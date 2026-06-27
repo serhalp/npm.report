@@ -1,11 +1,5 @@
-import { FailureLog } from './npmClient'
-import {
-  discoverInScope,
-  runExternal,
-  runManual,
-  runRecent,
-  type LogFn,
-} from './reports'
+import { FailureLog } from "./npmClient";
+import { discoverInScope, runExternal, runManual, runRecent, type LogFn } from "./reports";
 import type {
   AuditConfig,
   ExternalReport,
@@ -13,13 +7,13 @@ import type {
   ManualReport,
   RecentReport,
   ReportKind,
-} from './types'
+} from "./types";
 
 export interface AuditResult {
-  recent?: RecentReport
-  manual?: ManualReport
-  external?: ExternalReport
-  failures: FetchFailure[]
+  recent?: RecentReport;
+  manual?: ManualReport;
+  external?: ExternalReport;
+  failures: FetchFailure[];
 }
 
 /**
@@ -38,39 +32,37 @@ export async function runAudit(
   members: string[],
   log: LogFn,
 ): Promise<AuditResult> {
-  const failures = new FailureLog()
-  const want = new Set(reports)
-  const result: AuditResult = { failures: failures.failures }
+  const failures = new FailureLog();
+  const want = new Set(reports);
+  const result: AuditResult = { failures: failures.failures };
 
-  if (want.has('recent') || want.has('manual')) {
-    const scope = await discoverInScope(config, failures, log)
-    if (want.has('recent')) {
-      result.recent = await runRecent(config, failures, log, scope)
+  if (want.has("recent") || want.has("manual")) {
+    const scope = await discoverInScope(config, failures, log);
+    if (want.has("recent")) {
+      result.recent = await runRecent(config, failures, log, scope);
     }
-    if (want.has('manual')) {
+    if (want.has("manual")) {
       result.manual = await runManual(
         config,
         scope.map((s) => s.name),
         failures,
         log,
-      )
+      );
     }
   }
 
-  if (want.has('external')) {
+  if (want.has("external")) {
     if (members.length === 0) {
-      log('[external] SKIPPED: no org members supplied (membership isn’t public)')
+      log("[external] SKIPPED: no org members supplied (membership isn’t public)");
     } else {
-      result.external = await runExternal(config, members, failures, log)
+      result.external = await runExternal(config, members, failures, log);
     }
   }
 
   if (failures.count > 0) {
-    log(
-      `WARNING: ${failures.count} fetch(es) failed after retries — results may be INCOMPLETE.`,
-    )
+    log(`WARNING: ${failures.count} fetch(es) failed after retries — results may be INCOMPLETE.`);
   }
-  log('Done.')
-  result.failures = failures.failures
-  return result
+  log("Done.");
+  result.failures = failures.failures;
+  return result;
 }

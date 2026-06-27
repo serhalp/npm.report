@@ -1,4 +1,4 @@
-import type { TrustLevel, TrustStatus } from './types'
+import type { TrustLevel, TrustStatus } from "./types";
 
 // ---------------------------------------------------------------------------
 // Trust logic — reimplemented VERBATIM from github.com/43081j/packumeta
@@ -18,21 +18,21 @@ import type { TrustLevel, TrustStatus } from './types'
 
 interface VersionManifest {
   _npmUser?: {
-    name?: string
-    trustedPublisher?: unknown
-    approver?: unknown
-  }
+    name?: string;
+    trustedPublisher?: unknown;
+    approver?: unknown;
+  };
   dist?: {
     attestations?: {
-      provenance?: unknown
-    }
-  }
+      provenance?: unknown;
+    };
+  };
 }
 
 // jq's `truthy` def: (. != null) and (. != false). Mirror it exactly so that
 // e.g. an empty object or empty string counts as truthy, same as jq.
 function truthy(v: unknown): boolean {
-  return v != null && v !== false
+  return v != null && v !== false;
 }
 
 const LEVEL_ORDER: Record<TrustLevel, number> = {
@@ -40,30 +40,30 @@ const LEVEL_ORDER: Record<TrustLevel, number> = {
   provenance: 1,
   trustedPublisher: 2,
   stagedPublish: 3,
-}
+};
 
 export function getTrustLevelName(s: {
-  provenance: boolean
-  trustedPublisher: boolean
-  stagedPublish: boolean
+  provenance: boolean;
+  trustedPublisher: boolean;
+  stagedPublish: boolean;
 }): TrustLevel {
-  if (s.stagedPublish) return 'stagedPublish'
-  if (s.trustedPublisher && s.provenance) return 'trustedPublisher'
-  if (s.provenance) return 'provenance'
-  return 'none'
+  if (s.stagedPublish) return "stagedPublish";
+  if (s.trustedPublisher && s.provenance) return "trustedPublisher";
+  if (s.provenance) return "provenance";
+  return "none";
 }
 
 export function getTrustStatus(manifest: VersionManifest): TrustStatus {
-  const provenance = truthy(manifest.dist?.attestations?.provenance)
-  const trustedPublisher = truthy(manifest._npmUser?.trustedPublisher)
-  const stagedPublish = truthy(manifest._npmUser?.approver)
-  const level = getTrustLevelName({ provenance, trustedPublisher, stagedPublish })
+  const provenance = truthy(manifest.dist?.attestations?.provenance);
+  const trustedPublisher = truthy(manifest._npmUser?.trustedPublisher);
+  const stagedPublish = truthy(manifest._npmUser?.approver);
+  const level = getTrustLevelName({ provenance, trustedPublisher, stagedPublish });
   return {
     provenance,
     trustedPublisher,
     stagedPublish,
     level,
     order: LEVEL_ORDER[level],
-    publisher: manifest._npmUser?.name ?? '?',
-  }
+    publisher: manifest._npmUser?.name ?? "?",
+  };
 }

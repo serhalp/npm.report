@@ -24,8 +24,8 @@
   --warn: #e0a458;
   --danger: #e0675a;
 
-  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: "IBM Plex Sans", system-ui, sans-serif;
 
   --radius: 4px;
   --shadow: 0 12px 36px -18px rgba(0, 0, 0, 0.7);
@@ -56,7 +56,7 @@ body {
 
 /* Fixed grain overlay for atmosphere (never on scrolling containers). */
 body::before {
-  content: '';
+  content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
@@ -185,8 +185,8 @@ a:hover {
   margin: 6px 0 0;
 }
 
-input[type='text'],
-input[type='number'],
+input[type="text"],
+input[type="number"],
 textarea {
   width: 100%;
   background: var(--ink-900);
@@ -196,7 +196,9 @@ textarea {
   font-family: var(--mono);
   font-size: 13px;
   padding: 9px 11px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 input:focus,
 textarea:focus {
@@ -283,7 +285,9 @@ textarea {
   border-radius: var(--radius);
   padding: 11px 13px;
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
   background: var(--ink-850);
 }
 .check:hover {
@@ -338,7 +342,10 @@ textarea {
   border-radius: var(--radius);
   padding: 9px 16px;
   cursor: pointer;
-  transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.1s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 .btn:hover:not(:disabled) {
   border-color: var(--gold-dim);

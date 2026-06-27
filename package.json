@@ -1,13 +1,23 @@
 {
   "name": "npm-supply-chain-audit",
+  "version": "0.0.0",
   "private": true,
-  "version": "1.0.0",
-  "type": "module",
   "description": "A browser-based supply-chain audit tool for npm organizations: trusted-publishing/provenance rollout, manual publishes, and external maintainers.",
+  "type": "module",
   "scripts": {
-    "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "build:analyze": "rm -rf .sonda/ && SONDA=true vite build",
+    "dev": "vite",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "knip": "knip",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix .",
+    "preview": "vite preview",
+    "test": "pnpm run test:unit && pnpm run typecheck && pnpm run format:check && pnpm run lint",
+    "test:a11y": "playwright test",
+    "test:unit": "node --test",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@netlify/database": "^1.0.0",
@@ -17,11 +27,37 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@e18e/eslint-plugin": "^0.5.1",
+    "@netlify/edge-functions": "^3.0.8",
+    "@netlify/functions": "^5.3.0",
+    "@netlify/vite-plugin": "^2.12.8",
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.0.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^6.0.3",
     "drizzle-kit": "^1.0.0-beta.22",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.11"
+    "knip": "^6.21.0",
+    "oxfmt": "^0.56.0",
+    "oxlint": "^1.71.0",
+    "sonda": "^0.13.1",
+    "typescript": "7.0.1-rc",
+    "vite": "^8.1.0"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.5.2",
+      "onFail": "error"
+    },
+    "runtime": {
+      "name": "node",
+      "version": ">=26.0.0",
+      "onFail": "error"
+    }
+  },
+  "engines": {
+    "node": ">=26.0.0"
   }
 }

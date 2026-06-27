@@ -41,16 +41,16 @@
  */
 function isSafeResourcePath(rest: string): boolean {
   for (let i = 0; i < rest.length; i++) {
-    const c = rest.charCodeAt(i)
-    if (c <= 0x20 || c === 0x7f || c === 0x5c /* backslash */) return false
+    const c = rest.charCodeAt(i);
+    if (c <= 0x20 || c === 0x7f || c === 0x5c /* backslash */) return false;
   }
-  let decoded: string
+  let decoded: string;
   try {
-    decoded = decodeURIComponent(rest)
+    decoded = decodeURIComponent(rest);
   } catch {
-    return false // malformed percent-encoding
+    return false; // malformed percent-encoding
   }
-  return !decoded.split('/').includes('..')
+  return !decoded.split("/").includes("..");
 }
 
 /**
@@ -58,60 +58,56 @@ function isSafeResourcePath(rest: string): boolean {
  * the calling edge function (e.g. `/api/npm-registry`); everything after it is
  * the upstream path, reconstructed verbatim and appended to `host`.
  */
-export async function proxyNpm(
-  req: Request,
-  host: string,
-  prefix: string,
-): Promise<Response> {
-  if (req.method !== 'GET') {
-    return new Response('method not allowed', { status: 405 })
+export async function proxyNpm(req: Request, host: string, prefix: string): Promise<Response> {
+  if (req.method !== "GET") {
+    return new Response("method not allowed", { status: 405 });
   }
 
-  const incoming = new URL(req.url)
+  const incoming = new URL(req.url);
   // `pathname` preserves `%2f` / `+` exactly as sent, which scoped names and
   // fast-npm-meta batches depend on.
-  const rest = incoming.pathname.slice(prefix.length)
+  const rest = incoming.pathname.slice(prefix.length);
 
   if (!isSafeResourcePath(rest)) {
-    return new Response('invalid resource path', { status: 400 })
+    return new Response("invalid resource path", { status: 400 });
   }
 
   // Host is hardcoded into the authority before the first `/`, so nothing in
   // `rest` can alter it. We still re-verify after parsing as defense in depth.
-  let upstream: URL
+  let upstream: URL;
   try {
-    upstream = new URL(`https://${host}${rest}${incoming.search}`)
+    upstream = new URL(`https://${host}${rest}${incoming.search}`);
   } catch {
-    return new Response('invalid resource path', { status: 400 })
+    return new Response("invalid resource path", { status: 400 });
   }
-  if (upstream.protocol !== 'https:' || upstream.hostname !== host) {
-    return new Response('host not allowed', { status: 403 })
+  if (upstream.protocol !== "https:" || upstream.hostname !== host) {
+    return new Response("host not allowed", { status: 403 });
   }
 
-  let res: Response
+  let res: Response;
   try {
     res = await fetch(upstream.toString(), {
-      headers: { Accept: 'application/json' },
-    })
+      headers: { Accept: "application/json" },
+    });
   } catch {
     // Network error reaching npm — surface a 502 so the client's retry/backoff
     // kicks in rather than treating it as a legitimately-empty result.
-    return new Response('upstream fetch failed', { status: 502 })
+    return new Response("upstream fetch failed", { status: 502 });
   }
 
   // Own the response headers: add CORS, set caching, and forward nothing
   // hop-by-hop. Status and body stream through unchanged.
-  const headers = new Headers()
-  const contentType = res.headers.get('content-type')
-  if (contentType) headers.set('content-type', contentType)
-  headers.set('access-control-allow-origin', '*')
+  const headers = new Headers();
+  const contentType = res.headers.get("content-type");
+  if (contentType) headers.set("content-type", contentType);
+  headers.set("access-control-allow-origin", "*");
 
   if (res.ok) {
     // Cache only SUCCESSFUL responses, keyed by this resource's distinct path
     // (plus query) for 5 minutes on the Netlify CDN.
-    headers.set('cache-control', 'public, max-age=300')
-    headers.set('netlify-cdn-cache-control', 'public, durable, max-age=300')
-    headers.set('netlify-vary', 'query')
+    headers.set("cache-control", "public, max-age=300");
+    headers.set("netlify-cdn-cache-control", "public, durable, max-age=300");
+    headers.set("netlify-vary", "query");
   } else {
     // Never cache a non-2xx (404 / 429 rate-limit / 5xx). The npm hosts —
     // especially api.npmjs.org's token bucket and the free fast-npm-meta
@@ -119,13 +115,13 @@ export async function proxyNpm(
     // to every retry and re-run, defeating the client's retry/backoff and
     // turning a momentary blip into a sticky, silent "everything looks empty"
     // audit. Force the client straight back to upstream instead.
-    headers.set('cache-control', 'no-store')
+    headers.set("cache-control", "no-store");
     // Forward the host's own Retry-After so the client can honor the exact
     // delay it asks for instead of guessing. (Same-origin /api/* fetch, so the
     // browser can read this without Access-Control-Expose-Headers.)
-    const retryAfter = res.headers.get('retry-after')
-    if (retryAfter) headers.set('retry-after', retryAfter)
+    const retryAfter = res.headers.get("retry-after");
+    if (retryAfter) headers.set("retry-after", retryAfter);
   }
 
-  return new Response(res.body, { status: res.status, headers })
+  return new Response(res.body, { status: res.status, headers });
 }

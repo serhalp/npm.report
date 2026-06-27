@@ -2,9 +2,7 @@
   "version": "8",
   "dialect": "postgres",
   "id": "e3ba9e0a-4a53-475d-b817-bcab71ddd5f4",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "isRlsEnabled": false,
@@ -78,9 +76,7 @@
       "table": "reports"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "reports_pkey",
       "schema": "public",

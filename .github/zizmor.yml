@@ -1,0 +1,8 @@
+# https://docs.zizmor.sh/configuration/
+# $schema: 'https://github.com/zizmorcore/zizmor/blob/v1.25.2/support/zizmor.schema.json'
+
+rules:
+  anonymous-definition:
+    disable: true
+  concurrency-limits:
+    disable: true

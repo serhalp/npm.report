@@ -110,7 +110,7 @@ src/
 
 ## Build / type-checking
 
-`npm run build` is `vite build` (esbuild) — it transpiles without type-checking,
+`pnpm run build` is `vite build` (esbuild) — it transpiles without type-checking,
 so type errors won't fail the build. Keep types honest anyway; run
 `npx tsc --noEmit` locally if you want a real check. Do not run build/dev/tsc as
 part of automated edits — the platform validates the build.

@@ -1,0 +1,8 @@
+allowBuilds:
+  "@parcel/watcher": false
+  esbuild: true
+  sharp: false
+minimumReleaseAge: 1080 # 18 hours
+blockExoticSubdeps: true
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 1080 # 18 hours

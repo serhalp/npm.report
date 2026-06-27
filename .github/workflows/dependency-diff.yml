@@ -1,0 +1,29 @@
+name: 🎬 Dependency Diff (Comment)
+
+on: # zizmor: ignore[dangerous-triggers] -- The whole point of this is that it's secure.
+  workflow_run:
+    workflows: ["Dependency Diff (Analyze)"]
+    types:
+      - completed
+
+permissions: {}
+
+jobs:
+  post-comment:
+    runs-on: ubuntu-24.04-arm
+    if: github.event.workflow_run.conclusion == 'success'
+    permissions:
+      pull-requests: write # posts comments
+      actions: read # reads artifact from previous workflow
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: e18e-diff-result
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Post comment
+        uses: e18e/action-dependency-diff@8e9b8c1957ab066d36235a43f4c1ff1522e1bdbc # v1.6.1
+        with:
+          mode: comment-from-artifact
+          artifact-path: e18e-diff-result.json

@@ -1,5 +1,9 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import netlify from "@netlify/vite-plugin";
+import Sonda from "sonda/vite";
+
+const analyzeBundle = process.env.SONDA === "true";
 
 // The audit runs entirely client-side (all three npm APIs send
 // `access-control-allow-origin: *`), so this is a pure static SPA — no
@@ -7,11 +11,25 @@ import react from '@vitejs/plugin-react'
 // inlines its WASM as a base64 data URL in the ESM build, so no special
 // asset handling is required.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    netlify(),
+    Sonda({
+      enabled: analyzeBundle,
+      format: ["html", "json"],
+      include: [/^dist\/client\/assets\/.*\.js$/],
+      filename: "bundle",
+      outputDir: ".sonda",
+      open: false,
+      gzip: true,
+      brotli: true,
+    }),
+  ],
   build: {
-    target: 'es2022',
+    sourcemap: analyzeBundle,
+    target: "es2022",
     // The inlined WASM data URL pushes the ghostty-web chunk well past the
     // default warning size; that's expected.
     chunkSizeWarningLimit: 2048,
   },
-})
+});

@@ -6,7 +6,7 @@ npm org(s) and it answers three questions:
 1. **Trusted-publishing / provenance rollout** — the supply-chain trust status of
    every package's latest release.
 2. **Manual publishes** — versions published from a human account rather than CI.
-3. **External maintainers** — npm users who can publish *now* but aren't org
+3. **External maintainers** — npm users who can publish _now_ but aren't org
    members (stale publish access = attack surface).
 
 It is a TypeScript port of two bash scripts (`scripts/npm-audit.sh`,
@@ -17,7 +17,7 @@ registry — no backend, no data leaves the page.
 ## Why client-side (and no shell execution)
 
 [`coder/ghostty-web`](https://github.com/coder/ghostty-web) is a terminal
-*renderer* (Ghostty's VT100 parser compiled to WASM, a drop-in for xterm.js) —
+_renderer_ (Ghostty's VT100 parser compiled to WASM, a drop-in for xterm.js) —
 it does not execute shells. And the audit is a multi-minute job that fetches
 hundreds of packages, which doesn't fit a serverless function's timeout or its
 6 MB response cap (one packument is 23 MB).
@@ -30,12 +30,12 @@ the live progress log. The result is a pure static site with zero server code.
 
 ## Reports
 
-| Report | What it shows | Notes |
-| --- | --- | --- |
-| `recent` | Trust level of each package's `latest` release | Trust logic ported verbatim from [packumeta](https://github.com/43081j/packumeta): staged publish > trusted publisher (OIDC + provenance) > provenance > none |
-| `manual` | Who published manually (non-bot) in the window | "Manual" is a proxy — npm can't distinguish a human from their CI token |
-| `external` | Maintainers with live publish rights who aren't org members | Requires pasted `npm org ls <org> --json` output (membership isn't public) |
-| user-publishes | Versions a specific npm user personally published | Standalone tool, scans the user's own packages + optionally the last audit's set |
+| Report         | What it shows                                               | Notes                                                                                                                                                         |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `recent`       | Trust level of each package's `latest` release              | Trust logic ported verbatim from [packumeta](https://github.com/43081j/packumeta): staged publish > trusted publisher (OIDC + provenance) > provenance > none |
+| `manual`       | Who published manually (non-bot) in the window              | "Manual" is a proxy — npm can't distinguish a human from their CI token                                                                                       |
+| `external`     | Maintainers with live publish rights who aren't org members | Requires pasted `npm org ls <org> --json` output (membership isn't public)                                                                                    |
+| user-publishes | Versions a specific npm user personally published           | Standalone tool, scans the user's own packages + optionally the last audit's set                                                                              |
 
 Each report renders as a **sortable table** with **Copy JSON** and **Download
 CSV**.
@@ -50,15 +50,15 @@ CSV**.
 ## Run locally
 
 ```bash
-npm install
-npm run dev      # http://localhost:5173
+pnpm install
+pnpm run dev      # http://localhost:5173
 ```
 
 Build for production:
 
 ```bash
-npm run build    # -> dist/
-npm run preview
+pnpm run build    # -> dist/
+pnpm run preview
 ```
 
 Deployment is configured in `netlify.toml` (static publish of `dist/` with an

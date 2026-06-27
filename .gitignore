@@ -1,0 +1,12 @@
+/node_modules/
+/.pnpm-store/
+/dist/
+/.sonda/
+/.netlify/
+/test-results/
+/playwright-report/
+/.vite/
+/.env
+/.env.*
+
+.DS_Store

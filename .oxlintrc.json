@@ -1,0 +1,50 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "oxc", "import", "react", "jsx-a11y", "react-perf"],
+  "jsPlugins": ["@e18e/eslint-plugin"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error"
+  },
+  "rules": {
+    // All recommended e18e rules. Must be listed individually due to oxlint/eslint compat limitations.
+    "e18e/prefer-array-at": "error",
+    "e18e/prefer-array-fill": "error",
+    "e18e/prefer-includes": "error",
+    "e18e/prefer-array-to-reversed": "error",
+    "e18e/prefer-array-to-sorted": "error",
+    "e18e/prefer-array-to-spliced": "error",
+    "e18e/prefer-nullish-coalescing": "error",
+    "e18e/prefer-object-has-own": "error",
+    "e18e/prefer-spread-syntax": "error",
+    "e18e/prefer-url-canparse": "error",
+    "e18e/ban-dependencies": "error",
+    "react/react-in-jsx-scope": "off",
+    "import/no-unassigned-import": [
+      "error",
+      {
+        "allow": ["**/*.css"]
+      }
+    ]
+  },
+  "env": {
+    "builtin": true
+  },
+  "overrides": [
+    // Don't enable e18e perf rules in test files
+    {
+      "files": ["**/*.{js,jsx,ts,tsx}"],
+      "excludeFiles": ["test/**", "**/{*,}.{test,e2e}.{js,jsx,ts,tsx}"],
+      "rules": {
+        "e18e/prefer-timer-args": "error",
+        "e18e/prefer-date-now": "error",
+        "e18e/prefer-regex-test": "error",
+        "e18e/prefer-static-regex": "error",
+        "e18e/prefer-array-from-map": "error",
+        "e18e/prefer-array-some": "error",
+        "e18e/prefer-string-fromcharcode": "error"
+      }
+    }
+  ]
+}

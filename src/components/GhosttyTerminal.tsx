@@ -1,31 +1,25 @@
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react'
-import { init, Terminal, FitAddon } from 'ghostty-web'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { init, Terminal, FitAddon } from "ghostty-web";
 
 export interface TerminalHandle {
-  writeLine: (line: string) => void
-  clear: () => void
+  writeLine: (line: string) => void;
+  clear: () => void;
 }
 
 // ANSI colorizer — ghostty-web is a real VT100 emulator, so the progress lines
 // get the same coloring the scripts' stderr would in a terminal: tags cyan,
 // WARNING red, "Done." green, counters dim.
-const RESET = '\x1b[0m'
+const RESET = "\x1b[0m";
 function colorize(line: string): string {
-  if (/^WARNING/.test(line)) return `\x1b[31m${line}${RESET}`
-  if (/^Done\./.test(line)) return `\x1b[32m${line}${RESET}`
-  if (/^Error/i.test(line)) return `\x1b[31m${line}${RESET}`
-  const m = line.match(/^(\s*)(\[[a-z]+\])(.*)$/)
+  if (/^WARNING/.test(line)) return `\x1b[31m${line}${RESET}`;
+  if (/^Done\./.test(line)) return `\x1b[32m${line}${RESET}`;
+  if (/^Error/i.test(line)) return `\x1b[31m${line}${RESET}`;
+  const m = line.match(/^(\s*)(\[[a-z]+\])(.*)$/);
   if (m) {
-    const rest = /\d+\/\d+/.test(m[3]) ? `\x1b[2m${m[3]}${RESET}` : m[3]
-    return `${m[1]}\x1b[36m${m[2]}${RESET}${rest}`
+    const rest = /\d+\/\d+/.test(m[3]) ? `\x1b[2m${m[3]}${RESET}` : m[3];
+    return `${m[1]}\x1b[36m${m[2]}${RESET}${rest}`;
   }
-  return line
+  return line;
 }
 
 /**
@@ -37,81 +31,81 @@ function colorize(line: string): string {
  * so the audit log is never lost.
  */
 export const GhosttyTerminal = forwardRef<TerminalHandle>((_props, ref) => {
-  const hostRef = useRef<HTMLDivElement | null>(null)
-  const termRef = useRef<Terminal | null>(null)
-  const fallbackRef = useRef<HTMLPreElement | null>(null)
-  const [failed, setFailed] = useState(false)
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const termRef = useRef<Terminal | null>(null);
+  const fallbackRef = useRef<HTMLPreElement | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    let disposed = false
-    let term: Terminal | null = null
-    ;(async () => {
+    let disposed = false;
+    let term: Terminal | null = null;
+    (async () => {
       try {
-        await init()
-        if (disposed || !hostRef.current) return
+        await init();
+        if (disposed || !hostRef.current) return;
         term = new Terminal({
           fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
           fontSize: 12,
           theme: {
-            background: '#0b0f15',
-            foreground: '#d7dde5',
-            cursor: '#d8a657',
+            background: "#0b0f15",
+            foreground: "#d7dde5",
+            cursor: "#d8a657",
           },
           cursorBlink: true,
           scrollback: 5000,
-        } as ConstructorParameters<typeof Terminal>[0])
-        term.open(hostRef.current)
+        } as ConstructorParameters<typeof Terminal>[0]);
+        term.open(hostRef.current);
         try {
-          const fit = new FitAddon()
-          term.loadAddon(fit)
-          fit.fit()
+          const fit = new FitAddon();
+          term.loadAddon(fit);
+          fit.fit();
         } catch {
           /* FitAddon is best-effort */
         }
-        term.writeln('\x1b[2mnpm supply-chain audit — ready.\x1b[0m')
-        term.writeln('\x1b[2mConfigure orgs and reports, then Run audit.\x1b[0m')
-        termRef.current = term
+        term.writeln("\x1b[2mnpm supply-chain audit — ready.\x1b[0m");
+        term.writeln("\x1b[2mConfigure orgs and reports, then Run audit.\x1b[0m");
+        termRef.current = term;
       } catch {
-        setFailed(true)
+        setFailed(true);
       }
-    })()
+    })();
     return () => {
-      disposed = true
+      disposed = true;
       try {
-        term?.dispose()
+        term?.dispose();
       } catch {
         /* ignore */
       }
-      termRef.current = null
-    }
-  }, [])
+      termRef.current = null;
+    };
+  }, []);
 
   useImperativeHandle(ref, () => ({
     writeLine(line: string) {
-      const t = termRef.current
+      const t = termRef.current;
       if (t) {
         try {
-          t.writeln(colorize(line))
-          return
+          t.writeln(colorize(line));
+          return;
         } catch {
           /* fall through to mirror */
         }
       }
-      const pre = fallbackRef.current
+      const pre = fallbackRef.current;
       if (pre) {
-        pre.textContent += `${line}\n`
-        pre.scrollTop = pre.scrollHeight
+        pre.textContent += `${line}\n`;
+        pre.scrollTop = pre.scrollHeight;
       }
     },
     clear() {
       try {
-        termRef.current?.clear()
+        termRef.current?.clear();
       } catch {
         /* ignore */
       }
-      if (fallbackRef.current) fallbackRef.current.textContent = ''
+      if (fallbackRef.current) fallbackRef.current.textContent = "";
     },
-  }))
+  }));
 
   return (
     <div className="term-wrap">
@@ -127,7 +121,7 @@ export const GhosttyTerminal = forwardRef<TerminalHandle>((_props, ref) => {
         <div ref={hostRef} className="term-host" />
       )}
     </div>
-  )
-})
+  );
+});
 
-GhosttyTerminal.displayName = 'GhosttyTerminal'
+GhosttyTerminal.displayName = "GhosttyTerminal";

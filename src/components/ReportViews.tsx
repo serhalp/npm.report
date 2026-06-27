@@ -4,28 +4,28 @@ import type {
   RecentReport,
   TrustLevel,
   UserPublishReport,
-} from '../lib/types'
-import { DataTable, type Column } from './DataTable'
-import { ExportButtons } from './ExportButtons'
+} from "../lib/types";
+import { DataTable, type Column } from "./DataTable";
+import { ExportButtons } from "./ExportButtons";
 
-const yn = (b: boolean) => (b ? 'yes' : 'no')
+const yn = (b: boolean) => (b ? "yes" : "no");
 
 const LEVEL_ORDER: Record<TrustLevel, number> = {
   none: 0,
   provenance: 1,
   trustedPublisher: 2,
   stagedPublish: 3,
-}
+};
 
 const LEVEL_LABEL: Record<TrustLevel, string> = {
-  none: 'none',
-  provenance: 'provenance',
-  trustedPublisher: 'trusted publisher',
-  stagedPublish: 'staged publish',
-}
+  none: "none",
+  provenance: "provenance",
+  trustedPublisher: "trusted publisher",
+  stagedPublish: "staged publish",
+};
 
 function fmtDate(iso: string): string {
-  return iso ? iso.replace('T', ' ').replace(/\.\d+Z$/, 'Z') : '—'
+  return iso ? iso.replace("T", " ").replace(/\.\d+Z$/, "Z") : "—";
 }
 
 function Stat({
@@ -34,20 +34,20 @@ function Stat({
   sub,
   variant,
 }: {
-  k: string
-  v: string | number
-  sub?: string
-  variant?: 'accent' | 'risk'
+  k: string;
+  v: string | number;
+  sub?: string;
+  variant?: "accent" | "risk";
 }) {
   return (
-    <div className={`stat${variant ? ` stat--${variant}` : ''}`}>
+    <div className={`stat${variant ? ` stat--${variant}` : ""}`}>
       <div className="k">{k}</div>
       <div className="v">
-        {typeof v === 'number' ? v.toLocaleString() : v}
+        {typeof v === "number" ? v.toLocaleString() : v}
         {sub ? <small> {sub}</small> : null}
       </div>
     </div>
-  )
+  );
 }
 
 // ---- recent ----------------------------------------------------------------
@@ -56,69 +56,63 @@ export function RecentView({
   report,
   onToast,
 }: {
-  report: RecentReport
-  onToast: (m: string) => void
+  report: RecentReport;
+  onToast: (m: string) => void;
 }) {
-  const { rows, summary } = report
+  const { rows, summary } = report;
   const columns: Column<(typeof rows)[number]>[] = [
-    { key: 'pkg', header: 'Package' },
-    { key: 'version', header: 'Version' },
+    { key: "pkg", header: "Package" },
+    { key: "version", header: "Version" },
     {
-      key: 'level',
-      header: 'Trust level',
+      key: "level",
+      header: "Trust level",
       value: (r) => LEVEL_ORDER[r.level],
-      render: (r) => (
-        <span className={`badge badge--${r.level}`}>{LEVEL_LABEL[r.level]}</span>
-      ),
+      render: (r) => <span className={`badge badge--${r.level}`}>{LEVEL_LABEL[r.level]}</span>,
     },
-    { key: 'publisher', header: 'Publisher' },
+    { key: "publisher", header: "Publisher" },
     {
-      key: 'downloads',
-      header: 'Downloads/wk',
+      key: "downloads",
+      header: "Downloads/wk",
       numeric: true,
       value: (r) => r.downloads,
       render: (r) =>
-        r.downloads == null ? (
-          <span className="muted">?</span>
-        ) : (
-          r.downloads.toLocaleString()
-        ),
+        r.downloads == null ? <span className="muted">?</span> : r.downloads.toLocaleString(),
     },
     {
-      key: 'latestPublish',
-      header: 'Latest publish',
+      key: "latestPublish",
+      header: "Latest publish",
       value: (r) => r.latestPublish,
       render: (r) => fmtDate(r.latestPublish),
     },
     {
-      key: 'deprecated',
-      header: 'Deprecated',
+      key: "deprecated",
+      header: "Deprecated",
       value: (r) => (r.deprecated ? 1 : 0),
       render: (r) =>
         r.deprecated ? <span className="flag">DEPRECATED</span> : <span className="muted">—</span>,
     },
-  ]
+  ];
 
   const csvColumns = [
-    { key: 'pkg', header: 'package' },
-    { key: 'latestPublish', header: 'latest_publish_iso' },
-    { key: 'version', header: 'latest_version' },
-    { key: 'level', header: 'trust_level' },
-    { key: 'provenance', header: 'provenance' },
-    { key: 'trustedPublisher', header: 'trustedPublisher' },
-    { key: 'stagedPublish', header: 'stagedPublish' },
-    { key: 'publisher', header: 'publisher' },
-    { key: 'deprecated', header: 'deprecated' },
-    { key: 'downloads', header: 'downloads_last_week' },
-  ]
+    { key: "pkg", header: "package" },
+    { key: "latestPublish", header: "latest_publish_iso" },
+    { key: "version", header: "latest_version" },
+    { key: "level", header: "trust_level" },
+    { key: "provenance", header: "provenance" },
+    { key: "trustedPublisher", header: "trustedPublisher" },
+    { key: "stagedPublish", header: "stagedPublish" },
+    { key: "publisher", header: "publisher" },
+    { key: "deprecated", header: "deprecated" },
+    { key: "downloads", header: "downloads_last_week" },
+  ];
   const csvRows = rows.map((r) => ({
     ...r,
     provenance: yn(r.provenance),
     trustedPublisher: yn(r.trustedPublisher),
     stagedPublish: yn(r.stagedPublish),
     deprecated: yn(r.deprecated),
-    downloads: r.downloads ?? '?',
-  }))
+    downloads: r.downloads ?? "?",
+  }));
 
   return (
     <div>
@@ -132,8 +126,7 @@ export function RecentView({
       </div>
       <div className="table-tools">
         <span className="table-meta">
-          {rows.length} packages · click a column to sort · trust logic from
-          packumeta (43081j)
+          {rows.length} packages · click a column to sort · trust logic from packumeta (43081j)
         </span>
         <ExportButtons
           json={report}
@@ -145,7 +138,7 @@ export function RecentView({
       </div>
       <DataTable columns={columns} rows={rows} />
     </div>
-  )
+  );
 }
 
 // ---- manual ----------------------------------------------------------------
@@ -154,18 +147,18 @@ export function ManualView({
   report,
   onToast,
 }: {
-  report: ManualReport
-  onToast: (m: string) => void
+  report: ManualReport;
+  onToast: (m: string) => void;
 }) {
   const detailCols: Column<(typeof report.rows)[number]>[] = [
-    { key: 'when', header: 'When', value: (r) => r.when, render: (r) => fmtDate(r.when) },
-    { key: 'who', header: 'Publisher' },
-    { key: 'ref', header: 'Package@version' },
-  ]
+    { key: "when", header: "When", value: (r) => r.when, render: (r) => fmtDate(r.when) },
+    { key: "who", header: "Publisher" },
+    { key: "ref", header: "Package@version" },
+  ];
   const byCols: Column<(typeof report.byPublisher)[number]>[] = [
-    { key: 'who', header: 'Publisher' },
-    { key: 'count', header: 'Publishes', numeric: true },
-  ]
+    { key: "who", header: "Publisher" },
+    { key: "count", header: "Publishes", numeric: true },
+  ];
 
   return (
     <div>
@@ -176,7 +169,7 @@ export function ManualView({
         <Stat
           k="Excluded bots"
           v={report.bots.length}
-          sub={report.bots.length ? report.bots.join(', ') : 'none'}
+          sub={report.bots.length ? report.bots.join(", ") : "none"}
         />
       </div>
 
@@ -193,8 +186,8 @@ export function ManualView({
               json={report.byPublisher}
               csvRows={report.byPublisher as unknown as Record<string, unknown>[]}
               csvColumns={[
-                { key: 'who', header: 'publisher' },
-                { key: 'count', header: 'publishes' },
+                { key: "who", header: "publisher" },
+                { key: "count", header: "publishes" },
               ]}
               filenameBase="manual-by-publisher"
               onToast={onToast}
@@ -208,9 +201,9 @@ export function ManualView({
               json={report.rows}
               csvRows={report.rows as unknown as Record<string, unknown>[]}
               csvColumns={[
-                { key: 'when', header: 'when' },
-                { key: 'who', header: 'publisher' },
-                { key: 'ref', header: 'package_version' },
+                { key: "when", header: "when" },
+                { key: "who", header: "publisher" },
+                { key: "ref", header: "package_version" },
               ]}
               filenameBase="manual-publishes"
               onToast={onToast}
@@ -220,7 +213,7 @@ export function ManualView({
         </>
       )}
     </div>
-  )
+  );
 }
 
 // ---- external --------------------------------------------------------------
@@ -229,17 +222,17 @@ export function ExternalView({
   report,
   onToast,
 }: {
-  report: ExternalReport
-  onToast: (m: string) => void
+  report: ExternalReport;
+  onToast: (m: string) => void;
 }) {
   const byCols: Column<(typeof report.byUser)[number]>[] = [
-    { key: 'user', header: 'npm user' },
-    { key: 'count', header: 'Packages', numeric: true },
-  ]
+    { key: "user", header: "npm user" },
+    { key: "count", header: "Packages", numeric: true },
+  ];
   const detailCols: Column<(typeof report.rows)[number]>[] = [
-    { key: 'user', header: 'npm user' },
-    { key: 'pkg', header: 'Package (publish access)' },
-  ]
+    { key: "user", header: "npm user" },
+    { key: "pkg", header: "Package (publish access)" },
+  ];
 
   return (
     <div>
@@ -261,8 +254,8 @@ export function ExternalView({
               json={report.byUser}
               csvRows={report.byUser as unknown as Record<string, unknown>[]}
               csvColumns={[
-                { key: 'user', header: 'user' },
-                { key: 'count', header: 'package_count' },
+                { key: "user", header: "user" },
+                { key: "count", header: "package_count" },
               ]}
               filenameBase="external-by-user"
               onToast={onToast}
@@ -276,8 +269,8 @@ export function ExternalView({
               json={report.rows}
               csvRows={report.rows as unknown as Record<string, unknown>[]}
               csvColumns={[
-                { key: 'user', header: 'user' },
-                { key: 'pkg', header: 'package' },
+                { key: "user", header: "user" },
+                { key: "pkg", header: "package" },
               ]}
               filenameBase="external-maintainers"
               onToast={onToast}
@@ -287,7 +280,7 @@ export function ExternalView({
         </>
       )}
     </div>
-  )
+  );
 }
 
 // ---- user publishes --------------------------------------------------------
@@ -296,13 +289,13 @@ export function UserPublishView({
   report,
   onToast,
 }: {
-  report: UserPublishReport
-  onToast: (m: string) => void
+  report: UserPublishReport;
+  onToast: (m: string) => void;
 }) {
   const cols: Column<(typeof report.rows)[number]>[] = [
-    { key: 'when', header: 'When', value: (r) => r.when, render: (r) => fmtDate(r.when) },
-    { key: 'ref', header: 'Package@version' },
-  ]
+    { key: "when", header: "When", value: (r) => r.when, render: (r) => fmtDate(r.when) },
+    { key: "ref", header: "Package@version" },
+  ];
   return (
     <div>
       <div className="statgrid">
@@ -313,8 +306,8 @@ export function UserPublishView({
       {report.rows.length === 0 ? (
         <div className="empty">
           <div className="big">No publishes in window</div>
-          {report.user} did not personally publish any version in the selected
-          window across {report.scanned} scanned packages.
+          {report.user} did not personally publish any version in the selected window across{" "}
+          {report.scanned} scanned packages.
         </div>
       ) : (
         <>
@@ -324,8 +317,8 @@ export function UserPublishView({
               json={report.rows}
               csvRows={report.rows as unknown as Record<string, unknown>[]}
               csvColumns={[
-                { key: 'when', header: 'when' },
-                { key: 'ref', header: 'package_version' },
+                { key: "when", header: "when" },
+                { key: "ref", header: "package_version" },
               ]}
               filenameBase={`publishes-${report.user}`}
               onToast={onToast}
@@ -335,5 +328,5 @@ export function UserPublishView({
         </>
       )}
     </div>
-  )
+  );
 }
