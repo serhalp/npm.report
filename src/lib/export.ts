@@ -1,6 +1,8 @@
 // Export helpers: copy-to-clipboard JSON and download CSV. Generic over the
 // table data so every report reuses them.
 
+const CSV_QUOTE_RE = /[",\n\r]/;
+
 export async function copyJson(data: unknown): Promise<void> {
   const text = JSON.stringify(data, null, 2);
   await navigator.clipboard.writeText(text);
@@ -10,7 +12,7 @@ function csvCell(value: unknown): string {
   if (value == null) return "";
   const s = String(value);
   // Quote if it contains a comma, quote, newline, or leading/trailing space.
-  if (/[",\n\r]/.test(s) || s !== s.trim()) {
+  if (CSV_QUOTE_RE.test(s) || s !== s.trim()) {
     return `"${s.replace(/"/g, '""')}"`;
   }
   return s;

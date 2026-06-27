@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle -- npm packuments expose publisher metadata as the documented `_npmUser` field. */
 import type { TrustLevel, TrustStatus } from "./types";
 
 // ---------------------------------------------------------------------------

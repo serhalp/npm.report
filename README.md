@@ -1,84 +1,94 @@
-# npm org trust & access audit
+# npm supply-chain audit
 
-A browser-based supply-chain audit tool for npm organizations. Point it at any
-npm org(s) and it answers three questions:
+A browser app for auditing public npm organization packages for supply-chain
+trust and live publish access.
 
-1. **Trusted-publishing / provenance rollout** — the supply-chain trust status of
-   every package's latest release.
-2. **Manual publishes** — versions published from a human account rather than CI.
-3. **External maintainers** — npm users who can publish _now_ but aren't org
-   members (stale publish access = attack surface).
+It answers:
 
-It is a TypeScript port of two bash scripts (`scripts/npm-audit.sh`,
-`scripts/npm-user-publishes.sh`), kept in the repo as the reference
-specification. The audit runs **entirely in the browser** against the public npm
-registry — no backend, no data leaves the page.
+- `recent`: trust status of each in-scope package's `latest` release.
+- `manual`: versions published by non-bot accounts in the selected window.
+- `external`: current package maintainers who are not listed as org members.
+- User publish history: versions a specific npm user personally published.
 
-## Why client-side (and no shell execution)
+The TypeScript audit logic is a port of the original shell scripts in
+`scripts/`. Those scripts are kept as the behavior reference.
 
-[`coder/ghostty-web`](https://github.com/coder/ghostty-web) is a terminal
-_renderer_ (Ghostty's VT100 parser compiled to WASM, a drop-in for xterm.js) —
-it does not execute shells. And the audit is a multi-minute job that fetches
-hundreds of packages, which doesn't fit a serverless function's timeout or its
-6 MB response cap (one packument is 23 MB).
+## Run Locally
 
-The unlock: all three upstream APIs
-(`registry.npmjs.org`, `api.npmjs.org`, `npm.antfu.dev`) send
-`Access-Control-Allow-Origin: *`, so the browser can call them directly. The
-shell logic is ported to TypeScript and run client-side; `ghostty-web` displays
-the live progress log. The result is a pure static site with zero server code.
+Requirements:
 
-## Reports
-
-| Report         | What it shows                                               | Notes                                                                                                                                                         |
-| -------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `recent`       | Trust level of each package's `latest` release              | Trust logic ported verbatim from [packumeta](https://github.com/43081j/packumeta): staged publish > trusted publisher (OIDC + provenance) > provenance > none |
-| `manual`       | Who published manually (non-bot) in the window              | "Manual" is a proxy — npm can't distinguish a human from their CI token                                                                                       |
-| `external`     | Maintainers with live publish rights who aren't org members | Requires pasted `npm org ls <org> --json` output (membership isn't public)                                                                                    |
-| user-publishes | Versions a specific npm user personally published           | Standalone tool, scans the user's own packages + optionally the last audit's set                                                                              |
-
-Each report renders as a **sortable table** with **Copy JSON** and **Download
-CSV**.
-
-## Tech
-
-- **Vite + React + TypeScript** — static SPA, no server.
-- **ghostty-web** — live audit log terminal (WASM inlined in the ESM build, so
-  no asset wiring needed).
-- No data persistence: every run is ephemeral and stays in the browser.
-
-## Run locally
+- Node.js 26+
+- pnpm 11.5.2
 
 ```bash
 pnpm install
-pnpm run dev      # http://localhost:5173
+pnpm run dev
 ```
 
-Build for production:
+Open `http://localhost:5173`.
+
+Build and preview production output:
 
 ```bash
-pnpm run build    # -> dist/
+pnpm run build
 pnpm run preview
 ```
 
-Deployment is configured in `netlify.toml` (static publish of `dist/` with an
-SPA fallback redirect).
+`pnpm run build` transpiles with Vite; it does not type-check. Use
+`pnpm run typecheck` when you need TypeScript validation.
 
-## Using the external report
+## Use The App
 
-npm org membership is not exposed by any unauthenticated API. For the `external`
-report the app gives you a `npm org ls <org> --json` command per org to run
-locally (you must be logged in / authorized for the org), then you paste the
-JSON output back. Membership goes stale as people join and leave — refresh it
-each run.
+1. Enter one or more npm org slugs.
+2. Choose a recency window, or select "Analyze ALL org packages".
+3. Select `recent`, `manual`, `external`, or any combination.
+4. For `manual`, add bot or CI publisher account names to exclude.
+5. For `external`, run `npm org ls <org> --json` locally while authenticated and
+   paste the output. npm org membership is not public.
+6. Run the audit. Results render as sortable tables with JSON copy and CSV
+   download actions.
+7. Use "Share report" only when you want a persistent read-only snapshot.
 
-## Known limitations (inherited from the registry, not bugs)
+## Architecture
 
-- `registry.npmjs.org/-/org/<org>/package` **hard-caps at 250 packages** and
-  ignores pagination. Larger orgs lose the alphabetical tail; those packages are
-  private/unlisted and unreachable unauthenticated anyway.
-- The `api.npmjs.org` downloads endpoint is a strict token bucket; scoped-package
-  download counts are fetched sequentially and paced, so a large run takes a
-  while.
-- Failed fetches are retried with backoff and **counted** — a rate-limited
-  package is reported as incomplete rather than silently treated as "clean."
+- Vite, Svelte 5, and TypeScript provide a static client-side app.
+- Audit orchestration runs in the browser. There is no backend job runner for
+  npm audits.
+- npm fetches go through thin Netlify edge proxies:
+  - `/api/npm-registry/*` -> `registry.npmjs.org`
+  - `/api/npm-downloads/*` -> `api.npmjs.org`
+  - `/api/npm-meta/*` -> `npm.antfu.dev`
+- Each proxy pins one upstream host server-side, streams the upstream response,
+  adds CORS, and applies a 5-minute shared cache for successful responses.
+- Report sharing is the only stateful feature. `POST /api/reports` stores a
+  completed `AuditResult` plus display metadata in Netlify Database; `/report/:id`
+  renders that snapshot read-only.
+
+## Important Limits
+
+- npm's public org package endpoint caps results at 250 packages per org.
+- `external` needs fresh pasted membership output because org membership is
+  private and can change.
+- "Manual" means the version's `_npmUser` was not in the configured bot list;
+  npm does not distinguish a human login from that account's automation token.
+- Scoped package download counts are intentionally fetched sequentially with a
+  500 ms delay because `api.npmjs.org` rate-limits aggressively.
+- Failed or exhausted fetches are counted and surfaced. A rate-limited package
+  must not silently look clean.
+
+## Development Checks
+
+Useful commands:
+
+```bash
+pnpm run format:check
+pnpm run lint
+pnpm run typecheck
+pnpm run test:unit
+pnpm run knip
+pnpm run test:a11y
+pnpm run test
+```
+
+See `CONTRIBUTING.md` for contribution workflow and `AGENTS.md` for agent-facing
+architecture rules.

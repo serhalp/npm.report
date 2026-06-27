@@ -1,18 +1,17 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
 import netlify from "@netlify/vite-plugin";
 import Sonda from "sonda/vite";
+import { defineConfig } from "vitest/config";
 
 const analyzeBundle = process.env.SONDA === "true";
 
-// The audit runs entirely client-side (all three npm APIs send
-// `access-control-allow-origin: *`), so this is a pure static SPA — no
-// serverless functions, no timeouts, no response-size caps. ghostty-web
-// inlines its WASM as a base64 data URL in the ESM build, so no special
-// asset handling is required.
+// The audit orchestration runs in the browser. Netlify's Vite plugin exposes
+// the narrow /api/* surface used by the per-host npm edge proxies and the small
+// report-sharing function. ghostty-web inlines its WASM as a base64 data URL in
+// the ESM build, so no special asset handling is required.
 export default defineConfig({
   plugins: [
-    react(),
+    svelte(),
     netlify(),
     Sonda({
       enabled: analyzeBundle,
@@ -31,5 +30,16 @@ export default defineConfig({
     // The inlined WASM data URL pushes the ghostty-web chunk well past the
     // default warning size; that's expected.
     chunkSizeWarningLimit: 2048,
+  },
+  resolve: process.env.VITEST
+    ? {
+        conditions: ["browser"],
+      }
+    : undefined,
+  test: {
+    environment: "jsdom",
+    setupFiles: ["src/test/setup.ts"],
+    include: ["src/**/*.{test,spec}.ts", "src/**/*.{test,spec}.svelte.ts"],
+    clearMocks: true,
   },
 });

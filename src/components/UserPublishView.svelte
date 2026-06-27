@@ -1,0 +1,52 @@
+<script lang="ts">
+  import DataTable from "./DataTable.svelte";
+  import type { Column } from "./dataTableTypes";
+  import ExportButtons from "./ExportButtons.svelte";
+  import Stat from "./Stat.svelte";
+  import type { UserPublishReport, UserPublishRow } from "../lib/types";
+  import { fmtDate } from "./reportFormatting";
+
+  interface Props {
+    report: UserPublishReport;
+    onToast: (message: string) => void;
+  }
+
+  let { report, onToast }: Props = $props();
+
+  const columns: Column<UserPublishRow>[] = [
+    { key: "when", header: "When", value: (row) => row.when, cell: (row) => fmtDate(row.when) },
+    { key: "ref", header: "Package@version" },
+  ];
+
+  let csvRows = $derived(report.rows as unknown as Record<string, unknown>[]);
+</script>
+
+<div>
+  <div class="statgrid">
+    <Stat k="Publishes" v={report.rows.length} variant="accent" />
+    <Stat k="Packages scanned" v={report.scanned} />
+    <Stat k="User" v={report.user} />
+  </div>
+  {#if report.rows.length === 0}
+    <div class="empty">
+      <div class="big">No publishes in window</div>
+      {report.user} did not personally publish any version in the selected window across
+      {report.scanned} scanned packages.
+    </div>
+  {:else}
+    <div class="table-tools">
+      <span class="table-meta">{report.rows.length} versions</span>
+      <ExportButtons
+        json={report.rows}
+        {csvRows}
+        csvColumns={[
+          { key: "when", header: "when" },
+          { key: "ref", header: "package_version" },
+        ]}
+        filenameBase={`publishes-${report.user}`}
+        {onToast}
+      />
+    </div>
+    <DataTable {columns} rows={report.rows} />
+  {/if}
+</div>

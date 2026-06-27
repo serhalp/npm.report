@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop -- api.npmjs.org has a strict token bucket; scoped downloads must remain sequential and paced. */
 import { chunk } from "./concurrency";
 import { FailureLog, npmGetJson, sleep } from "./npmClient";
 

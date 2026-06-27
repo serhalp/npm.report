@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle -- npm packuments expose publisher metadata as the documented `_npmUser` field. */
 import { mapLimit } from "./concurrency";
 import { resolveMeta, listOrgPackages } from "./discovery";
 import { fetchWeeklyDownloads } from "./downloads";
@@ -182,9 +183,9 @@ export async function runManual(
 
   const counts = new Map<string, number>();
   for (const r of human) counts.set(r.who, (counts.get(r.who) ?? 0) + 1);
-  const byPublisher = [...counts.entries()]
-    .map(([who, count]) => ({ who, count }))
-    .sort((a, b) => b.count - a.count);
+  const byPublisher = Array.from(counts.entries(), ([who, count]) => ({ who, count })).sort(
+    (a, b) => b.count - a.count,
+  );
 
   log(`[manual] ${human.length} manual publishes (of ${all.length} scanned)`);
   return {
@@ -244,9 +245,9 @@ export async function runExternal(
 
   const counts = new Map<string, number>();
   for (const p of external) counts.set(p.user, (counts.get(p.user) ?? 0) + 1);
-  const byUser = [...counts.entries()]
-    .map(([user, count]) => ({ user, count }))
-    .sort((a, b) => b.count - a.count);
+  const byUser = Array.from(counts.entries(), ([user, count]) => ({ user, count })).sort(
+    (a, b) => b.count - a.count,
+  );
 
   log(`[external] ${byUser.length} external maintainer account(s)`);
   return { rows: external, distinctUsers: byUser.length, byUser };
@@ -277,7 +278,7 @@ export async function runUserPublishes(
     for (const n of Object.keys(ownBody)) universe.add(n);
   }
   for (const n of extraPackages) universe.add(n);
-  const all = [...universe].sort();
+  const all = [...universe].toSorted();
 
   log(
     `Scanning ${all.length} packages (user's own + cache) for versions published by '${username}' (last ${months} months)...`,

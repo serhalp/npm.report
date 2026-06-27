@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop -- Discovery intentionally resolves orgs and fast-npm-meta batches in a bounded sequence so failures stay attributable and upstream request shape matches the shell reference. */
 import { chunk } from "./concurrency";
 import { FailureLog, npmGet, npmGetJson } from "./npmClient";
 import type { PkgMeta } from "./types";
@@ -28,7 +29,7 @@ export async function listOrgPackages(orgs: string[], failures: FailureLog): Pro
       for (const name of Object.keys(obj)) seen.add(name);
     }
   }
-  return [...seen].sort();
+  return [...seen].toSorted();
 }
 
 interface FastMetaItem {

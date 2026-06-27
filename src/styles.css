@@ -170,7 +170,8 @@ a:hover {
 .field:last-child {
   margin-bottom: 0;
 }
-.field > label {
+.field > label,
+.field > .field-label {
   display: block;
   font-family: var(--mono);
   font-size: 11px;
@@ -422,7 +423,7 @@ textarea {
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 .term-host {
   height: 340px;
@@ -665,6 +666,11 @@ table.data th {
 table.data th:hover {
   color: var(--fg);
 }
+table.data th .sort-button {
+  all: unset;
+  cursor: pointer;
+  display: inline-block;
+}
 table.data th .arrow {
   color: var(--gold);
   margin-left: 5px;
@@ -715,6 +721,12 @@ table.data tbody tr:hover td {
 .muted {
   color: var(--fg-faint);
 }
+.table-tools--spaced {
+  margin-top: 22px;
+}
+.incomplete-warning {
+  margin-top: 18px;
+}
 
 .empty {
   text-align: center;
@@ -759,6 +771,21 @@ table.data tbody tr:hover td {
 }
 .note strong {
   color: var(--fg-dim);
+}
+.members-copy {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+.user-publish-panel {
+  margin-top: 36px;
+}
+.user-publish-copy,
+.shared-error,
+.shared-loading {
+  margin-top: 0;
+}
+.user-publish-result {
+  margin-top: 22px;
 }
 
 .toast {

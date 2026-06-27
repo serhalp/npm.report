@@ -16,15 +16,16 @@
     "preview": "vite preview",
     "test": "pnpm run test:unit && pnpm run typecheck && pnpm run format:check && pnpm run lint",
     "test:a11y": "playwright test",
-    "test:unit": "node --test",
-    "typecheck": "tsc --noEmit"
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
     "@netlify/database": "^1.0.0",
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "drizzle-orm": "^1.0.0-beta.22",
     "ghostty-web": "^0.4.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "svelte": "^5.56.4"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
@@ -33,17 +34,20 @@
     "@netlify/functions": "^5.3.0",
     "@netlify/vite-plugin": "^2.12.8",
     "@playwright/test": "^1.61.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/svelte": "^5.4.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^26.0.1",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^6.0.3",
     "drizzle-kit": "^1.0.0-beta.22",
+    "jsdom": "^29.1.1",
     "knip": "^6.21.0",
     "oxfmt": "^0.56.0",
     "oxlint": "^1.71.0",
     "sonda": "^0.13.1",
-    "typescript": "7.0.1-rc",
-    "vite": "^8.1.0"
+    "svelte-check": "^4.7.1",
+    "typescript": "6.0.3",
+    "vite": "^8.1.0",
+    "vitest": "^4.1.9"
   },
   "devEngines": {
     "packageManager": {

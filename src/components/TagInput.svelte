@@ -1,0 +1,73 @@
+<script lang="ts">
+  interface Props {
+    values: string[];
+    onChange: (next: string[]) => void;
+    placeholder?: string;
+    lowercase?: boolean;
+    id?: string;
+  }
+
+  let { values, onChange, placeholder = "", lowercase = false, id }: Props = $props();
+
+  let draft = $state("");
+
+  function commit(raw: string) {
+    const parts = raw
+      .split(/[,\n]+/)
+      .map((value) => (lowercase ? value.trim().toLowerCase() : value.trim()))
+      .filter(Boolean);
+
+    if (parts.length === 0) return;
+
+    const next = [...values];
+    for (const part of parts) {
+      if (!next.includes(part)) next.push(part);
+    }
+    onChange(next);
+    draft = "";
+  }
+
+  function remove(value: string) {
+    onChange(values.filter((item) => item !== value));
+  }
+</script>
+
+<div class="taginput">
+  {#each values as value (value)}
+    <span class="chip">
+      {value}
+      <button
+        type="button"
+        aria-label={`Remove ${value}`}
+        onclick={(event) => {
+          event.stopPropagation();
+          remove(value);
+        }}
+      >
+        ×
+      </button>
+    </span>
+  {/each}
+  <input
+    type="text"
+    {id}
+    value={draft}
+    placeholder={values.length === 0 ? placeholder : ""}
+    oninput={(event) => {
+      const value = event.currentTarget.value;
+      if (value.endsWith(",")) commit(value);
+      else draft = value;
+    }}
+    onkeydown={(event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        commit(draft);
+      } else if (event.key === "Backspace" && draft === "" && values.length > 0) {
+        remove(values[values.length - 1]);
+      }
+    }}
+    onblur={() => {
+      if (draft.trim()) commit(draft);
+    }}
+  />
+</div>

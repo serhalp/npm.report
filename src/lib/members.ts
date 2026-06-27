@@ -14,6 +14,8 @@
 // Matching is case-insensitive, so members are lowercased + deduped.
 // ---------------------------------------------------------------------------
 
+const LINE_SPLIT_RE = /\r?\n/;
+
 export function parseMembers(raw: string): string[] {
   const members = new Set<string>();
   const text = raw.trim();
@@ -56,13 +58,13 @@ export function parseMembers(raw: string): string[] {
       }
     }
   }
-  if (foundJson) return [...members].sort();
+  if (foundJson) return [...members].toSorted();
 
   // 2) Fall back to a plain username list (# comments allowed).
-  for (const line of text.split(/\r?\n/)) {
+  for (const line of text.split(LINE_SPLIT_RE)) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#")) continue;
     members.add(trimmed.toLowerCase());
   }
-  return [...members].sort();
+  return [...members].toSorted();
 }

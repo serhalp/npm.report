@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop -- Retry/backoff must wait between attempts; parallelizing retries would violate rate-limit handling. */
 import type { FetchFailure } from "./types";
 
 // ---------------------------------------------------------------------------
