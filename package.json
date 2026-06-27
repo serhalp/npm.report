@@ -21,9 +21,9 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
-    "@netlify/database": "^1.0.0",
+    "@netlify/database": "^1.1.0",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
-    "drizzle-orm": "^1.0.0-beta.22",
+    "drizzle-orm": "1.0.0-rc.4-5d5b77c",
     "ghostty-web": "^0.4.0",
     "svelte": "^5.56.4"
   },
@@ -38,7 +38,7 @@
     "@testing-library/svelte": "^5.4.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^26.0.1",
-    "drizzle-kit": "^1.0.0-beta.22",
+    "drizzle-kit": "1.0.0-rc.4-ca0f029",
     "jsdom": "^29.1.1",
     "knip": "^6.21.0",
     "oxfmt": "^0.56.0",
@@ -52,7 +52,7 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.5.2",
+      "version": "11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b",
       "onFail": "error"
     },
     "runtime": {
