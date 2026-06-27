@@ -40,10 +40,11 @@ Do not read an upstream host from the request. There must be no host-generic
 `?url=` proxy and no open relay or SSRF surface.
 
 The upstream resource is carried in the proxy path after the fixed `/api/npm-*`
-mount. Preserve scoped package `%2f`, fast-npm-meta `+` separators, and query
-strings. The shared proxy core rejects control characters, backslashes, malformed
-encoding, and decoded `..` path segments. Keeping the resource in the path also
-keeps CDN cache keys distinct per upstream object.
+mount. Preserve scoped package `%2f`, send fast-npm-meta `+` separators as
+`%2B`, and preserve query strings. The shared proxy core rejects control
+characters, backslashes, malformed encoding, and decoded `..` path segments.
+Keeping the resource in the path also keeps CDN cache keys distinct per upstream
+object.
 
 The client-side host mapping is in `src/lib/npmClient.ts` (`proxied()`). When
 adding a new npm upstream host, add a new per-host edge proxy and a matching
@@ -84,7 +85,7 @@ src/
     types.ts            Shared types; field names mirror script TSV columns
     npmClient.ts        npmGet, retry/backoff, FailureLog, URL helpers
     concurrency.ts      pLimit, mapLimit, chunk
-    trust.ts            packumeta trust logic
+    trust.ts            Thin adapter around packumeta trust logic
     discovery.ts        Org listing and fast-npm-meta batch resolve
     downloads.ts        Weekly downloads, including paced scoped lookups
     members.ts          Parse npm org ls JSON or a plain member list
@@ -109,11 +110,11 @@ src/
   valid `Retry-After` header, otherwise uses 1, 4, 9, and 16 second backoff.
   Exhausted or unexpected failures go into `FailureLog`; the UI warns that
   results may be incomplete. 404 is treated as legitimately empty.
-- Trust logic in `src/lib/trust.ts` mirrors packumeta: provenance is
-  `dist.attestations.provenance` truthy; trusted publisher is
-  `_npmUser.trustedPublisher` truthy; staged publish is `_npmUser.approver`
-  truthy. Ordering is staged publish > trusted publisher with provenance >
-  provenance > none. Truthy means not `null` and not `false`.
+- Trust classification in `src/lib/trust.ts` delegates to `packumeta`; do not
+  reimplement that logic locally. The adapter only adds fields the app needs for
+  reports (`level`, numeric `order`, and `publisher`). Follow `packumeta`'s
+  JavaScript truthiness semantics for provenance, trusted publisher, and staged
+  publish.
 - Recency means the `latest` dist-tag's `publishedAt`, not the maximum timestamp
   across every version. Trust and deprecation status are computed for `latest`.
 - Discovery has no registry fallback. Latest version, recency, and deprecation
@@ -129,8 +130,10 @@ src/
   from that cache: all packages under `-A`, otherwise only recency-filtered
   packages. `external` ignores that cache and enumerates the full org list
   because dormant packages can still have live maintainers.
-- Do not hardcode a real org, user, package, or bot account. This is a generic
-  tool and those values are user input.
+- Do not hardcode a real org, user, or package. This is a generic tool and those
+  values are user input. Generic automation-account defaults are allowed only
+  when they are broadly applicable, such as the current `GitHub Actions` manual
+  exclusion default.
 
 ## Tooling Rules
 

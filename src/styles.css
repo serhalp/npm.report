@@ -102,7 +102,7 @@ body {
   background-attachment: fixed;
   color: var(--fg);
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
@@ -150,7 +150,7 @@ a:hover {
 }
 .masthead .eyebrow {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.32em;
   text-transform: uppercase;
   color: var(--gold-dim);
@@ -159,7 +159,7 @@ a:hover {
 .masthead h1 {
   font-family: var(--mono);
   font-weight: 600;
-  font-size: clamp(28px, 4.4vw, 46px);
+  font-size: clamp(32px, 4.4vw, 52px);
   letter-spacing: -0.015em;
   line-height: 1.04;
   margin: 0;
@@ -206,7 +206,7 @@ a:hover {
 }
 .panel__head h2 {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -215,7 +215,7 @@ a:hover {
 }
 .panel__head .hint {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--fg-faint);
 }
 .panel__body {
@@ -234,14 +234,14 @@ a:hover {
 .field > .field-label {
   display: block;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--fg-dim);
   margin-bottom: 7px;
 }
 .field .desc {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--fg-faint);
   margin: 6px 0 0;
 }
@@ -255,7 +255,7 @@ textarea {
   border-radius: var(--radius);
   color: var(--fg);
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 14px;
   padding: 9px 11px;
   transition:
     border-color 0.15s ease,
@@ -315,7 +315,7 @@ textarea {
   align-items: center;
   gap: 6px;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   background: var(--ink-700);
   border: 1px solid var(--line);
   border-radius: 3px;
@@ -327,7 +327,7 @@ textarea {
   background: transparent;
   color: var(--fg-faint);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
   padding: 1px 3px;
   border-radius: 2px;
@@ -369,13 +369,13 @@ textarea {
 .check .ctitle {
   display: block;
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.04em;
 }
 .check .cdesc {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--fg-dim);
   margin-top: 2px;
 }
@@ -387,7 +387,7 @@ textarea {
   gap: 10px;
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--fg);
 }
 .toggle input {
@@ -396,8 +396,12 @@ textarea {
 
 /* Buttons */
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -435,7 +439,7 @@ textarea {
 }
 .btn--sm {
   padding: 6px 11px;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* Theme selector */
@@ -490,13 +494,13 @@ textarea {
 }
 .run-bar .status {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--fg-dim);
 }
 
 .inline-error {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--danger);
   border-left: 2px solid var(--danger);
   padding-left: 10px;
@@ -528,26 +532,77 @@ textarea {
 .term-bar .label {
   margin-left: 8px;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--fg-dim);
 }
 .term-host {
-  height: 340px;
+  height: 520px;
   width: 100%;
   padding: 8px 10px;
 }
 .term-fallback {
-  height: 340px;
+  height: 520px;
   margin: 0;
   padding: 10px 12px;
   overflow: auto;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
   color: var(--fg);
   white-space: pre-wrap;
+}
+
+.report-ready {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  border: 1px solid var(--gold-dim);
+  border-radius: var(--radius);
+  background: var(--gold-soft);
+  padding: 12px 14px;
+}
+.report-ready__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.report-ready__main svg {
+  color: var(--gold);
+  flex: 0 0 auto;
+}
+.report-ready__text {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.report-ready__text strong {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+.report-ready__text span {
+  color: var(--fg-dim);
+  font-size: 13px;
+}
+.btn--ready {
+  background: var(--ink-850);
+  border-color: var(--gold-dim);
+  color: var(--fg);
+}
+.btn--ready:hover:not(:disabled) {
+  background: var(--ink-800);
+  border-color: var(--gold);
+}
+.btn--ready svg {
+  flex: 0 0 auto;
 }
 
 /* ---- Summary stats --------------------------------------------------- */
@@ -579,15 +634,19 @@ textarea {
 }
 .results__head h2 {
   font-family: var(--mono);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   letter-spacing: 0.04em;
   margin: 0;
   color: var(--fg);
 }
+.results__head h2:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
 .results__head .hint {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--fg-faint);
 }
 
@@ -605,12 +664,12 @@ textarea {
 }
 .share-bar__title {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--fg);
 }
 .share-bar__hint {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--fg-dim);
   margin-top: 2px;
 }
@@ -621,7 +680,7 @@ textarea {
   flex-wrap: wrap;
   margin-bottom: 18px;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
 }
 .share-link a {
   word-break: break-all;
@@ -637,7 +696,7 @@ textarea {
 }
 .tabs__label {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--fg-faint);
@@ -645,7 +704,7 @@ textarea {
 }
 .tab {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   background: var(--ink-850);
@@ -696,7 +755,7 @@ textarea {
 }
 .stat .k {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--fg-dim);
@@ -752,7 +811,7 @@ table.data {
   width: 100%;
   border-collapse: collapse;
   font-family: var(--mono);
-  font-size: 12.5px;
+  font-size: 13.5px;
 }
 table.data th {
   position: sticky;
@@ -761,7 +820,7 @@ table.data th {
   background: var(--ink-750);
   text-align: left;
   font-weight: 600;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--fg-dim);
@@ -803,7 +862,7 @@ table.data tbody tr:hover td {
 
 .badge {
   display: inline-block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
   padding: 2px 8px;
@@ -841,7 +900,7 @@ table.data tbody tr:hover td {
   padding: 44px 20px;
   color: var(--fg-dim);
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 14px;
   border: 1px dashed var(--line);
   border-radius: var(--radius);
 }
@@ -861,7 +920,7 @@ table.data tbody tr:hover td {
 .cmd {
   flex: 1;
   font-family: var(--mono);
-  font-size: 12.5px;
+  font-size: 13.5px;
   background: var(--ink-900);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -871,7 +930,7 @@ table.data tbody tr:hover td {
   white-space: nowrap;
 }
 .note {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--fg-faint);
   border-left: 2px solid var(--line);
   padding-left: 11px;
@@ -906,7 +965,7 @@ table.data tbody tr:hover td {
   border: 1px solid var(--gold-dim);
   color: var(--fg);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   padding: 9px 16px;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -918,7 +977,7 @@ table.data tbody tr:hover td {
   padding-top: 22px;
   border-top: 1px solid var(--line);
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--fg-faint);
   line-height: 1.7;
 }

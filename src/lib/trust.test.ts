@@ -36,7 +36,7 @@ describe("trust status", () => {
     ).toBe("none");
   });
 
-  it("mirrors jq truthiness and publisher fallback", () => {
+  it("uses packumeta trust status and adds publisher fallback", () => {
     expect(
       getTrustStatus({
         _npmUser: {
@@ -52,10 +52,10 @@ describe("trust status", () => {
       }),
     ).toEqual({
       provenance: true,
-      trustedPublisher: true,
+      trustedPublisher: false,
       stagedPublish: false,
-      level: "trustedPublisher",
-      order: 2,
+      level: "provenance",
+      order: 1,
       publisher: "GitHub Actions",
     });
 

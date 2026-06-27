@@ -27,6 +27,7 @@ describe("proxyNpm", () => {
       "/api/npm-registry/%2e%2e/secret",
       "/api/npm-registry/%zz",
       "/api/npm-registry/has%0anewline",
+      "/api/npm-registry/has%20space",
       "/api/npm-registry/has%5cbackslash",
     ];
 
@@ -72,6 +73,25 @@ describe("proxyNpm", () => {
     expect(res.headers.get("netlify-cdn-cache-control")).toBe("public, durable, max-age=300");
     expect(res.headers.get("netlify-vary")).toBe("query");
     await expect(res.json()).resolves.toEqual({ ok: true });
+  });
+
+  it("preserves encoded fast-npm-meta plus separators", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("[]", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await proxyNpm(
+      req("/api/npm-meta/@scope/pkg%2Bleft-pad?metadata=true"),
+      "npm.antfu.dev",
+      "/api/npm-meta",
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://npm.antfu.dev/@scope/pkg%2Bleft-pad?metadata=true",
+      {
+        headers: { Accept: "application/json" },
+      },
+    );
+    expect(res.status).toBe(200);
   });
 
   it("does not cache non-2xx responses and forwards Retry-After", async () => {

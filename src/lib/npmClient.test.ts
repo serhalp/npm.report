@@ -44,6 +44,17 @@ describe("npm client", () => {
     expect(failures.failures).toEqual([{ url, reason: "http 429" }]);
   });
 
+  it("encodes fast-npm-meta plus separators in proxy paths", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(textResponse("[]"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await npmGet("https://npm.antfu.dev/@scope/pkg+left-pad?metadata=true", new FailureLog());
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/npm-meta/@scope/pkg%2Bleft-pad?metadata=true", {
+      headers: { Accept: "application/json" },
+    });
+  });
+
   it("honors retry-after before retrying and does not log successful retries", async () => {
     vi.useFakeTimers();
     const fetchMock = vi

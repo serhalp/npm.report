@@ -37,7 +37,7 @@ describe("report builders", () => {
     vi.setSystemTime(new Date("2026-06-27T00:00:00.000Z"));
     installRoutes({
       "/api/npm-registry/-/org/acme/package": { recent: {}, old: {}, blank: {} },
-      "/api/npm-meta/blank+old+recent?metadata=true": [
+      "/api/npm-meta/blank%2Bold%2Brecent?metadata=true": [
         {
           name: "recent",
           version: "1.0.0",
@@ -76,7 +76,7 @@ describe("report builders", () => {
     vi.setSystemTime(new Date("2026-06-27T00:00:00.000Z"));
     installRoutes({
       "/api/npm-registry/-/org/acme/package": { recent: {}, old: {}, blank: {} },
-      "/api/npm-meta/blank+old+recent?metadata=true": [
+      "/api/npm-meta/blank%2Bold%2Brecent?metadata=true": [
         {
           name: "recent",
           version: "1.0.0",
@@ -199,9 +199,7 @@ describe("report builders", () => {
       },
     });
     expect(failures.count).toBe(0);
-    expect(log).toHaveBeenCalledWith(
-      "[recent] fetching weekly downloads (bulk unscoped + 1 scoped paced ~2/s)...",
-    );
+    expect(log).toHaveBeenCalledWith("[recent] fetching weekly downloads (1 scoped)...");
   });
 
   it("filters manual publishes by cutoff and configured bots", async () => {

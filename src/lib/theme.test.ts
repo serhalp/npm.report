@@ -42,6 +42,27 @@ describe("theme state", () => {
     expect(document.documentElement.dataset.themeMode).toBe("system");
   });
 
+  test("defaults to dark when there is no saved mode and no system preference", () => {
+    initTheme({
+      storage: window.localStorage,
+      media: createMedia(false),
+      lightMedia: createMedia(false),
+    });
+
+    expect(themeState.mode).toBe("system");
+    expect(themeState.resolved).toBe("dark");
+    expect(document.documentElement.dataset.theme).toBe("dark");
+    expect(document.documentElement.dataset.themeMode).toBe("system");
+  });
+
+  test("defaults to dark when system preference detection is unavailable", () => {
+    initTheme({ storage: window.localStorage, media: null });
+
+    expect(themeState.mode).toBe("system");
+    expect(themeState.resolved).toBe("dark");
+    expect(document.documentElement.dataset.theme).toBe("dark");
+  });
+
   test("uses and persists explicit user selections", () => {
     initTheme({ storage: window.localStorage, media: createMedia(false) });
 

@@ -41,10 +41,13 @@ pnpm run preview
 
 1. Enter one or more npm org slugs.
 2. Choose a recency window, or select "Analyze ALL org packages".
-3. Select `recent`, `manual`, `external`, or any combination.
-4. For `manual`, add bot or CI publisher account names to exclude.
+3. Select `recent`, `manual`, `external`, or any combination. `recent` and
+   `manual` are selected by default.
+4. For `manual`, adjust bot or CI publisher account names to exclude. The
+   default exclusion list starts with `GitHub Actions`.
 5. For `external`, run `npm org ls <org> --json` locally while authenticated and
-   paste the output. npm org membership is not public.
+   paste the output. npm package maintainers are public, but org membership is
+   private, so the app needs your authenticated member list to compare them.
 6. Run the audit. Results render as sortable tables with JSON copy and CSV
    download actions.
 7. Use "Share report" only when you want a persistent read-only snapshot.
@@ -71,6 +74,7 @@ pnpm run preview
   private and can change.
 - "Manual" means the version's `_npmUser` was not in the configured bot list;
   npm does not distinguish a human login from that account's automation token.
+- Trust labels are delegated to `packumeta`.
 - Scoped package download counts are intentionally fetched sequentially with a
   500 ms delay because `api.npmjs.org` rate-limits aggressively.
 - Failed or exhausted fetches are counted and surfaced. A rate-limited package

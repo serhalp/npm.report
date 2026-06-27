@@ -24,7 +24,9 @@ function.
   behavior reference.
 - Preserve partial-failure visibility. A failed or rate-limited fetch must be
   recorded and surfaced, not silently treated as a clean or empty result.
-- Keep the app generic. Do not hardcode a specific org, user, package, or bot.
+- Keep the app generic. Do not hardcode a specific org, user, or package. Bot
+  defaults should be broadly applicable automation accounts, not project-specific
+  policy.
 - Keep npm proxying per-host. Do not create a host-generic proxy.
 
 ## Checks

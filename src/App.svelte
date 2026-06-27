@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { ArrowDown, CircleCheck } from "@lucide/svelte";
   import GhosttyTerminal from "./components/GhosttyTerminal.svelte";
   import ResultsView from "./components/ResultsView.svelte";
   import TagInput from "./components/TagInput.svelte";
@@ -15,6 +16,9 @@
     clear: () => void;
   };
 
+  const DEFAULT_BOTS = ["GitHub Actions"];
+  const FETCH_CONCURRENCY = 12;
+
   const REPORT_META: { kind: ReportKind; title: string; desc: string }[] = [
     {
       kind: "recent",
@@ -29,21 +33,21 @@
     {
       kind: "external",
       title: "external",
-      desc: "Users who can publish now but aren’t org members. Needs pasted membership.",
+      desc: "Public package maintainers compared with your private npm org member list.",
     },
   ];
 
   let terminal: TerminalHandle | null = $state(null);
+  let resultsHeading: HTMLHeadingElement | null = $state(null);
   const log = (message: string) => terminal?.writeLine(message);
 
   let orgs: string[] = $state([]);
   let months = $state(12);
   let all = $state(false);
-  let bots: string[] = $state([]);
-  let jobs = $state(12);
+  let bots: string[] = $state([...DEFAULT_BOTS]);
   let selected: Record<ReportKind, boolean> = $state({
     recent: true,
-    manual: false,
+    manual: true,
     external: false,
   });
   let membersRaw = $state("");
@@ -73,8 +77,23 @@
   }
 
   let hasReports = $derived(containsReports(result));
+  let reportReadySummary = $derived(result ? summarizeReadyReport(result) : "");
   const membersPlaceholder =
     "Paste output of `npm org ls <org> --json` here.\nMultiple orgs can be pasted one after another.";
+
+  function plural(count: number, singular: string, pluralLabel = `${singular}s`): string {
+    return `${count} ${count === 1 ? singular : pluralLabel}`;
+  }
+
+  function summarizeReadyReport(value: AuditResult): string {
+    const parts: string[] = [];
+    if (value.recent) parts.push(plural(value.recent.rows.length, "recent package"));
+    if (value.manual)
+      parts.push(plural(value.manual.rows.length, "manual publish", "manual publishes"));
+    if (value.external) parts.push(plural(value.external.distinctUsers, "external account"));
+    if (value.failures.length) parts.push(plural(value.failures.length, "fetch warning"));
+    return parts.join(" · ");
+  }
 
   function showToast(message: string) {
     toast = message;
@@ -100,11 +119,11 @@
     }
     if (selected.external && members.length === 0 && selectedKinds.length === 1) {
       error =
-        "The external report needs org members. Run the npm org ls commands below and paste the output.";
+        "The external report needs your npm org member list. npm does not expose org membership publicly.";
       return;
     }
 
-    const config: AuditConfig = { orgs, months, all, bots, jobs };
+    const config: AuditConfig = { orgs, months, all, bots, jobs: FETCH_CONCURRENCY };
     running = true;
     result = null;
     shareUrl = null;
@@ -171,7 +190,14 @@
 
     try {
       const failures = new FailureLog();
-      const report = await runUserPublishes(user, upMonths, jobs, extra, failures, log);
+      const report = await runUserPublishes(
+        user,
+        upMonths,
+        FETCH_CONCURRENCY,
+        extra,
+        failures,
+        log,
+      );
       if (failures.count > 0) {
         log(
           `WARNING: ${failures.count} fetch(es) failed after retries — results may be INCOMPLETE.`,
@@ -201,6 +227,17 @@
       .then(() => showToast("Link copied"))
       .catch(() => showToast("Clipboard unavailable"));
   }
+
+  function viewReport() {
+    const target = resultsHeading ?? document.getElementById("reports");
+    if (!target) return;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    target.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    });
+    resultsHeading?.focus({ preventScroll: true });
+  }
 </script>
 
 <div class="app">
@@ -222,7 +259,6 @@
     <section class="panel">
       <div class="panel__head">
         <h2>Configuration</h2>
-        <span class="hint">generic — supply your own orgs</span>
       </div>
       <div class="panel__body">
         <div class="field">
@@ -250,17 +286,6 @@
               value={months}
               disabled={all}
               oninput={(event) => (months = Number(event.currentTarget.value) || 1)}
-            />
-          </div>
-          <div class="field">
-            <label for="jobs">Fetch concurrency</label>
-            <input
-              id="jobs"
-              type="number"
-              min="1"
-              max="32"
-              value={jobs}
-              oninput={(event) => (jobs = Number(event.currentTarget.value) || 1)}
             />
           </div>
         </div>
@@ -301,7 +326,7 @@
             id="bots"
             values={bots}
             onChange={(next) => (bots = next)}
-            placeholder="e.g. GitHub Actions, ci-bot — Enter to add"
+            placeholder="e.g. ci-bot — Enter to add"
           />
           <p class="desc">
             Publishers to treat as automation. Note: npm cannot distinguish a human from that
@@ -313,8 +338,8 @@
           <div class="field">
             <label for="members">Org membership (for external report)</label>
             <p class="desc members-copy">
-              npm membership isn&rsquo;t public. Run these locally (you must be authenticated), then
-              paste the JSON output below:
+              npm exposes package maintainers publicly, but not org membership. Paste authenticated
+              membership output so the app can compare the two lists:
             </p>
             {#each orgs.length ? orgs : ["<org>"] as org (org)}
               <div class="cmd-row">
@@ -357,21 +382,31 @@
     <section>
       <GhosttyTerminal bind:this={terminal} />
       <p class="note">
-        <strong>Live log</strong> rendered by
-        <a href="https://github.com/coder/ghostty-web" target="_blank" rel="noreferrer">
-          coder/ghostty-web
-        </a>
-        — Ghostty&rsquo;s VT100 parser compiled to WebAssembly. Progress mirrors the original shell scripts&rsquo;
-        stderr. Failed fetches are retried with backoff and counted, so a rate-limited package never silently
-        looks &ldquo;clean.&rdquo;
+        <strong>Live log</strong> shows audit progress and warnings. Network and rate-limit failures are
+        counted so incomplete results stay visible.
       </p>
+      {#if hasReports && result && !running}
+        <div class="report-ready">
+          <div class="report-ready__main">
+            <CircleCheck aria-hidden="true" size={18} strokeWidth={2} />
+            <div class="report-ready__text" role="status" aria-live="polite">
+              <strong>Report ready</strong>
+              <span>{reportReadySummary}</span>
+            </div>
+          </div>
+          <button class="btn btn--sm btn--ready" type="button" onclick={viewReport}>
+            <ArrowDown aria-hidden="true" size={15} strokeWidth={2} />
+            View report
+          </button>
+        </div>
+      {/if}
     </section>
   </div>
 
   {#if hasReports && result}
     <section class="results" id="reports">
       <div class="results__head">
-        <h2>Audit results</h2>
+        <h2 id="audit-results-title" bind:this={resultsHeading} tabindex="-1">Audit results</h2>
         <span class="hint">switch between reports with the tabs below</span>
       </div>
       <div class="share-bar">
@@ -402,9 +437,9 @@
     </div>
     <div class="panel__body">
       <p class="desc user-publish-copy">
-        Versions a specific npm user personally published (recorded as the version&rsquo;s
-        <code>_npmUser</code>) within the window. The package universe is the user&rsquo;s own
-        maintained packages, optionally unioned with the packages from the last audit run.
+        Versions attributed to a specific npm publisher within the window. This scans that
+        account&rsquo;s maintained packages, optionally combined with packages from the last audit
+        run.
       </p>
       <div class="row">
         <div class="field">
@@ -468,12 +503,9 @@
   </section>
 
   <footer class="footer">
-    Trust logic ported verbatim from
-    <a href="https://github.com/43081j/packumeta" target="_blank" rel="noreferrer">packumeta</a>:
-    staged publish &gt; trusted publisher (OIDC + provenance) &gt; provenance &gt; none. Discovery
-    via fast-npm-meta (npm.antfu.dev); trust from per-version registry manifests; weekly downloads
-    from api.npmjs.org. &ldquo;Recency&rdquo; is the latest dist-tag&rsquo;s publish time, not the
-    newest version overall.
+    &ldquo;Recency&rdquo; uses the latest dist-tag&rsquo;s publish time. &ldquo;Manual&rdquo; means
+    the publisher is not in your bot exclusion list; npm cannot tell a human session from that
+    account&rsquo;s automation token.
   </footer>
 
   {#if toast}

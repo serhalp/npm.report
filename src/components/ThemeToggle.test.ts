@@ -7,11 +7,11 @@ import ThemeToggle from "./ThemeToggle.svelte";
 function stubMatchMedia(matches: boolean) {
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
-    value: vi.fn().mockReturnValue({
-      matches,
+    value: vi.fn((query: string) => ({
+      matches: query.includes("dark") ? matches : !matches,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
-    }),
+    })),
   });
 }
 

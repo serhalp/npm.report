@@ -13,7 +13,7 @@ export interface AuditConfig {
   all: boolean;
   /** CI/bot accounts to exclude from the `manual` report (the `-b` flag). */
   bots: string[];
-  /** Parallel fetch jobs (the `-j` flag). */
+  /** Parallel fetch jobs. The UI uses a fixed code constant for this value. */
   jobs: number;
 }
 

@@ -76,17 +76,19 @@ const PROXY_MOUNTS: Record<string, string> = {
 /**
  * Rewrite an upstream npm URL to go through its dedicated `/api/npm-*` edge
  * proxy. The upstream path + query is carried in the proxy URL's PATH (not a
- * query param), so `%2f` in scoped names and the `+` separators fast-npm-meta
- * uses survive intact, and every resource gets a distinct path — which keeps
- * the CDN cache from serving one cached body for a different resource.
+ * query param), so `%2f` in scoped names survives intact, fast-npm-meta `+`
+ * separators are sent as `%2B` so they cannot be normalized to spaces, and
+ * every resource gets a distinct path — which keeps the CDN cache from serving
+ * one cached body for a different resource.
  * Non-npm or relative URLs are returned untouched.
  */
 function proxied(url: string): string {
   try {
     const u = new URL(url);
     const mount = PROXY_MOUNTS[u.hostname];
-    // `u.pathname` preserves `%2f`/`+`; `u.search` carries any query string.
-    if (mount) return `${mount}${u.pathname}${u.search}`;
+    // `u.pathname` preserves `%2f`; encode literal `+` so intermediaries never
+    // normalize fast-npm-meta batch separators into spaces before edge parsing.
+    if (mount) return `${mount}${u.pathname.replaceAll("+", "%2B")}${u.search}`;
   } catch {
     // not an absolute URL — leave it alone
   }

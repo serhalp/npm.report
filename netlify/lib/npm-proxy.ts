@@ -35,9 +35,10 @@
 /**
  * Reject anything that could escape the pinned host's path or smuggle bytes.
  * Control chars (<= 0x20), DEL (0x7f), and backslash never appear in a
- * legitimate npm resource path — the client always percent-encodes — so any of
- * them is a tampering signal. Then decode (so `%2e%2e` -> `..`, `%2f` -> `/`)
- * and reject any `..` segment so traversal can't hide behind encoding.
+ * legitimate npm resource path — the client always percent-encodes spaces and
+ * fast-npm-meta `+` separators as `%2B` — so any of them is a tampering signal.
+ * Then decode (so `%2e%2e` -> `..`, `%2f` -> `/`) and reject any `..` segment
+ * so traversal can't hide behind encoding.
  */
 function isSafeResourcePath(rest: string): boolean {
   for (let i = 0; i < rest.length; i++) {

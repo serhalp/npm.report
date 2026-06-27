@@ -51,9 +51,7 @@ export async function discoverInScope(
 ): Promise<PkgMeta[]> {
   log(`[recent] listing packages in: ${config.orgs.join(" ")}`);
   const pkgs = await listOrgPackages(config.orgs, failures);
-  log(
-    `[recent] ${pkgs.length} packages; resolving latest version + recency + deprecated via fast-npm-meta...`,
-  );
+  log(`[recent] ${pkgs.length} packages; checking latest release metadata...`);
   const meta = await resolveMeta(pkgs, failures, (d, t) => log(`[recent]   resolved ${d}/${t}`));
   const scope = inScope(meta, config);
   const scopeLabel = config.all ? "ALL org packages" : `last ${config.months} months`;
@@ -68,7 +66,7 @@ export async function runRecent(
   scope?: PkgMeta[],
 ): Promise<RecentReport> {
   const inScopeMeta = scope ?? (await discoverInScope(config, failures, log));
-  log(`[recent] fetching per-version manifests for trust status (${inScopeMeta.length})...`);
+  log(`[recent] checking trust status (${inScopeMeta.length})...`);
 
   let done = 0;
   const rows: RecentRow[] = await mapLimit(inScopeMeta, config.jobs, async (m) => {
@@ -96,7 +94,7 @@ export async function runRecent(
 
   // Weekly downloads (the api.npmjs.org token bucket — bulk unscoped, paced scoped).
   const nScoped = rows.filter((r) => r.pkg.startsWith("@")).length;
-  log(`[recent] fetching weekly downloads (bulk unscoped + ${nScoped} scoped paced ~2/s)...`);
+  log(`[recent] fetching weekly downloads (${nScoped} scoped)...`);
   const dl = await fetchWeeklyDownloads(
     rows.map((r) => r.pkg),
     failures,
@@ -281,7 +279,7 @@ export async function runUserPublishes(
   const all = [...universe].toSorted();
 
   log(
-    `Scanning ${all.length} packages (user's own + cache) for versions published by '${username}' (last ${months} months)...`,
+    `Scanning ${all.length} packages for versions published by '${username}' (last ${months} months)...`,
   );
   let done = 0;
   const nested: UserPublishRow[][] = await mapLimit(all, jobs, async (pkg) => {

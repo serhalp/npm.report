@@ -32,7 +32,7 @@
         if (disposed || !host) return;
         localTerm = new Terminal({
           fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
-          fontSize: 12,
+          fontSize: 13,
           theme: {
             background: "#0b0f15",
             foreground: "#d7dde5",

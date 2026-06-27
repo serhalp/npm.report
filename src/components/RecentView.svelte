@@ -90,9 +90,7 @@
     <Stat k="Deprecated latest" v={summary.deprecated} />
   </div>
   <div class="table-tools">
-    <span class="table-meta">
-      {rows.length} packages · click a column to sort · trust logic from packumeta (43081j)
-    </span>
+    <span class="table-meta">{rows.length} packages · click a column to sort</span>
     <ExportButtons json={report} {csvRows} {csvColumns} filenameBase="recent-packages" {onToast} />
   </div>
   <DataTable {columns} {rows} />

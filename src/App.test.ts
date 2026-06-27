@@ -49,6 +49,7 @@ describe("App", () => {
 
     await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
     await user.click(screen.getByRole("checkbox", { name: /recent/i }));
+    await user.click(screen.getByRole("checkbox", { name: /manual/i }));
     await user.click(screen.getByRole("button", { name: "Run audit" }));
 
     expect(screen.getByText("Select at least one report.")).toBeInTheDocument();
@@ -61,10 +62,11 @@ describe("App", () => {
 
     await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
     await user.click(screen.getByRole("checkbox", { name: /recent/i }));
+    await user.click(screen.getByRole("checkbox", { name: /manual/i }));
     await user.click(screen.getByRole("checkbox", { name: /external/i }));
     await user.click(screen.getByRole("button", { name: "Run audit" }));
 
-    expect(screen.getByText(/external report needs org members/i)).toBeInTheDocument();
+    expect(screen.getByText(/external report needs your npm org member list/i)).toBeInTheDocument();
     expect(mockedRunAudit).not.toHaveBeenCalled();
   });
 
@@ -86,7 +88,7 @@ describe("App", () => {
     await screen.findByRole("heading", { name: "Audit results" });
     expect(mockedRunAudit).toHaveBeenCalledWith(
       expect.objectContaining({ orgs: ["netlify"] }),
-      ["recent", "external"],
+      ["recent", "manual", "external"],
       ["alice", "bob"],
       expect.any(Function),
     );
@@ -95,6 +97,11 @@ describe("App", () => {
   test("runs an audit, renders results, and stores a share snapshot", async () => {
     const user = userEvent.setup();
     const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
     mockedRunAudit.mockResolvedValue(auditResult);
     vi.stubGlobal(
       "fetch",
@@ -109,19 +116,29 @@ describe("App", () => {
     await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
     await user.click(screen.getByRole("button", { name: "Run audit" }));
 
-    await screen.findByRole("heading", { name: "Audit results" });
+    const resultsHeading = await screen.findByRole("heading", { name: "Audit results" });
+    expect(screen.getByText("Report ready")).toBeInTheDocument();
+    expect(
+      screen.getByText("2 recent packages · 1 manual publish · 1 fetch warning"),
+    ).toBeInTheDocument();
     expect(mockedRunAudit).toHaveBeenCalledWith(
       {
         orgs: ["netlify"],
         months: 12,
         all: false,
-        bots: [],
+        bots: ["GitHub Actions"],
         jobs: 12,
       },
-      ["recent"],
+      ["recent", "manual"],
       [],
       expect.any(Function),
     );
+
+    await user.click(screen.getByRole("button", { name: "View report" }));
+    expect(scrollIntoView).toHaveBeenCalledWith(
+      expect.objectContaining({ behavior: "smooth", block: "start" }),
+    );
+    expect(resultsHeading).toHaveFocus();
 
     await user.click(screen.getByRole("button", { name: "Share report" }));
 

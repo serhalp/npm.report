@@ -222,6 +222,9 @@ importers:
       ghostty-web:
         specifier: ^0.4.0
         version: 0.4.0
+      packumeta:
+        specifier: 0.4.1
+        version: 0.4.1
       svelte:
         specifier: ^5.56.4
         version: 5.56.4(@typescript-eslint/types@8.62.0)
@@ -3789,6 +3792,10 @@ packages:
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
+
+  packumeta@0.4.1:
+    resolution: {integrity: sha512-n+4VKW4+05duTeQP8BRUDke6rTHYqxqsrVyLEt0Y4Kmisp+ZL3JKREjaxv+ajSd9GpjZkJLY+zG1A0f1Jib21A==}
+    engines: {node: '>=20.0.0'}
 
   parse-gitignore@2.0.0:
     resolution: {integrity: sha512-RmVuCHWsfu0QPNW+mraxh/xjQVw/lhUCUru8Zni3Ctq3AoMhpDTq0OVdKS6iesd6Kqb7viCV3isAL43dciOSog==}
@@ -8143,6 +8150,8 @@ snapshots:
       p-timeout: 6.1.4
 
   package-json-from-dist@1.0.1: {}
+
+  packumeta@0.4.1: {}
 
   parse-gitignore@2.0.0: {}
 

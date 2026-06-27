@@ -22,7 +22,7 @@ describe("npm edge proxy wrappers", () => {
     await downloadsProxy(
       new Request("https://audit.example/api/npm-downloads/downloads/point/last-week/pkg"),
     );
-    await metaProxy(new Request("https://audit.example/api/npm-meta/pkg+other?metadata=true"));
+    await metaProxy(new Request("https://audit.example/api/npm-meta/pkg%2Bother?metadata=true"));
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, "https://registry.npmjs.org/pkg", {
       headers: { Accept: "application/json" },
@@ -34,9 +34,13 @@ describe("npm edge proxy wrappers", () => {
         headers: { Accept: "application/json" },
       },
     );
-    expect(fetchMock).toHaveBeenNthCalledWith(3, "https://npm.antfu.dev/pkg+other?metadata=true", {
-      headers: { Accept: "application/json" },
-    });
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      "https://npm.antfu.dev/pkg%2Bother?metadata=true",
+      {
+        headers: { Accept: "application/json" },
+      },
+    );
   });
 
   it("declares manual-cache GET mounts for Netlify edge routing", () => {

@@ -3,7 +3,8 @@ export type ResolvedTheme = "light" | "dark";
 
 export const THEME_STORAGE_KEY = "npm-security-report:theme-mode";
 
-const THEME_QUERY = "(prefers-color-scheme: dark)";
+const DARK_THEME_QUERY = "(prefers-color-scheme: dark)";
+const LIGHT_THEME_QUERY = "(prefers-color-scheme: light)";
 
 let mode = $state<ThemeMode>("system");
 let systemTheme = $state<ResolvedTheme>("dark");
@@ -16,6 +17,7 @@ interface ThemeInitOptions {
   root?: HTMLElement;
   storage?: Storage | null;
   media?: MediaQueryList | null;
+  lightMedia?: MediaQueryList | null;
 }
 
 export const themeState = {
@@ -39,9 +41,9 @@ function getSafeStorage(): Storage | null {
   }
 }
 
-function getSafeMedia(): MediaQueryList | null {
+function getSafeMedia(query: string): MediaQueryList | null {
   if (typeof window.matchMedia !== "function") return null;
-  return window.matchMedia(THEME_QUERY);
+  return window.matchMedia(query);
 }
 
 function readStoredMode(storage: Storage | null): ThemeMode {
@@ -55,6 +57,16 @@ function readStoredMode(storage: Storage | null): ThemeMode {
 
 function resolveTheme(): ResolvedTheme {
   return mode === "system" ? systemTheme : mode;
+}
+
+function resolveSystemTheme(
+  darkMedia: MediaQueryList | null,
+  lightMedia?: MediaQueryList | null,
+): ResolvedTheme {
+  if (darkMedia?.matches) return "dark";
+  if (lightMedia === undefined) return darkMedia ? "light" : "dark";
+  if (lightMedia?.matches) return "light";
+  return "dark";
 }
 
 function applyTheme() {
@@ -71,21 +83,29 @@ export function initTheme(options: ThemeInitOptions = {}) {
 
   rootRef = options.root ?? document.documentElement;
   storageRef = options.storage === undefined ? getSafeStorage() : options.storage;
-  const media = options.media === undefined ? getSafeMedia() : options.media;
+  const media = options.media === undefined ? getSafeMedia(DARK_THEME_QUERY) : options.media;
+  const lightMedia =
+    options.lightMedia === undefined && options.media === undefined
+      ? getSafeMedia(LIGHT_THEME_QUERY)
+      : options.lightMedia;
 
   mode = readStoredMode(storageRef);
-  systemTheme = media?.matches ? "dark" : "light";
+  systemTheme = resolveSystemTheme(media, lightMedia);
   applyTheme();
 
-  if (!media) return;
+  if (!media && !lightMedia) return;
 
-  const onChange = (event: MediaQueryListEvent) => {
-    systemTheme = event.matches ? "dark" : "light";
+  const onChange = () => {
+    systemTheme = resolveSystemTheme(media, lightMedia);
     if (mode === "system") applyTheme();
   };
 
-  media.addEventListener("change", onChange);
-  stopListening = () => media.removeEventListener("change", onChange);
+  media?.addEventListener("change", onChange);
+  if (lightMedia !== media) lightMedia?.addEventListener("change", onChange);
+  stopListening = () => {
+    media?.removeEventListener("change", onChange);
+    if (lightMedia !== media) lightMedia?.removeEventListener("change", onChange);
+  };
 }
 
 export function setThemeMode(next: ThemeMode) {

@@ -51,7 +51,7 @@ describe("discovery", () => {
       progress.push([done, total]),
     );
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/npm-meta/@scope/pkg+left-pad?metadata=true", {
+    expect(fetchMock).toHaveBeenCalledWith("/api/npm-meta/@scope/pkg%2Bleft-pad?metadata=true", {
       headers: { Accept: "application/json" },
     });
     expect(meta).toEqual([

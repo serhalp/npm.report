@@ -91,7 +91,6 @@ test("home page controls expose accessible names", async ({ page }) => {
   await expect(
     page.getByRole("spinbutton", { name: "Window (months)", exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("spinbutton", { name: "Fetch concurrency" })).toBeVisible();
   await expect(page.getByRole("checkbox", { name: /Analyze ALL org packages/i })).toBeVisible();
   await expect(page.getByRole("checkbox", { name: /recent/i })).toBeVisible();
   await expect(page.getByRole("checkbox", { name: /manual/i })).toBeVisible();
