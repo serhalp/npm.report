@@ -8,6 +8,29 @@
       name="description"
       content="Browser-based supply-chain audit for npm organizations: provenance & trusted-publishing rollout, manual publishes, and external maintainers."
     />
+    <meta name="color-scheme" content="dark light" />
+    <script>
+      (() => {
+        const key = "npm-security-report:theme-mode";
+        let stored = null;
+        try {
+          stored = localStorage.getItem(key);
+        } catch {
+          stored = null;
+        }
+        const mode =
+          stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+        const resolved =
+          mode === "system"
+            ? window.matchMedia?.("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+            : mode;
+        document.documentElement.dataset.theme = resolved;
+        document.documentElement.dataset.themeMode = mode;
+        document.documentElement.style.colorScheme = resolved;
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

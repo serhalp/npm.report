@@ -1,5 +1,6 @@
 <script lang="ts">
   import ResultsView from "./components/ResultsView.svelte";
+  import ThemeToggle from "./components/ThemeToggle.svelte";
   import type { AuditResult } from "./lib/runAudit";
 
   interface ReportRecord {
@@ -64,7 +65,10 @@
 
 <div class="app">
   <header class="masthead">
-    <p class="eyebrow">supply-chain audit · shared report</p>
+    <div class="masthead__top">
+      <p class="eyebrow">supply-chain audit · shared report</p>
+      <ThemeToggle />
+    </div>
     <h1><span class="pkg">npm</span> org trust &amp; access audit</h1>
     {#if record}
       <p>

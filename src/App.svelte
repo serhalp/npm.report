@@ -2,6 +2,7 @@
   import GhosttyTerminal from "./components/GhosttyTerminal.svelte";
   import ResultsView from "./components/ResultsView.svelte";
   import TagInput from "./components/TagInput.svelte";
+  import ThemeToggle from "./components/ThemeToggle.svelte";
   import UserPublishView from "./components/UserPublishView.svelte";
   import { parseMembers } from "./lib/members";
   import { FailureLog } from "./lib/npmClient";
@@ -204,7 +205,10 @@
 
 <div class="app">
   <header class="masthead">
-    <p class="eyebrow">supply-chain audit</p>
+    <div class="masthead__top">
+      <p class="eyebrow">supply-chain audit</p>
+      <ThemeToggle />
+    </div>
     <h1><span class="pkg">npm</span> org trust &amp; access audit</h1>
     <p>
       Point this at any npm organizations to track trusted-publishing / provenance rollout, find
