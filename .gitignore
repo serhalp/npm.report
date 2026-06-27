@@ -5,6 +5,7 @@
 /.netlify/
 /test-results/
 /playwright-report/
+/coverage/
 /.vite/
 /.env
 /.env.*

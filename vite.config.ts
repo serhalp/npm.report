@@ -38,8 +38,33 @@ export default defineConfig({
     : undefined,
   test: {
     environment: "jsdom",
+    environmentOptions: {
+      jsdom: {
+        url: "http://localhost:3000/",
+      },
+    },
     setupFiles: ["src/test/setup.ts"],
-    include: ["src/**/*.{test,spec}.ts", "src/**/*.{test,spec}.svelte.ts"],
+    include: [
+      "src/**/*.{test,spec}.ts",
+      "src/**/*.{test,spec}.svelte.ts",
+      "db/**/*.{test,spec}.ts",
+      "netlify/**/*.{test,spec}.ts",
+    ],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "json", "html"],
+      reportOnFailure: true,
+      include: ["src/**/*.{ts,svelte}", "db/**/*.ts", "netlify/**/*.ts"],
+      exclude: [
+        "src/**/*.{test,spec}.ts",
+        "src/**/*.{test,spec}.svelte.ts",
+        "src/test/**",
+        "src/vite-env.d.ts",
+        "src/lib/types.ts",
+        "src/components/dataTableTypes.ts",
+        "netlify/database/**",
+      ],
+    },
     clearMocks: true,
   },
 });

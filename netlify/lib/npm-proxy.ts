@@ -50,6 +50,10 @@ function isSafeResourcePath(rest: string): boolean {
   } catch {
     return false; // malformed percent-encoding
   }
+  for (let i = 0; i < decoded.length; i++) {
+    const c = decoded.charCodeAt(i);
+    if (c <= 0x20 || c === 0x7f || c === 0x5c /* backslash */) return false;
+  }
   return !decoded.split("/").includes("..");
 }
 
@@ -64,6 +68,10 @@ export async function proxyNpm(req: Request, host: string, prefix: string): Prom
   }
 
   const incoming = new URL(req.url);
+  if (!incoming.pathname.startsWith(prefix)) {
+    return new Response("invalid resource path", { status: 400 });
+  }
+
   // `pathname` preserves `%2f` / `+` exactly as sent, which scoped names and
   // fast-npm-meta batches depend on.
   const rest = incoming.pathname.slice(prefix.length);

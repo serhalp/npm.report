@@ -16,11 +16,13 @@
     "preview": "vite preview",
     "test": "pnpm run test:unit && pnpm run typecheck && pnpm run format:check && pnpm run lint",
     "test:a11y": "playwright test",
+    "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
+    "@lucide/svelte": "^1.21.0",
     "@netlify/database": "^1.1.0",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "drizzle-orm": "1.0.0-rc.4-5d5b77c",
@@ -38,6 +40,7 @@
     "@testing-library/svelte": "^5.4.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^26.0.1",
+    "@vitest/coverage-v8": "4.1.9",
     "drizzle-kit": "1.0.0-rc.4-ca0f029",
     "jsdom": "^29.1.1",
     "knip": "^6.21.0",
