@@ -29,8 +29,15 @@ describe("App", () => {
   beforeEach(() => {
     mockedRunAudit.mockReset();
     mockedRunUserPublishes.mockReset();
-    vi.mocked(navigator.clipboard.writeText).mockClear();
     vi.unstubAllGlobals();
+    vi.mocked(navigator.clipboard.writeText).mockClear();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ orgs: [], points: [] }),
+      }),
+    );
   });
 
   test("validates required organizations before running", async () => {
@@ -43,13 +50,29 @@ describe("App", () => {
     expect(mockedRunAudit).not.toHaveBeenCalled();
   });
 
+  test("defaults to all scope and shows history only for all-scope org sets", async () => {
+    const user = userEvent.setup();
+    render(App);
+
+    const limitScope = screen.getByRole("checkbox", { name: "Limit to recent packages" });
+    expect(limitScope).not.toBeChecked();
+    expect(screen.queryByRole("spinbutton", { name: "Window (months)" })).not.toBeInTheDocument();
+
+    await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
+    expect(await screen.findByText("No history yet")).toBeInTheDocument();
+
+    await user.click(limitScope);
+    expect(screen.getByRole("spinbutton", { name: "Window (months)" })).toBeEnabled();
+    expect(screen.queryByRole("heading", { name: "Progress over time" })).not.toBeInTheDocument();
+  });
+
   test("validates that at least one report is selected", async () => {
     const user = userEvent.setup();
     render(App);
 
     await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
-    await user.click(screen.getByRole("checkbox", { name: /recent/i }));
-    await user.click(screen.getByRole("checkbox", { name: /manual/i }));
+    await user.click(screen.getByRole("checkbox", { name: /^package trust level\b/i }));
+    await user.click(screen.getByRole("checkbox", { name: /^manual\b/i }));
     await user.click(screen.getByRole("button", { name: "Run audit" }));
 
     expect(screen.getByText("Select at least one report.")).toBeInTheDocument();
@@ -61,9 +84,9 @@ describe("App", () => {
     render(App);
 
     await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
-    await user.click(screen.getByRole("checkbox", { name: /recent/i }));
-    await user.click(screen.getByRole("checkbox", { name: /manual/i }));
-    await user.click(screen.getByRole("checkbox", { name: /external/i }));
+    await user.click(screen.getByRole("checkbox", { name: /^package trust level\b/i }));
+    await user.click(screen.getByRole("checkbox", { name: /^manual\b/i }));
+    await user.click(screen.getByRole("checkbox", { name: /^external\b/i }));
     await user.click(screen.getByRole("button", { name: "Run audit" }));
 
     expect(screen.getByText(/external report needs your npm org member list/i)).toBeInTheDocument();
@@ -79,7 +102,7 @@ describe("App", () => {
     render(App);
 
     await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
-    await user.click(screen.getByRole("checkbox", { name: /external/i }));
+    await user.click(screen.getByRole("checkbox", { name: /^external\b/i }));
     await fireEvent.input(screen.getByLabelText(/org membership/i), {
       target: { value: '{"Alice": "owner", "bob": "developer"}' },
     });
@@ -94,22 +117,28 @@ describe("App", () => {
     );
   });
 
-  test("runs an audit, renders results, and stores a share snapshot", async () => {
+  test("runs an audit, renders results, saves a report link, and copies it on request", async () => {
     const user = userEvent.setup();
     const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      if (String(input) === "/api/reports") {
+        return {
+          ok: true,
+          json: async () => ({ id: "netlify-2026-06-27-abc12345" }),
+        };
+      }
+      return {
+        ok: true,
+        json: async () => ({ orgs: ["netlify"], points: [] }),
+      };
+    });
     const scrollIntoView = vi.fn();
     Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", {
       configurable: true,
       value: scrollIntoView,
     });
     mockedRunAudit.mockResolvedValue(auditResult);
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: "netlify-2026-06-27-abc12345" }),
-      }),
-    );
+    vi.stubGlobal("fetch", fetchMock);
 
     render(App);
 
@@ -119,13 +148,13 @@ describe("App", () => {
     const resultsHeading = await screen.findByRole("heading", { name: "Audit results" });
     expect(screen.getByText("Report ready")).toBeInTheDocument();
     expect(
-      screen.getByText("2 recent packages · 1 manual publish · 1 fetch warning"),
+      screen.getByText("2 package trust rows · 1 manual publish · 1 fetch warning"),
     ).toBeInTheDocument();
     expect(mockedRunAudit).toHaveBeenCalledWith(
       {
         orgs: ["netlify"],
         months: 12,
-        all: false,
+        all: true,
         bots: ["GitHub Actions"],
         jobs: 12,
       },
@@ -140,25 +169,47 @@ describe("App", () => {
     );
     expect(resultsHeading).toHaveFocus();
 
-    await user.click(screen.getByRole("button", { name: "Share report" }));
-
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith("/api/reports", expect.any(Object));
     });
+    const shareCall = fetchMock.mock.calls.find(([input]) => String(input) === "/api/reports");
+    expect(shareCall).toBeDefined();
+    const shareBody = JSON.parse(String((shareCall![1] as RequestInit).body));
+    expect(shareBody).toMatchObject({
+      orgs: ["netlify"],
+      scope: "all",
+      scopeLabel: "ALL org packages",
+      payload: auditResult,
+    });
+    expect(typeof shareBody.capturedAt).toBe("string");
     expect(await screen.findByText(/netlify-2026-06-27-abc12345/)).toBeInTheDocument();
+    expect(screen.getByText("Saved automatically after this run.")).toBeInTheDocument();
+    expect(writeText).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+
     expect(writeText).toHaveBeenCalledWith(
       "http://localhost:3000/report/netlify-2026-06-27-abc12345",
     );
+    expect(await screen.findByText("Link copied")).toBeInTheDocument();
   });
 
-  test("surfaces share failures as a toast", async () => {
+  test("surfaces automatic report save failures inline", async () => {
     const user = userEvent.setup();
     mockedRunAudit.mockResolvedValue(auditResult);
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input) === "/api/reports") {
+          return {
+            ok: false,
+            status: 500,
+          };
+        }
+        return {
+          ok: true,
+          json: async () => ({ orgs: ["netlify"], points: [] }),
+        };
       }),
     );
 
@@ -167,9 +218,47 @@ describe("App", () => {
     await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
     await user.click(screen.getByRole("button", { name: "Run audit" }));
     await screen.findByRole("heading", { name: "Audit results" });
-    await user.click(screen.getByRole("button", { name: "Share report" }));
 
-    expect(await screen.findByText("Share failed (500)")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Report link unavailable: Save failed (500)"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeDisabled();
+  });
+
+  test("reports clipboard failures when copying a saved report link", async () => {
+    const user = userEvent.setup();
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockRejectedValue(new Error("denied"));
+    mockedRunAudit.mockResolvedValue(auditResult);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input) === "/api/reports") {
+          return {
+            ok: true,
+            json: async () => ({ id: "netlify-2026-06-27-abc12345" }),
+          };
+        }
+        return {
+          ok: true,
+          json: async () => ({ orgs: ["netlify"], points: [] }),
+        };
+      }),
+    );
+
+    render(App);
+
+    await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
+    await user.click(screen.getByRole("button", { name: "Run audit" }));
+    await screen.findByRole("heading", { name: "Audit results" });
+    expect(await screen.findByText(/netlify-2026-06-27-abc12345/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+
+    expect(await screen.findByText("Clipboard unavailable")).toBeInTheDocument();
+    expect(writeText).toHaveBeenCalledWith(
+      "http://localhost:3000/report/netlify-2026-06-27-abc12345",
+    );
   });
 
   test("runs user publish lookup with packages from the recent cache", async () => {

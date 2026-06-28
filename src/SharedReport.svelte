@@ -1,4 +1,5 @@
 <script lang="ts">
+  import HistoryPanel from "./components/HistoryPanel.svelte";
   import ResultsView from "./components/ResultsView.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import type { AuditResult } from "./lib/runAudit";
@@ -26,6 +27,8 @@
   }
 
   let when = $derived(generatedDay(record));
+  let historyOrgs = $derived(record?.payload.recent?.summary.orgs ?? []);
+  let historyEnabled = $derived(record?.payload.recent?.summary.scopeLabel === "ALL org packages");
 
   function showToast(message: string) {
     toast = message;
@@ -98,6 +101,7 @@
   {/if}
 
   {#if record}
+    <HistoryPanel orgs={historyOrgs} enabled={historyEnabled} currentReportId={record.id} />
     <section class="results">
       <ResultsView result={record.payload} onToast={showToast} />
     </section>

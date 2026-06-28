@@ -91,7 +91,13 @@
   </div>
   <div class="table-tools">
     <span class="table-meta">{rows.length} packages · click a column to sort</span>
-    <ExportButtons json={report} {csvRows} {csvColumns} filenameBase="recent-packages" {onToast} />
+    <ExportButtons
+      json={report}
+      {csvRows}
+      {csvColumns}
+      filenameBase="package-trust-level"
+      {onToast}
+    />
   </div>
   <DataTable {columns} {rows} />
 </div>

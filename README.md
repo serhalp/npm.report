@@ -5,7 +5,7 @@ trust and live publish access.
 
 It answers:
 
-- `recent`: trust status of each in-scope package's `latest` release.
+- Package trust level: trust status of each in-scope package's `latest` release.
 - `manual`: versions published by non-bot accounts in the selected window.
 - `external`: current package maintainers who are not listed as org members.
 - User publish history: versions a specific npm user personally published.
@@ -40,9 +40,10 @@ pnpm run preview
 ## Use The App
 
 1. Enter one or more npm org slugs.
-2. Choose a recency window, or select "Analyze ALL org packages".
-3. Select `recent`, `manual`, `external`, or any combination. `recent` and
-   `manual` are selected by default.
+2. By default, the audit scans all org packages. Select "Limit to recent packages" to use a
+   recency window.
+3. Select package trust level, `manual`, `external`, or any combination. Package trust
+   level and `manual` are selected by default.
 4. For `manual`, adjust bot or CI publisher account names to exclude. The
    default exclusion list starts with `GitHub Actions`.
 5. For `external`, run `npm org ls <org> --json` locally while authenticated and
@@ -50,7 +51,7 @@ pnpm run preview
    private, so the app needs your authenticated member list to compare them.
 6. Run the audit. Results render as sortable tables with JSON copy and CSV
    download actions.
-7. Use "Share report" only when you want a persistent read-only snapshot.
+7. Copy the automatically saved report link when you want to share the read-only snapshot.
 
 ## Architecture
 
@@ -63,9 +64,9 @@ pnpm run preview
   - `/api/npm-meta/*` -> `npm.antfu.dev`
 - Each proxy pins one upstream host server-side, streams the upstream response,
   adds CORS, and applies a 5-minute shared cache for successful responses.
-- Report sharing is the only stateful feature. `POST /api/reports` stores a
-  completed `AuditResult` plus display metadata in Netlify Database; `/report/:id`
-  renders that snapshot read-only.
+- Report links are the only stateful feature. `POST /api/reports` stores a completed
+  `AuditResult` plus display metadata in Netlify Database after each successful run;
+  `/report/:id` renders that snapshot read-only.
 
 ## Important Limits
 

@@ -1,12 +1,16 @@
 <script lang="ts">
   import { ArrowDown, CircleCheck } from "@lucide/svelte";
   import GhosttyTerminal from "./components/GhosttyTerminal.svelte";
+  import HistoryPanel from "./components/HistoryPanel.svelte";
+  import RecentReports from "./components/RecentReports.svelte";
   import ResultsView from "./components/ResultsView.svelte";
   import TagInput from "./components/TagInput.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import UserPublishView from "./components/UserPublishView.svelte";
   import { parseMembers } from "./lib/members";
   import { FailureLog } from "./lib/npmClient";
+  import type { SharedReportScope } from "./lib/reportHistory";
+  import { scopeLabelFor } from "./lib/reportHistory";
   import { runUserPublishes } from "./lib/reports";
   import { runAudit, type AuditResult } from "./lib/runAudit";
   import type { AuditConfig, ReportKind, UserPublishReport } from "./lib/types";
@@ -16,13 +20,20 @@
     clear: () => void;
   };
 
+  interface CompletedRunContext {
+    orgs: string[];
+    scope: SharedReportScope;
+    scopeLabel: string;
+    capturedAt: string;
+  }
+
   const DEFAULT_BOTS = ["GitHub Actions"];
   const FETCH_CONCURRENCY = 12;
 
   const REPORT_META: { kind: ReportKind; title: string; desc: string }[] = [
     {
       kind: "recent",
-      title: "recent",
+      title: "package trust level",
       desc: "Trust status (provenance / trusted publishing) of each package’s latest release.",
     },
     {
@@ -43,7 +54,7 @@
 
   let orgs: string[] = $state([]);
   let months = $state(12);
-  let all = $state(false);
+  let all = $state(true);
   let bots: string[] = $state([...DEFAULT_BOTS]);
   let selected: Record<ReportKind, boolean> = $state({
     recent: true,
@@ -58,8 +69,11 @@
   let firstTab: ReportKind = $state("recent");
   let toast: string | null = $state(null);
 
-  let sharing = $state(false);
+  let savingReport = $state(false);
+  let reportSaveError = $state<string | null>(null);
   let shareUrl = $state<string | null>(null);
+  let historyRefreshKey = $state(0);
+  let saveAttempt = 0;
 
   let upUser = $state("");
   let upMonths = $state(12);
@@ -87,7 +101,7 @@
 
   function summarizeReadyReport(value: AuditResult): string {
     const parts: string[] = [];
-    if (value.recent) parts.push(plural(value.recent.rows.length, "recent package"));
+    if (value.recent) parts.push(plural(value.recent.rows.length, "package trust row"));
     if (value.manual)
       parts.push(plural(value.manual.rows.length, "manual publish", "manual publishes"));
     if (value.external) parts.push(plural(value.external.distinctUsers, "external account"));
@@ -107,6 +121,38 @@
     return () => window.clearTimeout(timer);
   });
 
+  async function saveReportSnapshot(
+    nextResult: AuditResult,
+    context: CompletedRunContext,
+    attempt: number,
+  ) {
+    savingReport = true;
+    reportSaveError = null;
+    try {
+      const response = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          orgs: context.orgs,
+          scope: context.scope,
+          scopeLabel: context.scopeLabel,
+          capturedAt: context.capturedAt,
+          payload: nextResult,
+        }),
+      });
+      if (!response.ok) throw new Error(`Save failed (${response.status})`);
+      const { id } = (await response.json()) as { id: string };
+      if (attempt !== saveAttempt) return;
+      shareUrl = `${window.location.origin}/report/${id}`;
+      historyRefreshKey++;
+    } catch (reason) {
+      if (attempt !== saveAttempt) return;
+      reportSaveError = reason instanceof Error ? reason.message : "Save failed";
+    } finally {
+      if (attempt === saveAttempt) savingReport = false;
+    }
+  }
+
   async function handleRun() {
     error = null;
     if (orgs.length === 0) {
@@ -124,9 +170,12 @@
     }
 
     const config: AuditConfig = { orgs, months, all, bots, jobs: FETCH_CONCURRENCY };
+    const attempt = ++saveAttempt;
     running = true;
     result = null;
     shareUrl = null;
+    savingReport = false;
+    reportSaveError = null;
     terminal?.clear();
     log(`→ audit ${orgs.join(", ")} | reports: ${selectedKinds.join(",")}`);
     log(all ? "→ scope: ALL org packages (-A)" : `→ scope: last ${months} months`);
@@ -134,6 +183,13 @@
     try {
       const response = await runAudit(config, selectedKinds, members, log);
       result = response;
+      const scope: SharedReportScope = config.all ? "all" : { months: config.months };
+      const context: CompletedRunContext = {
+        orgs: [...config.orgs],
+        scope,
+        scopeLabel: scopeLabelFor(scope),
+        capturedAt: new Date().toISOString(),
+      };
       const first = selectedKinds.find(
         (kind) =>
           (kind === "recent" && response.recent) ||
@@ -141,36 +197,13 @@
           (kind === "external" && response.external),
       );
       if (first) firstTab = first;
+      void saveReportSnapshot(response, context, attempt);
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : String(reason);
       log(`Error: ${message}`);
       error = reason instanceof Error ? reason.message : "Audit failed.";
     } finally {
       running = false;
-    }
-  }
-
-  async function handleShare() {
-    if (!result) return;
-    sharing = true;
-    try {
-      const scopeLabel =
-        result.recent?.summary.scopeLabel ?? (all ? "all org packages" : `last ${months} months`);
-      const response = await fetch("/api/reports", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ orgs, scopeLabel, payload: result }),
-      });
-      if (!response.ok) throw new Error(`Share failed (${response.status})`);
-      const { id } = (await response.json()) as { id: string };
-      const link = `${window.location.origin}/report/${id}`;
-      shareUrl = link;
-      await navigator.clipboard.writeText(link).catch(() => {});
-      showToast("Share link copied to clipboard");
-    } catch (reason) {
-      showToast(reason instanceof Error ? reason.message : "Share failed");
-    } finally {
-      sharing = false;
     }
   }
 
@@ -251,9 +284,11 @@
       Point this at any npm organizations to track trusted-publishing / provenance rollout, find
       packages published manually rather than via CI, and surface maintainers who can publish but
       aren&rsquo;t org members. Audit execution runs in your browser against public npm data; a
-      read-only snapshot is stored only when you click Share report.
+      read-only snapshot is saved automatically after each completed audit.
     </p>
   </header>
+
+  <RecentReports />
 
   <div class="layout">
     <section class="panel">
@@ -275,30 +310,28 @@
           </p>
         </div>
 
-        <div class="row">
-          <div class="field">
-            <label for="months">Window (months)</label>
-            <input
-              id="months"
-              type="number"
-              min="1"
-              max="120"
-              value={months}
-              disabled={all}
-              oninput={(event) => (months = Number(event.currentTarget.value) || 1)}
-            />
-          </div>
-        </div>
-
-        <div class="field">
+        <div class="field scope-field">
           <label class="toggle">
             <input
               type="checkbox"
-              checked={all}
-              onchange={(event) => (all = event.currentTarget.checked)}
+              checked={!all}
+              onchange={(event) => (all = !event.currentTarget.checked)}
             />
-            Analyze ALL org packages (ignore the recency window)
+            Limit to recent packages
           </label>
+          {#if !all}
+            <div class="scope-window">
+              <label for="months">Window (months)</label>
+              <input
+                id="months"
+                type="number"
+                min="1"
+                max="120"
+                value={months}
+                oninput={(event) => (months = Number(event.currentTarget.value) || 1)}
+              />
+            </div>
+          {/if}
         </div>
 
         <div class="field">
@@ -360,7 +393,8 @@
               placeholder={membersPlaceholder}></textarea>
             <p class="desc">
               Parsed {members.length} member{members.length === 1 ? "" : "s"}. Matching is
-              case-insensitive. Refresh this whenever membership changes.
+              case-insensitive. The pasted member list is not stored; external findings are included
+              in the saved report.
             </p>
           </div>
         {/if}
@@ -400,6 +434,7 @@
           </button>
         </div>
       {/if}
+      <HistoryPanel {orgs} enabled={all && orgs.length > 0} refreshKey={historyRefreshKey} />
     </section>
   </div>
 
@@ -411,19 +446,24 @@
       </div>
       <div class="share-bar">
         <div>
-          <strong class="share-bar__title">Share this report</strong>
-          <span class="share-bar__hint">
-            Saves a read-only snapshot and gives you a link anyone can open.
-          </span>
+          <strong class="share-bar__title">Report link</strong>
+          {#if savingReport}
+            <span class="share-bar__hint">Saving read-only snapshot…</span>
+          {:else if shareUrl}
+            <span class="share-bar__hint">Saved automatically after this run.</span>
+          {:else if reportSaveError}
+            <span class="share-bar__hint">Report link unavailable: {reportSaveError}</span>
+          {:else}
+            <span class="share-bar__hint">Link appears after the report is saved.</span>
+          {/if}
         </div>
-        <button class="btn btn--ghost" type="button" onclick={handleShare} disabled={sharing}>
-          {sharing ? "Saving…" : shareUrl ? "Re-share" : "Share report"}
+        <button class="btn btn--ghost" type="button" onclick={copyShareLink} disabled={!shareUrl}>
+          Copy link
         </button>
       </div>
       {#if shareUrl}
         <div class="share-link">
           <a href={shareUrl}>{shareUrl}</a>
-          <button class="btn btn--sm btn--ghost" type="button" onclick={copyShareLink}>Copy</button>
         </div>
       {/if}
       <ResultsView {result} onToast={showToast} initialTab={firstTab} />

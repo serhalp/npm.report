@@ -37,9 +37,12 @@ describe("ResultsView", () => {
       },
     });
 
-    await user.click(screen.getByRole("tab", { name: /recent 2/i }));
+    await user.click(screen.getByRole("tab", { name: /package trust level 2/i }));
 
-    expect(screen.getByRole("tab", { name: /recent 2/i })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /package trust level 2/i })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     expect(location.hash).toBe("#recent");
     expect(replace).toHaveBeenLastCalledWith(null, "", "#recent");
   });

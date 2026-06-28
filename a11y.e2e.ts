@@ -37,6 +37,55 @@ async function selectThemeMode(page: Page, mode: Extract<ThemeMode, "light" | "d
   await expectThemeModeSelected(page, mode);
 }
 
+async function mockRecentReports(page: Page) {
+  await page.route("**/api/reports/recent", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        reports: [
+          {
+            id: "netlify-2026-06-27-abc12345",
+            url: "/report/netlify-2026-06-27-abc12345",
+            orgs: ["netlify"],
+            capturedAt: "2026-06-27T12:00:00.000Z",
+          },
+        ],
+      }),
+    }),
+  );
+}
+
+async function mockHistory(page: Page) {
+  await page.route("**/api/reports/history?**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        orgs: ["netlify"],
+        points: [
+          {
+            id: "netlify-2026-06-27-abc12345",
+            url: "/report/netlify-2026-06-27-abc12345",
+            capturedAt: "2026-06-27T12:00:00.000Z",
+            total: 4,
+            byLevel: {
+              stagedPublish: 1,
+              trustedPublisher: 1,
+              provenance: 1,
+              none: 1,
+            },
+            deprecated: 0,
+            failureCount: 0,
+          },
+        ],
+      }),
+    }),
+  );
+}
+
+test.beforeEach(async ({ page }) => {
+  await mockRecentReports(page);
+});
+
 async function expectNoAccessibilityViolations(page: Page) {
   await expect(page.getByRole("heading", { name: "npm org trust & access audit" })).toBeVisible();
 
@@ -82,19 +131,35 @@ for (const mode of ["light", "dark"] as const) {
     await expectEffectiveTheme(page, mode);
     await expectNoAccessibilityViolations(page);
   });
+
+  test(`history panel has no detectable accessibility violations in ${mode} mode`, async ({
+    page,
+  }) => {
+    await mockHistory(page);
+    await page.goto("/");
+    await selectThemeMode(page, mode);
+    const orgs = page.getByRole("textbox", { name: "Organizations" });
+    await orgs.fill("netlify");
+    await orgs.press("Enter");
+    await expect(page.getByRole("heading", { name: "Progress over time" })).toBeVisible();
+    await expectNoAccessibilityViolations(page);
+  });
 }
 
 test("home page controls expose accessible names", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByRole("textbox", { name: "Organizations" })).toBeVisible();
+  await expect(page.getByRole("spinbutton", { name: "Window (months)", exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole("checkbox", { name: "Limit to recent packages" }).click();
   await expect(
     page.getByRole("spinbutton", { name: "Window (months)", exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("checkbox", { name: /Analyze ALL org packages/i })).toBeVisible();
-  await expect(page.getByRole("checkbox", { name: /recent/i })).toBeVisible();
-  await expect(page.getByRole("checkbox", { name: /manual/i })).toBeVisible();
-  await expect(page.getByRole("checkbox", { name: /external/i })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: /^package trust level\b/i })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: /^manual\b/i })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: /^external\b/i })).toBeVisible();
   await expect(
     page.getByRole("textbox", { name: "Exclude bot / CI accounts (manual report)" }),
   ).toBeVisible();

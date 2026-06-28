@@ -20,7 +20,7 @@ Server-side code exists only for narrow Netlify integration:
 - `netlify/lib/npm-proxy.ts` contains the shared proxy core and intentionally
   lives outside `netlify/edge-functions/` so Netlify does not mount it as a
   function.
-- `netlify/functions/reports.ts` is a serverless function for sharing completed
+- `netlify/functions/reports.ts` is a serverless function for storing completed
   small JSON reports through Netlify Database. It is not used for npm packument
   proxying or audit execution.
 
@@ -52,11 +52,13 @@ client mapping.
 
 ## Report Sharing
 
-Report sharing is opt-in and stateful. `POST /api/reports` stores a completed
-`AuditResult` plus display metadata (`orgs`, `scopeLabel`) in Netlify Database
-and returns an id of the form `<orgs>-<yyyy-mm-dd>-<shorthash>`. The hash is
-derived from the payload, so re-sharing the same report on the same day is
-idempotent. `GET /api/reports/:id` returns the stored row.
+Report links are stateful. After a completed audit, the app automatically sends
+`POST /api/reports` with the `AuditResult` plus completed-run context (`orgs`,
+`scope`, `scopeLabel`, `capturedAt`) and stores it in Netlify Database. The
+function returns an id of the form `<orgs>-<yyyy-mm-dd>-<shorthash>`. The hash is
+derived from the payload, so saving the same report on the same day is
+idempotent. `GET /api/reports/:id` returns the stored row. The UI share action
+only copies the already-created report link.
 
 The client detects `/report/:id` in `src/main.ts`, renders
 `src/SharedReport.svelte`, and reuses `components/ResultsView.svelte` for the read-only
@@ -74,11 +76,11 @@ scripts/                Original shell scripts; behavior reference, not executed
 db/                     Drizzle schema and Netlify Database connection
 netlify/
   edge-functions/       Per-host npm edge proxies
-  functions/            Report sharing API
+  functions/            Report link API
   lib/npm-proxy.ts      Shared proxy core
 src/
   main.ts               Svelte root and tiny /report/:id path switch
-  App.svelte            Live audit UI, state, run orchestration, sharing trigger
+  App.svelte            Live audit UI, state, run orchestration, automatic report-link save
   SharedReport.svelte   Read-only shared report route
   styles.css            Design system and app styling
   lib/
@@ -97,7 +99,7 @@ src/
     DataTable.svelte       Generic sortable table
     TagInput.svelte        Chip multi-value input
     ExportButtons.svelte   Per-report export controls
-    RecentView.svelte      Recent report view
+    RecentView.svelte      Package trust level report view (`recent` internally)
     ManualView.svelte      Manual report view
     ExternalView.svelte    External report view
     UserPublishView.svelte User publish-history view

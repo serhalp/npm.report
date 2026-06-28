@@ -6,7 +6,7 @@
   import type { ReportKind } from "../lib/types";
 
   const TAB_META: { kind: ReportKind; title: string }[] = [
-    { kind: "recent", title: "recent" },
+    { kind: "recent", title: "package trust level" },
     { kind: "manual", title: "manual" },
     { kind: "external", title: "external" },
   ];
