@@ -34,9 +34,7 @@ describe("HistoryPanel", () => {
 
     expect(await screen.findByText("No history yet")).toBeInTheDocument();
     expect(
-      screen.getByText(
-        "Share an all-packages trust report for this org set to start the timeline.",
-      ),
+      screen.getByText("Run an all-packages trust report for this org set to start the timeline."),
     ).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith("/api/reports/history?org=netlify");
   });

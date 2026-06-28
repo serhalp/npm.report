@@ -114,7 +114,7 @@
     </div>
     <div class="panel__body">
       <p class="desc history-copy">
-        Public trust history from shared package trust level reports for this exact org set.
+        Public trust history from saved package trust level reports for this exact org set.
       </p>
 
       {#if loading}
@@ -122,7 +122,7 @@
       {:else if points.length === 0}
         <div class="empty history-empty">
           <div class="big">No history yet</div>
-          Share an all-packages trust report for this org set to start the timeline.
+          Run an all-packages trust report for this org set to start the timeline.
         </div>
       {:else}
         <div class="statgrid history-stats">
