@@ -9,9 +9,14 @@ two shell scripts in `scripts/`; those scripts are the reference specification
 for audit behavior. When changing audit semantics, diff against the scripts and
 preserve their documented behavior unless the user explicitly asks otherwise.
 
-The audit itself is client-side. The browser orchestrates package discovery,
+Interactive audits are client-side. The browser orchestrates package discovery,
 trust checks, downloads lookups, manual-publish scans, and external-maintainer
-checks. Do not add a backend audit worker.
+checks. Do not add a general backend audit worker.
+
+The only server-side audit path is daily package trust tracking. It reruns the
+all-package `recent`/package-trust report for opted-in org sets so the public
+timeline can grow without a browser session. It must not run, derive, store, or
+query `manual` or `external` report data.
 
 Server-side code exists only for narrow Netlify integration:
 
@@ -21,8 +26,10 @@ Server-side code exists only for narrow Netlify integration:
   lives outside `netlify/edge-functions/` so Netlify does not mount it as a
   function.
 - `netlify/functions/reports.ts` is a serverless function for storing completed
-  small JSON reports through Netlify Database. It is not used for npm packument
-  proxying or audit execution.
+  small JSON reports and daily tracking schedules through Netlify Database. It
+  is not used for npm packument proxying.
+- `netlify/functions/trust-reruns-background.ts` is an hourly scheduled
+  background function. It only processes due daily package-trust schedules.
 
 ## npm Proxy Rules
 
@@ -48,7 +55,8 @@ object.
 
 The client-side host mapping is in `src/lib/npmClient.ts` (`proxied()`). When
 adding a new npm upstream host, add a new per-host edge proxy and a matching
-client mapping.
+client mapping. Server-side daily reruns pass `npmFetchMode: "direct"` and fetch
+the same upstream URLs without the browser CORS proxies.
 
 ## Report Sharing
 
@@ -59,6 +67,11 @@ function returns an id of the form `<orgs>-<yyyy-mm-dd>-<shorthash>`. The hash i
 derived from the payload, so saving the same report on the same day is
 idempotent. `GET /api/reports/:id` returns the stored row. The UI share action
 only copies the already-created report link.
+
+Daily tracking is created with `POST /api/reports/:id/schedule-daily`. The
+endpoint is eligible only when the saved report already has a
+`report_trust_history` row, which means it came from an all-scope package trust
+report. Schedules are keyed by the same normalized org set as the timeline.
 
 The client detects `/report/:id` in `src/main.ts`, renders
 `src/SharedReport.svelte`, and reuses `components/ResultsView.svelte` for the read-only
@@ -76,7 +89,8 @@ scripts/                Original shell scripts; behavior reference, not executed
 db/                     Drizzle schema and Netlify Database connection
 netlify/
   edge-functions/       Per-host npm edge proxies
-  functions/            Report link API
+  functions/            Report link API and daily package-trust scheduled reruns
+    _shared/            Shared report persistence and schedule helpers
   lib/npm-proxy.ts      Shared proxy core
 src/
   main.ts               Svelte root and tiny /report/:id path switch
@@ -85,6 +99,7 @@ src/
   styles.css            Design system and app styling
   lib/
     types.ts            Shared types; field names mirror script TSV columns
+    auditDefaults.ts    Shared fetch concurrency and generic bot defaults
     npmClient.ts        npmGet, retry/backoff, FailureLog, URL helpers
     concurrency.ts      pLimit, mapLimit, chunk
     trust.ts            Thin adapter around packumeta trust logic
@@ -139,7 +154,7 @@ src/
 
 ## Tooling Rules
 
-- Use Node 26 and pnpm 11.5.2.
+- Use Node 26 and pnpm 11.9.0.
 - `pnpm run build` is `vite build`; it transpiles without type-checking.
 - `pnpm run typecheck` runs `svelte-check` and is the real Svelte/TypeScript check.
 - For automated edits, do not run build, dev, or typecheck unless the user asks.
@@ -185,6 +200,7 @@ Changing persistence:
 
 1. Update `db/schema.ts`.
 2. Add a migration under `netlify/database/migrations/`.
-3. Update `netlify/functions/reports.ts`.
+3. Update shared persistence/schedule helpers under `netlify/functions/_shared/`
+   and any public API in `netlify/functions/reports.ts`.
 4. Verify `/report/:id` still renders older stored payloads or document the
    migration boundary.

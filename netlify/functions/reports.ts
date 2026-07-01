@@ -1,39 +1,22 @@
 import type { Config } from "@netlify/functions";
-import { createHash } from "node:crypto";
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { reportTrustHistory, reports } from "../../db/schema.js";
 import {
-  extractTrustHistory,
   normalizeOrgs,
   orgKeyFor,
   scopeLabelFor,
   type RecentTrustReportLink,
-  type ReportTrustHistoryPoint,
   type SharedReportScope,
 } from "../../src/lib/reportHistory.js";
+import {
+  historyPointFromRow,
+  recentReportLinkFromRow,
+  saveReportSnapshot,
+} from "./_shared/report-persistence.js";
+import { scheduleDailyTrustReport } from "./_shared/report-schedules.js";
 
 const RECENT_REPORT_LIMIT = 5;
-
-// Turn org names into a URL-safe slug fragment, e.g. ["Netlify","Gatsby"] -> "netlify-gatsby".
-function slugifyOrgs(orgs: string[]): string {
-  const joined = (orgs.length ? orgs : ["npm"])
-    .join("-")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return joined || "npm";
-}
-
-// Build the human-readable primary key: <orgs>-<yyyy-mm-dd>-<shorthash>.
-// The short hash is content-derived (sha256 of the payload), so re-sharing an
-// identical report yields the same id (idempotent) and ids never collide by
-// accident.
-function buildId(orgs: string[], payload: unknown): string {
-  const hash = createHash("sha256").update(JSON.stringify(payload)).digest("hex").slice(0, 8);
-  const date = new Date().toISOString().slice(0, 10);
-  return `${slugifyOrgs(orgs)}-${date}-${hash}`;
-}
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object";
@@ -52,38 +35,6 @@ function parseCapturedAt(value: unknown): string {
     return new Date(value).toISOString();
   }
   return new Date().toISOString();
-}
-
-function historyUrl(id: string): string {
-  return `/report/${encodeURIComponent(id)}`;
-}
-
-function historyPointFromRow(row: typeof reportTrustHistory.$inferSelect): ReportTrustHistoryPoint {
-  return {
-    id: row.reportId,
-    url: historyUrl(row.reportId),
-    capturedAt: new Date(row.capturedAt).toISOString(),
-    total: row.total,
-    byLevel: {
-      stagedPublish: row.stagedPublish,
-      trustedPublisher: row.trustedPublisher,
-      provenance: row.provenance,
-      none: row.none,
-    },
-    deprecated: row.deprecated,
-    failureCount: row.failureCount,
-  };
-}
-
-function recentReportLinkFromRow(
-  row: typeof reportTrustHistory.$inferSelect,
-): RecentTrustReportLink {
-  return {
-    id: row.reportId,
-    url: historyUrl(row.reportId),
-    orgs: row.orgs,
-    capturedAt: new Date(row.capturedAt).toISOString(),
-  };
 }
 
 async function getHistory(url: URL): Promise<Response> {
@@ -124,33 +75,12 @@ async function getRecentReports(): Promise<Response> {
   return Response.json({ reports: recentReports });
 }
 
-async function storeTrustHistory(
-  reportId: string,
-  history: NonNullable<ReturnType<typeof extractTrustHistory>>,
-) {
-  await db
-    .insert(reportTrustHistory)
-    .values({
-      reportId,
-      orgKey: history.orgKey,
-      orgs: history.orgs,
-      capturedAt: new Date(history.capturedAt),
-      total: history.total,
-      stagedPublish: history.byLevel.stagedPublish,
-      trustedPublisher: history.byLevel.trustedPublisher,
-      provenance: history.byLevel.provenance,
-      none: history.byLevel.none,
-      deprecated: history.deprecated,
-      failureCount: history.failureCount,
-    })
-    .onConflictDoNothing();
-}
-
 export default async (req: Request) => {
   const url = new URL(req.url);
-  // /api/reports/:id  ->  ["", "api", "reports", ":id"]
+  // /api/reports/:id  ->  ["api", "reports", ":id"]
   const parts = url.pathname.split("/").filter(Boolean);
   const id = parts[2];
+  const action = parts[3];
 
   if (req.method === "GET") {
     if (id === "history") return getHistory(url);
@@ -162,6 +92,18 @@ export default async (req: Request) => {
   }
 
   if (req.method === "POST") {
+    if (id && action === "schedule-daily") {
+      const status = await scheduleDailyTrustReport(id);
+      if (!status) {
+        return new Response("Only saved all-package trust reports can be tracked daily.", {
+          status: 400,
+        });
+      }
+      return Response.json(status, { status: 201 });
+    }
+
+    if (id) return new Response("Not found", { status: 404 });
+
     let body: {
       orgs?: string[];
       scope?: unknown;
@@ -181,33 +123,25 @@ export default async (req: Request) => {
     const scope = parseScope(body.scope, body.scopeLabel);
     const capturedAt = parseCapturedAt(body.capturedAt);
     const scopeLabel = typeof body.scopeLabel === "string" ? body.scopeLabel : scopeLabelFor(scope);
-    const newId = buildId(orgs, body.payload);
-    await db
-      .insert(reports)
-      .values({
-        id: newId,
-        orgs: orgs.join(", "),
-        scopeLabel,
-        payload: body.payload,
-      })
-      // Same content + same day = same id; treat a re-share as a no-op.
-      .onConflictDoNothing();
-
-    const history = extractTrustHistory({
+    const saved = await saveReportSnapshot({
       orgs,
       scope,
+      scopeLabel,
       capturedAt,
       payload: body.payload,
     });
-    if (history) {
-      await storeTrustHistory(newId, history);
-    }
-    return Response.json({ id: newId }, { status: 201 });
+    return Response.json({ id: saved.id }, { status: 201 });
   }
 
   return new Response("Method not allowed", { status: 405 });
 };
 
 export const config: Config = {
-  path: ["/api/reports", "/api/reports/history", "/api/reports/recent", "/api/reports/:id"],
+  path: [
+    "/api/reports",
+    "/api/reports/history",
+    "/api/reports/recent",
+    "/api/reports/:id",
+    "/api/reports/:id/schedule-daily",
+  ],
 };

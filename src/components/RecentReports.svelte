@@ -40,13 +40,13 @@
 <section class="recent-reports" aria-labelledby="recent-reports-title">
   <div class="recent-reports__head">
     <h2 id="recent-reports-title">Recent reports</h2>
-    <span>Latest shared audits</span>
+    <span>Latest saved audits</span>
   </div>
 
   {#if loading}
     <p class="desc">Loading recent reports…</p>
   {:else if reports.length === 0}
-    <p class="desc">No shared reports yet.</p>
+    <p class="desc">No saved reports yet.</p>
   {:else}
     <ol class="recent-reports__list">
       {#each reports as report (report.id)}

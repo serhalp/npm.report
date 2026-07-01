@@ -38,7 +38,7 @@ describe("RecentReports", () => {
 
     render(RecentReports);
 
-    expect(screen.getByText("Latest shared audits")).toBeInTheDocument();
+    expect(screen.getByText("Latest saved audits")).toBeInTheDocument();
     expect(await screen.findByRole("link", { name: "gatsbyjs, netlify" })).toHaveAttribute(
       "href",
       "/report/netlify-gatsby-2026-06-27-abc12345",
@@ -52,7 +52,7 @@ describe("RecentReports", () => {
 
     render(RecentReports);
 
-    expect(await screen.findByText("No shared reports yet.")).toBeInTheDocument();
+    expect(await screen.findByText("No saved reports yet.")).toBeInTheDocument();
   });
 
   test("falls back to the empty state when recent reports cannot load", async () => {
@@ -67,7 +67,7 @@ describe("RecentReports", () => {
 
     render(RecentReports);
 
-    expect(await screen.findByText("No shared reports yet.")).toBeInTheDocument();
+    expect(await screen.findByText("No saved reports yet.")).toBeInTheDocument();
     expect(screen.queryByText(/Recent reports failed/)).not.toBeInTheDocument();
   });
 });

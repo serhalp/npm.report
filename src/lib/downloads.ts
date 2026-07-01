@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop -- api.npmjs.org has a strict token bucket; scoped downloads must remain sequential and paced. */
 import { chunk } from "./concurrency";
-import { FailureLog, npmGetJson, sleep } from "./npmClient";
+import { FailureLog, npmGetJson, sleep, type NpmFetchOptions } from "./npmClient";
 
 // ---------------------------------------------------------------------------
 // Weekly downloads — ported from npm-audit.sh `add_downloads`.
@@ -26,6 +26,7 @@ export async function fetchWeeklyDownloads(
   names: string[],
   failures: FailureLog,
   onProgress?: (done: number, total: number) => void,
+  fetchOptions: NpmFetchOptions = {},
 ): Promise<Map<string, number>> {
   const map = new Map<string, number>();
   const unscoped = names.filter((n) => !n.startsWith("@"));
@@ -39,6 +40,8 @@ export async function fetchWeeklyDownloads(
     const json = await npmGetJson<BulkResp>(
       `https://api.npmjs.org/downloads/point/last-week/${batch.join(",")}`,
       failures,
+      5,
+      fetchOptions,
     );
     if (json) {
       if (typeof json.downloads === "number" && typeof json.package === "string") {
@@ -60,6 +63,8 @@ export async function fetchWeeklyDownloads(
     const json = await npmGetJson<{ downloads?: number }>(
       `https://api.npmjs.org/downloads/point/last-week/${p}`,
       failures,
+      5,
+      fetchOptions,
     );
     if (json && typeof json.downloads === "number") map.set(p, json.downloads);
     done++;

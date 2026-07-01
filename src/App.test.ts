@@ -127,6 +127,19 @@ describe("App", () => {
           json: async () => ({ id: "netlify-2026-06-27-abc12345" }),
         };
       }
+      if (String(input) === "/api/reports/netlify-2026-06-27-abc12345/schedule-daily") {
+        return {
+          ok: true,
+          json: async () => ({
+            orgs: ["netlify"],
+            enabled: true,
+            nextRunAt: "2026-06-28T12:00:00.000Z",
+            lastRunAt: null,
+            lastReportId: "netlify-2026-06-27-abc12345",
+            consecutiveFailures: 0,
+          }),
+        };
+      }
       return {
         ok: true,
         json: async () => ({ orgs: ["netlify"], points: [] }),
@@ -172,19 +185,27 @@ describe("App", () => {
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith("/api/reports", expect.any(Object));
     });
-    const shareCall = fetchMock.mock.calls.find(([input]) => String(input) === "/api/reports");
-    expect(shareCall).toBeDefined();
-    const shareBody = JSON.parse(String((shareCall![1] as RequestInit).body));
-    expect(shareBody).toMatchObject({
+    const saveCall = fetchMock.mock.calls.find(([input]) => String(input) === "/api/reports");
+    expect(saveCall).toBeDefined();
+    const saveBody = JSON.parse(String((saveCall![1] as RequestInit).body));
+    expect(saveBody).toMatchObject({
       orgs: ["netlify"],
       scope: "all",
       scopeLabel: "ALL org packages",
       payload: auditResult,
     });
-    expect(typeof shareBody.capturedAt).toBe("string");
+    expect(typeof saveBody.capturedAt).toBe("string");
     expect(await screen.findByText(/netlify-2026-06-27-abc12345/)).toBeInTheDocument();
     expect(screen.getByText("Saved automatically after this run.")).toBeInTheDocument();
+    expect(screen.getByText("Package trust only.")).toBeInTheDocument();
     expect(writeText).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Track daily" }));
+    expect(fetch).toHaveBeenCalledWith("/api/reports/netlify-2026-06-27-abc12345/schedule-daily", {
+      method: "POST",
+    });
+    expect(await screen.findByRole("button", { name: "Tracking daily" })).toBeDisabled();
+    expect(screen.getByText("Next run 2026-06-28.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Copy link" }));
 

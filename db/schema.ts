@@ -1,6 +1,6 @@
-import { index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-// One shared audit report. The primary key is a human-readable slug of the
+// One saved audit report. The primary key is a human-readable slug of the
 // form `<orgs>-<yyyy-mm-dd>-<shorthash>` (e.g. `netlify-2026-06-17-1a2b3c4d`),
 // generated server-side from the report's content. `payload` holds the whole
 // AuditResult plus the config snapshot it was run with, so /report/:id can
@@ -33,5 +33,25 @@ export const reportTrustHistory = pgTable(
   (table) => [
     index("report_trust_history_org_key_idx").on(table.orgKey),
     index("report_trust_history_captured_at_idx").on(table.capturedAt),
+  ],
+);
+
+export const reportRerunSchedules = pgTable(
+  "report_rerun_schedules",
+  {
+    orgKey: text("org_key").primaryKey(),
+    orgs: jsonb("orgs_json").$type<string[]>().notNull(),
+    enabled: boolean().notNull().default(true),
+    nextRunAt: timestamp("next_run_at").notNull(),
+    lastRunAt: timestamp("last_run_at"),
+    lastReportId: text("last_report_id").references(() => reports.id, { onDelete: "set null" }),
+    lastError: text("last_error"),
+    consecutiveFailures: integer("consecutive_failures").notNull().default(0),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("report_rerun_schedules_enabled_next_run_at_idx").on(table.enabled, table.nextRunAt),
+    index("report_rerun_schedules_last_report_id_idx").on(table.lastReportId),
   ],
 );

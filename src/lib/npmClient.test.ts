@@ -55,6 +55,18 @@ describe("npm client", () => {
     });
   });
 
+  it("can fetch npm hosts directly for server-side reruns", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(textResponse("{}"));
+    vi.stubGlobal("fetch", fetchMock);
+    const url = "https://registry.npmjs.org/pkg";
+
+    await npmGet(url, new FailureLog(), 1, { mode: "direct" });
+
+    expect(fetchMock).toHaveBeenCalledWith(url, {
+      headers: { Accept: "application/json" },
+    });
+  });
+
   it("honors retry-after before retrying and does not log successful retries", async () => {
     vi.useFakeTimers();
     const fetchMock = vi

@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop -- Discovery intentionally resolves orgs and fast-npm-meta batches in a bounded sequence so failures stay attributable and upstream request shape matches the shell reference. */
 import { chunk } from "./concurrency";
-import { FailureLog, npmGet, npmGetJson } from "./npmClient";
+import { FailureLog, npmGet, npmGetJson, type NpmFetchOptions } from "./npmClient";
 import type { PkgMeta } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -16,7 +16,11 @@ import type { PkgMeta } from "./types";
  * those are private/unlisted/unreachable unauthenticated anyway. Documented
  * limitation, surfaced to the user in the UI.
  */
-export async function listOrgPackages(orgs: string[], failures: FailureLog): Promise<string[]> {
+export async function listOrgPackages(
+  orgs: string[],
+  failures: FailureLog,
+  fetchOptions: NpmFetchOptions = {},
+): Promise<string[]> {
   const seen = new Set<string>();
   for (const org of orgs) {
     const slug = org.trim();
@@ -24,6 +28,8 @@ export async function listOrgPackages(orgs: string[], failures: FailureLog): Pro
     const obj = await npmGetJson<Record<string, unknown>>(
       `https://registry.npmjs.org/-/org/${encodeURIComponent(slug)}/package`,
       failures,
+      5,
+      fetchOptions,
     );
     if (obj && typeof obj === "object") {
       for (const name of Object.keys(obj)) seen.add(name);
@@ -53,13 +59,14 @@ export async function resolveMeta(
   pkgs: string[],
   failures: FailureLog,
   onProgress?: (done: number, total: number) => void,
+  fetchOptions: NpmFetchOptions = {},
 ): Promise<PkgMeta[]> {
   const groups = chunk(pkgs, 100);
   const out: PkgMeta[] = [];
   let done = 0;
   for (const grp of groups) {
     const url = `https://npm.antfu.dev/${grp.join("+")}?metadata=true`;
-    const body = await npmGet(url, failures);
+    const body = await npmGet(url, failures, 5, fetchOptions);
     done += grp.length;
     onProgress?.(Math.min(done, pkgs.length), pkgs.length);
     if (!body) continue; // npmGet already recorded the exhausted failure

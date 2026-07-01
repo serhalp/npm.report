@@ -1,5 +1,6 @@
 /* eslint-disable no-await-in-loop -- Retry/backoff must wait between attempts; parallelizing retries would violate rate-limit handling. */
 import type { FetchFailure } from "./types";
+import type { NpmFetchMode } from "./types";
 
 // ---------------------------------------------------------------------------
 // npm_get — direct port of the bash helper shared by both scripts.
@@ -73,6 +74,14 @@ const PROXY_MOUNTS: Record<string, string> = {
   "npm.antfu.dev": "/api/npm-meta",
 };
 
+export interface NpmFetchOptions {
+  mode?: NpmFetchMode;
+}
+
+function defaultFetchMode(): NpmFetchMode {
+  return typeof window === "undefined" ? "direct" : "browser-proxy";
+}
+
 /**
  * Rewrite an upstream npm URL to go through its dedicated `/api/npm-*` edge
  * proxy. The upstream path + query is carried in the proxy URL's PATH (not a
@@ -95,14 +104,20 @@ function proxied(url: string): string {
   return url;
 }
 
-export async function npmGet(url: string, failures: FailureLog, tries = 5): Promise<string | null> {
+export async function npmGet(
+  url: string,
+  failures: FailureLog,
+  tries = 5,
+  options: NpmFetchOptions = {},
+): Promise<string | null> {
   let i = 0;
+  const target = (options.mode ?? defaultFetchMode()) === "browser-proxy" ? proxied(url) : url;
   for (;;) {
     i++;
     let code = 0;
     let retryAfter: string | null = null;
     try {
-      const res = await fetch(proxied(url), { headers: { Accept: "application/json" } });
+      const res = await fetch(target, { headers: { Accept: "application/json" } });
       code = res.status;
       if (code >= 200 && code < 300) return await res.text();
       if (code === 404) return null;
@@ -131,8 +146,9 @@ export async function npmGetJson<T = unknown>(
   url: string,
   failures: FailureLog,
   tries = 5,
+  options: NpmFetchOptions = {},
 ): Promise<T | null> {
-  const body = await npmGet(url, failures, tries);
+  const body = await npmGet(url, failures, tries, options);
   if (!body) return null;
   try {
     return JSON.parse(body) as T;

@@ -18,7 +18,7 @@ The TypeScript audit logic is a port of the original shell scripts in
 Requirements:
 
 - Node.js 26+
-- pnpm 11.5.2
+- pnpm 11.9.0
 
 ```bash
 pnpm install
@@ -52,21 +52,26 @@ pnpm run preview
 6. Run the audit. Results render as sortable tables with JSON copy and CSV
    download actions.
 7. Copy the automatically saved report link when you want to share the read-only snapshot.
+8. For all-package package trust reports, select "Track daily" to append one
+   automatic trust snapshot per day.
 
 ## Architecture
 
 - Vite, Svelte 5, and TypeScript provide a static client-side app.
-- Audit orchestration runs in the browser. There is no backend job runner for
-  npm audits.
+- Audit orchestration runs in the browser for interactive reports.
+- Daily tracking is the narrow server-side exception: an hourly Netlify
+  scheduled background function reruns only the all-package package trust report
+  for opted-in org sets.
 - npm fetches go through thin Netlify edge proxies:
   - `/api/npm-registry/*` -> `registry.npmjs.org`
   - `/api/npm-downloads/*` -> `api.npmjs.org`
   - `/api/npm-meta/*` -> `npm.antfu.dev`
 - Each proxy pins one upstream host server-side, streams the upstream response,
   adds CORS, and applies a 5-minute shared cache for successful responses.
-- Report links are the only stateful feature. `POST /api/reports` stores a completed
-  `AuditResult` plus display metadata in Netlify Database after each successful run;
-  `/report/:id` renders that snapshot read-only.
+- Report links and daily tracking are the only stateful features. `POST
+/api/reports` stores a completed `AuditResult` plus display metadata in
+  Netlify Database after each successful run; `/report/:id` renders that
+  snapshot read-only.
 
 ## Important Limits
 

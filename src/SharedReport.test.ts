@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/svelte";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import SharedReport from "./SharedReport.svelte";
 import { auditResult, recentReport } from "./test/fixtures";
@@ -30,6 +31,7 @@ describe("SharedReport", () => {
   });
 
   test("shows trust history for all-scope shared reports", async () => {
+    const user = userEvent.setup();
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
@@ -52,6 +54,20 @@ describe("SharedReport", () => {
                 },
               },
               createdAt: "2026-06-27T12:34:56.000Z",
+            }),
+          };
+        }
+        if (String(input) === "/api/reports/report-id/schedule-daily") {
+          return {
+            ok: true,
+            status: 201,
+            json: async () => ({
+              orgs: ["netlify"],
+              enabled: true,
+              nextRunAt: "2026-06-28T12:34:56.000Z",
+              lastRunAt: null,
+              lastReportId: "report-id",
+              consecutiveFailures: 0,
             }),
           };
         }
@@ -83,6 +99,8 @@ describe("SharedReport", () => {
       "href",
       "/report/report-id",
     );
+    await user.click(screen.getByRole("button", { name: "Track daily" }));
+    expect(await screen.findByRole("button", { name: "Tracking daily" })).toBeDisabled();
   });
 
   test("shows the specific not-found error for 404s", async () => {

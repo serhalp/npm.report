@@ -3,10 +3,12 @@
   import GhosttyTerminal from "./components/GhosttyTerminal.svelte";
   import HistoryPanel from "./components/HistoryPanel.svelte";
   import RecentReports from "./components/RecentReports.svelte";
+  import DailyTrackingButton from "./components/DailyTrackingButton.svelte";
   import ResultsView from "./components/ResultsView.svelte";
   import TagInput from "./components/TagInput.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import UserPublishView from "./components/UserPublishView.svelte";
+  import { DEFAULT_BOT_EXCLUSIONS, FETCH_CONCURRENCY } from "./lib/auditDefaults";
   import { parseMembers } from "./lib/members";
   import { FailureLog } from "./lib/npmClient";
   import type { SharedReportScope } from "./lib/reportHistory";
@@ -26,9 +28,6 @@
     scopeLabel: string;
     capturedAt: string;
   }
-
-  const DEFAULT_BOTS = ["GitHub Actions"];
-  const FETCH_CONCURRENCY = 12;
 
   const REPORT_META: { kind: ReportKind; title: string; desc: string }[] = [
     {
@@ -55,7 +54,7 @@
   let orgs: string[] = $state([]);
   let months = $state(12);
   let all = $state(true);
-  let bots: string[] = $state([...DEFAULT_BOTS]);
+  let bots: string[] = $state([...DEFAULT_BOT_EXCLUSIONS]);
   let selected: Record<ReportKind, boolean> = $state({
     recent: true,
     manual: true,
@@ -72,6 +71,8 @@
   let savingReport = $state(false);
   let reportSaveError = $state<string | null>(null);
   let shareUrl = $state<string | null>(null);
+  let savedReportId = $state<string | null>(null);
+  let savedReportCanTrackDaily = $state(false);
   let historyRefreshKey = $state(0);
   let saveAttempt = 0;
 
@@ -143,6 +144,8 @@
       if (!response.ok) throw new Error(`Save failed (${response.status})`);
       const { id } = (await response.json()) as { id: string };
       if (attempt !== saveAttempt) return;
+      savedReportId = id;
+      savedReportCanTrackDaily = context.scope === "all" && !!nextResult.recent;
       shareUrl = `${window.location.origin}/report/${id}`;
       historyRefreshKey++;
     } catch (reason) {
@@ -174,6 +177,8 @@
     running = true;
     result = null;
     shareUrl = null;
+    savedReportId = null;
+    savedReportCanTrackDaily = false;
     savingReport = false;
     reportSaveError = null;
     terminal?.clear();
@@ -457,9 +462,16 @@
             <span class="share-bar__hint">Link appears after the report is saved.</span>
           {/if}
         </div>
-        <button class="btn btn--ghost" type="button" onclick={copyShareLink} disabled={!shareUrl}>
-          Copy link
-        </button>
+        <div class="share-bar__actions">
+          <DailyTrackingButton
+            reportId={savedReportId}
+            enabled={savedReportCanTrackDaily}
+            onToast={showToast}
+          />
+          <button class="btn btn--ghost" type="button" onclick={copyShareLink} disabled={!shareUrl}>
+            Copy link
+          </button>
+        </div>
       </div>
       {#if shareUrl}
         <div class="share-link">

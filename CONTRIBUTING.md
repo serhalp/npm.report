@@ -6,7 +6,7 @@ changes small, behavior-driven, and aligned with the original shell scripts in
 
 ## Setup
 
-Use Node.js 26+ and pnpm 11.5.2.
+Use Node.js 26+ and pnpm 11.9.0.
 
 ```bash
 pnpm install
@@ -14,8 +14,8 @@ pnpm run dev
 ```
 
 The dev server runs the Vite app at `http://localhost:5173`. The Netlify Vite
-plugin wires local `/api/*` routes for the npm edge proxies and report-sharing
-function.
+plugin wires local `/api/*` routes for the npm edge proxies, report links, and
+daily package-trust tracking API.
 
 ## Before Changing Behavior
 
@@ -28,6 +28,8 @@ function.
   defaults should be broadly applicable automation accounts, not project-specific
   policy.
 - Keep npm proxying per-host. Do not create a host-generic proxy.
+- Keep scheduled reruns narrow: all-package package trust only, with direct npm
+  fetches from the Netlify function runtime.
 
 ## Checks
 
@@ -73,6 +75,8 @@ Svelte and TypeScript validation.
 - Agent-facing architecture or invariants are reflected in `AGENTS.md`.
 - New report types update types, orchestration, views, tabs, exports, and shared
   report rendering as needed.
+- Schedule or persistence changes include Drizzle schema updates and a Netlify
+  Database migration.
 - Relevant checks were run, or skipped checks are explicitly called out with a
   reason.
 

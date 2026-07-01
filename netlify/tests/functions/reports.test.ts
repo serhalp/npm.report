@@ -21,6 +21,18 @@ interface StoredTrustHistory {
   failureCount: number;
 }
 
+interface StoredRerunSchedule {
+  orgKey: string;
+  orgs: string[];
+  enabled: boolean;
+  nextRunAt: Date;
+  lastRunAt?: Date | null;
+  lastReportId?: string | null;
+  lastError?: string | null;
+  consecutiveFailures: number;
+  updatedAt?: Date;
+}
+
 function tableName(table: unknown): string {
   if (!table || typeof table !== "object") return "";
   const nameSymbol = Object.getOwnPropertySymbols(table).find((symbol) =>
@@ -35,18 +47,28 @@ function predicateValue(predicate: unknown): string | undefined {
     : undefined;
 }
 
-function makeDb(rows: Map<string, StoredReport>, historyRows: Map<string, StoredTrustHistory>) {
+function makeDb(
+  rows: Map<string, StoredReport>,
+  historyRows: Map<string, StoredTrustHistory>,
+  scheduleRows: Map<string, StoredRerunSchedule>,
+) {
+  const filterHistory = (predicate: unknown) => {
+    const value = predicateValue(predicate);
+    return [...historyRows.values()].filter(
+      (row) => row.orgKey === value || row.reportId === value,
+    );
+  };
+
   return {
     select: vi.fn(() => ({
       from: vi.fn((table: unknown) => {
         if (tableName(table) === "report_trust_history") {
           return {
             where: vi.fn((predicate: unknown) => ({
+              limit: vi.fn(async (limit: number) => filterHistory(predicate).slice(0, limit)),
               orderBy: vi.fn(() => ({
                 limit: vi.fn(async (limit: number) => {
-                  const orgKey = predicateValue(predicate);
-                  return [...historyRows.values()]
-                    .filter((row) => row.orgKey === orgKey)
+                  return filterHistory(predicate)
                     .toSorted(
                       (a, b) => new Date(a.capturedAt).getTime() - new Date(b.capturedAt).getTime(),
                     )
@@ -66,6 +88,14 @@ function makeDb(rows: Map<string, StoredReport>, historyRows: Map<string, Stored
           };
         }
 
+        if (tableName(table) === "report_rerun_schedules") {
+          return {
+            where: vi.fn(() => ({
+              limit: vi.fn(async (limit: number) => [...scheduleRows.values()].slice(0, limit)),
+            })),
+          };
+        }
+
         return {
           where: vi.fn(async (predicate: unknown) => {
             const id = predicateValue(predicate);
@@ -75,7 +105,7 @@ function makeDb(rows: Map<string, StoredReport>, historyRows: Map<string, Stored
       }),
     })),
     insert: vi.fn((table: unknown) => ({
-      values: vi.fn((row: StoredReport) => ({
+      values: vi.fn((row: StoredReport | StoredRerunSchedule) => ({
         onConflictDoNothing: vi.fn(async () => {
           if (tableName(table) === "report_trust_history") {
             const historyRow = row as unknown as StoredTrustHistory;
@@ -85,7 +115,16 @@ function makeDb(rows: Map<string, StoredReport>, historyRows: Map<string, Stored
             return;
           }
 
-          if (!rows.has(row.id)) rows.set(row.id, row);
+          const report = row as StoredReport;
+          if (!rows.has(report.id)) rows.set(report.id, report);
+        }),
+        onConflictDoUpdate: vi.fn(async ({ set }: { set: Partial<StoredRerunSchedule> }) => {
+          if (tableName(table) !== "report_rerun_schedules") return;
+          const schedule = row as StoredRerunSchedule;
+          scheduleRows.set(schedule.orgKey, {
+            ...schedule,
+            ...set,
+          });
         }),
       })),
     })),
@@ -95,17 +134,24 @@ function makeDb(rows: Map<string, StoredReport>, historyRows: Map<string, Stored
 async function loadHandler(
   rows = new Map<string, StoredReport>(),
   historyRows = new Map<string, StoredTrustHistory>(),
+  scheduleRows = new Map<string, StoredRerunSchedule>(),
 ) {
   vi.resetModules();
-  const db = makeDb(rows, historyRows);
-  vi.doMock("drizzle-orm", () => ({
-    asc: vi.fn((column: unknown) => ({ column })),
-    desc: vi.fn((column: unknown) => ({ column })),
-    eq: vi.fn((_column: unknown, value: string) => ({ value })),
-  }));
+  const db = makeDb(rows, historyRows, scheduleRows);
+  vi.doMock("drizzle-orm", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("drizzle-orm")>();
+    return {
+      ...actual,
+      and: vi.fn((...predicates: unknown[]) => ({ predicates })),
+      asc: vi.fn((column: unknown) => ({ column })),
+      desc: vi.fn((column: unknown) => ({ column })),
+      eq: vi.fn((_column: unknown, value: string) => ({ value })),
+      lte: vi.fn((_column: unknown, value: Date) => ({ value })),
+    };
+  });
   vi.doMock("../../../db/index.js", () => ({ db }));
   const mod = await import("../../functions/reports");
-  return { handler: mod.default, config: mod.config, db, rows, historyRows };
+  return { handler: mod.default, config: mod.config, db, rows, historyRows, scheduleRows };
 }
 
 beforeEach(() => {
@@ -127,7 +173,7 @@ function jsonPost(body: unknown) {
 }
 
 describe("reports function", () => {
-  it("stores shared reports under stable human-readable content IDs", async () => {
+  it("stores saved reports under stable human-readable content IDs", async () => {
     const { handler, rows } = await loadHandler();
     const payload = { recent: { rows: [] }, failures: [] };
 
@@ -208,7 +254,7 @@ describe("reports function", () => {
     });
   });
 
-  it("does not store history for manual or external only shares", async () => {
+  it("does not store history for manual or external only saves", async () => {
     const { handler, historyRows } = await loadHandler();
 
     await handler(
@@ -374,6 +420,57 @@ describe("reports function", () => {
     });
   });
 
+  it("enables daily tracking from saved all-scope trust reports only", async () => {
+    const history: StoredTrustHistory = {
+      reportId: "netlify-2026-06-27-aaaaaaaa",
+      orgKey: "netlify",
+      orgs: ["netlify"],
+      capturedAt: "2026-06-27T10:00:00.000Z",
+      total: 4,
+      stagedPublish: 0,
+      trustedPublisher: 1,
+      provenance: 1,
+      none: 2,
+      deprecated: 0,
+      failureCount: 0,
+    };
+    const { handler, scheduleRows } = await loadHandler(
+      new Map(),
+      new Map([[history.reportId, history]]),
+    );
+
+    const response = await handler(
+      new Request(`https://audit.example/api/reports/${history.reportId}/schedule-daily`, {
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toEqual({
+      orgs: ["netlify"],
+      enabled: true,
+      nextRunAt: "2026-06-28T10:00:00.000Z",
+      lastRunAt: null,
+      lastReportId: history.reportId,
+      consecutiveFailures: 0,
+    });
+    expect(scheduleRows.get("netlify")).toMatchObject({
+      orgKey: "netlify",
+      orgs: ["netlify"],
+      enabled: true,
+      nextRunAt: new Date("2026-06-28T10:00:00.000Z"),
+      lastReportId: history.reportId,
+      consecutiveFailures: 0,
+    });
+
+    const missing = await handler(
+      new Request("https://audit.example/api/reports/manual-only/schedule-daily", {
+        method: "POST",
+      }),
+    );
+    expect(missing.status).toBe(400);
+  });
+
   it("serves stored reports and returns 404 for missing ids", async () => {
     const row: StoredReport = {
       id: "netlify-2026-06-27-deadbeef",
@@ -412,7 +509,13 @@ describe("reports function", () => {
     ).resolves.toMatchObject({ status: 400 });
 
     expect(config).toEqual({
-      path: ["/api/reports", "/api/reports/history", "/api/reports/recent", "/api/reports/:id"],
+      path: [
+        "/api/reports",
+        "/api/reports/history",
+        "/api/reports/recent",
+        "/api/reports/:id",
+        "/api/reports/:id/schedule-daily",
+      ],
     });
   });
 });

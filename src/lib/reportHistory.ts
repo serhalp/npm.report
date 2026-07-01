@@ -28,6 +28,15 @@ export interface RecentTrustReportsResponse {
   reports: RecentTrustReportLink[];
 }
 
+export interface ReportRerunScheduleStatus {
+  orgs: string[];
+  enabled: boolean;
+  nextRunAt: string;
+  lastRunAt: string | null;
+  lastReportId: string | null;
+  consecutiveFailures: number;
+}
+
 export interface TrustHistorySnapshot {
   orgKey: string;
   orgs: string[];

@@ -50,9 +50,15 @@ export async function discoverInScope(
   log: LogFn,
 ): Promise<PkgMeta[]> {
   log(`[recent] listing packages in: ${config.orgs.join(" ")}`);
-  const pkgs = await listOrgPackages(config.orgs, failures);
+  const fetchOptions = { mode: config.npmFetchMode };
+  const pkgs = await listOrgPackages(config.orgs, failures, fetchOptions);
   log(`[recent] ${pkgs.length} packages; checking latest release metadata...`);
-  const meta = await resolveMeta(pkgs, failures, (d, t) => log(`[recent]   resolved ${d}/${t}`));
+  const meta = await resolveMeta(
+    pkgs,
+    failures,
+    (d, t) => log(`[recent]   resolved ${d}/${t}`),
+    fetchOptions,
+  );
   const scope = inScope(meta, config);
   const scopeLabel = config.all ? "ALL org packages" : `last ${config.months} months`;
   log(`[recent] in scope (${scopeLabel}): ${scope.length} packages`);
@@ -73,6 +79,8 @@ export async function runRecent(
     const manifest = await npmGetJson<Record<string, unknown>>(
       versionUrl(m.name, m.version),
       failures,
+      5,
+      { mode: config.npmFetchMode },
     );
     const trust = getTrustStatus(manifest ?? {});
     done++;
@@ -101,6 +109,7 @@ export async function runRecent(
     (d, t) => {
       if (d % 20 === 0 || d === t) log(`[recent]   downloads ${d}/${t}`);
     },
+    { mode: config.npmFetchMode },
   );
   for (const r of rows) {
     r.downloads = dl.has(r.pkg) ? dl.get(r.pkg)! : null;
@@ -155,7 +164,9 @@ export async function runManual(
   );
   let done = 0;
   const nested: ManualRow[][] = await mapLimit(packages, config.jobs, async (pkg) => {
-    const doc = await npmGetJson<Packument>(pkgUrl(pkg), failures);
+    const doc = await npmGetJson<Packument>(pkgUrl(pkg), failures, 5, {
+      mode: config.npmFetchMode,
+    });
     done++;
     if (done % 25 === 0 || done === packages.length)
       log(`[manual]   scanned ${done}/${packages.length}`);
@@ -211,11 +222,13 @@ export async function runExternal(
 ): Promise<ExternalReport> {
   const memberSet = new Set(members.map((m) => m.toLowerCase()));
   log(`[external] listing all packages in: ${config.orgs.join(" ")}`);
-  const pkgs = await listOrgPackages(config.orgs, failures);
+  const pkgs = await listOrgPackages(config.orgs, failures, { mode: config.npmFetchMode });
   log(`[external] scanning ${pkgs.length} packages for current maintainers...`);
   let done = 0;
   const nested: ExternalRow[][] = await mapLimit(pkgs, config.jobs, async (pkg) => {
-    const doc = await npmGetJson<MaintainerDoc>(pkgUrl(pkg), failures);
+    const doc = await npmGetJson<MaintainerDoc>(pkgUrl(pkg), failures, 5, {
+      mode: config.npmFetchMode,
+    });
     done++;
     if (done % 25 === 0 || done === pkgs.length) log(`[external]   scanned ${done}/${pkgs.length}`);
     if (!doc || !doc.maintainers) return [];
