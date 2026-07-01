@@ -9,5 +9,6 @@
 /.vite/
 /.env
 /.env.*
+/.svelte-check/
 
 .DS_Store

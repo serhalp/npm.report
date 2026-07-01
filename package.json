@@ -19,7 +19,7 @@
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
-    "typecheck": "svelte-check --tsconfig ./tsconfig.json"
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json --tsgo"
   },
   "dependencies": {
     "@lucide/svelte": "^1.22.0",
@@ -41,6 +41,7 @@
     "@testing-library/svelte": "^5.4.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^26.0.1",
+    "@typescript/native-preview": "7.0.0-dev.20260629.1",
     "@vitest/coverage-v8": "4.1.9",
     "drizzle-kit": "1.0.0-rc.4-ca0f029",
     "jsdom": "^29.1.1",
