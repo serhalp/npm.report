@@ -22,7 +22,7 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
-    "@lucide/svelte": "^1.21.0",
+    "@lucide/svelte": "^1.22.0",
     "@netlify/database": "^1.1.0",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "drizzle-orm": "1.0.0-rc.4-5d5b77c",
@@ -44,9 +44,9 @@
     "@vitest/coverage-v8": "4.1.9",
     "drizzle-kit": "1.0.0-rc.4-ca0f029",
     "jsdom": "^29.1.1",
-    "knip": "^6.21.0",
-    "oxfmt": "^0.56.0",
-    "oxlint": "^1.71.0",
+    "knip": "^6.23.0",
+    "oxfmt": "^0.57.0",
+    "oxlint": "^1.72.0",
     "sonda": "^0.13.1",
     "svelte-check": "^4.7.1",
     "typescript": "6.0.3",
