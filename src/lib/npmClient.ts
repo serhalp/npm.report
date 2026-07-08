@@ -141,7 +141,13 @@ export async function npmGet(
   }
 }
 
-/** Convenience: npm_get + JSON.parse, returning null on empty/parse error. */
+/**
+ * Convenience: npm_get + JSON.parse. An empty body (null / "") is a
+ * legitimately-empty result and returns null silently. But a NON-empty body
+ * that fails to parse (e.g. a 200 HTML rate-limit interstitial) is NOT empty —
+ * treating it as such would silently zero out an audit, so it's recorded in the
+ * FailureLog per the "no silent failure" invariant, matching discovery.ts.
+ */
 export async function npmGetJson<T = unknown>(
   url: string,
   failures: FailureLog,
@@ -153,6 +159,7 @@ export async function npmGetJson<T = unknown>(
   try {
     return JSON.parse(body) as T;
   } catch {
+    failures.add(url, "unparseable JSON response");
     return null;
   }
 }

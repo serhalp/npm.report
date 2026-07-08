@@ -4,6 +4,7 @@
   import ResultsView from "./components/ResultsView.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import type { AuditResult } from "./lib/runAudit";
+  import { parseOrNull, ReportRecordSchema } from "./lib/schemas";
 
   interface ReportRecord {
     id: string;
@@ -54,7 +55,11 @@
       .then(async (response) => {
         if (response.status === 404) throw new Error("This report could not be found.");
         if (!response.ok) throw new Error(`Failed to load report (${response.status}).`);
-        return (await response.json()) as ReportRecord;
+        const data: unknown = await response.json();
+        if (!parseOrNull(ReportRecordSchema, data)) {
+          throw new Error("This report is in an unexpected format and can't be displayed.");
+        }
+        return data as ReportRecord;
       })
       .then((next) => {
         if (!cancelled) record = next;

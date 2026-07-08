@@ -224,7 +224,7 @@ importers:
         version: 7.1.2(svelte@5.56.4(@typescript-eslint/types@8.62.0))(vite@8.1.0(@types/node@26.0.1)(esbuild@0.28.0)(jiti@2.7.0)(yaml@2.9.0))
       drizzle-orm:
         specifier: 1.0.0-rc.4-5d5b77c
-        version: 1.0.0-rc.4-5d5b77c(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(pg@8.22.0)(zod@4.4.3)
+        version: 1.0.0-rc.4-5d5b77c(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(pg@8.22.0)(valibot@1.4.2(typescript@6.0.3))(zod@4.4.3)
       ghostty-web:
         specifier: ^0.4.0
         version: 0.4.0
@@ -234,6 +234,9 @@ importers:
       svelte:
         specifier: ^5.56.4
         version: 5.56.4(@typescript-eslint/types@8.62.0)
+      valibot:
+        specifier: ^1.4.2
+        version: 1.4.2(typescript@6.0.3)
     devDependencies:
       '@axe-core/playwright':
         specifier: ^4.12.1
@@ -4579,6 +4582,14 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
+  valibot@1.4.2:
+    resolution: {integrity: sha512-gjdCvJ6d3RyHAneqxMYMW9QMCwYMb3jpOO0IyHZV1bnRHFBHrX3VkIILt5XYR0WhwHiH7Mty8ovuPZ/O3gamrg==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
 
@@ -6990,11 +7001,12 @@ snapshots:
       get-tsconfig: 4.14.0
       jiti: 2.7.0
 
-  drizzle-orm@1.0.0-rc.4-5d5b77c(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(pg@8.22.0)(zod@4.4.3):
+  drizzle-orm@1.0.0-rc.4-5d5b77c(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(pg@8.22.0)(valibot@1.4.2(typescript@6.0.3))(zod@4.4.3):
     optionalDependencies:
       '@neondatabase/serverless': 1.1.0
       '@opentelemetry/api': 1.9.0
       pg: 8.22.0
+      valibot: 1.4.2(typescript@6.0.3)
       zod: 4.4.3
 
   dunder-proto@1.0.1:
@@ -9026,6 +9038,10 @@ snapshots:
   urlpattern-polyfill@8.0.2: {}
 
   util-deprecate@1.0.2: {}
+
+  valibot@1.4.2(typescript@6.0.3):
+    optionalDependencies:
+      typescript: 6.0.3
 
   validate-npm-package-license@3.0.4:
     dependencies:

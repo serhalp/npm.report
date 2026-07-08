@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { RecentTrustReportLink, RecentTrustReportsResponse } from "../lib/reportHistory";
+  import { parseOrNull, RecentTrustReportsResponseSchema } from "../lib/schemas";
 
   let reports = $state<RecentTrustReportLink[]>([]);
   let loading = $state(true);
@@ -19,7 +20,10 @@
     fetch("/api/reports/recent")
       .then(async (response) => {
         if (!response.ok) return { reports: [] };
-        return (await response.json()) as Partial<RecentTrustReportsResponse>;
+        const data = await response.json();
+        return parseOrNull(RecentTrustReportsResponseSchema, data)
+          ? (data as RecentTrustReportsResponse)
+          : { reports: [] };
       })
       .then((body) => {
         if (!cancelled) reports = Array.isArray(body.reports) ? body.reports : [];

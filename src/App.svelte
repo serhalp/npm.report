@@ -15,6 +15,7 @@
   import { scopeLabelFor } from "./lib/reportHistory";
   import { runUserPublishes } from "./lib/reports";
   import { runAudit, type AuditResult } from "./lib/runAudit";
+  import { parseOrNull, SaveResponseSchema } from "./lib/schemas";
   import type { AuditConfig, ReportKind, UserPublishReport } from "./lib/types";
 
   type TerminalHandle = {
@@ -142,7 +143,10 @@
         }),
       });
       if (!response.ok) throw new Error(`Save failed (${response.status})`);
-      const { id } = (await response.json()) as { id: string };
+      const data = await response.json();
+      if (!parseOrNull(SaveResponseSchema, data))
+        throw new Error("Save failed (unexpected response)");
+      const { id } = data as { id: string };
       if (attempt !== saveAttempt) return;
       savedReportId = id;
       savedReportCanTrackDaily = context.scope === "all" && !!nextResult.recent;
@@ -166,7 +170,7 @@
       error = "Select at least one report.";
       return;
     }
-    if (selected.external && members.length === 0 && selectedKinds.length === 1) {
+    if (selected.external && members.length === 0) {
       error =
         "The external report needs your npm org member list. npm does not expose org membership publicly.";
       return;

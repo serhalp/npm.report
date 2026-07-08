@@ -15,6 +15,7 @@ import {
   saveReportSnapshot,
 } from "./_shared/report-persistence.js";
 import { scheduleDailyTrustReport } from "./_shared/report-schedules.js";
+import { ReportPostBodySchema, parseOrNull } from "../../src/lib/schemas.js";
 
 const RECENT_REPORT_LIMIT = 5;
 
@@ -104,20 +105,15 @@ export default async (req: Request) => {
 
     if (id) return new Response("Not found", { status: 404 });
 
-    let body: {
-      orgs?: string[];
-      scope?: unknown;
-      scopeLabel?: string;
-      capturedAt?: string;
-      payload?: unknown;
-    };
+    let raw: unknown;
     try {
-      body = await req.json();
+      raw = await req.json();
     } catch {
       return new Response("Invalid JSON", { status: 400 });
     }
-    if (!body || typeof body !== "object" || body.payload == null) {
-      return new Response("Missing payload", { status: 400 });
+    const body = parseOrNull(ReportPostBodySchema, raw);
+    if (!body) {
+      return new Response("Missing or invalid report body", { status: 400 });
     }
     const orgs = Array.isArray(body.orgs) ? body.orgs.map(String) : [];
     const scope = parseScope(body.scope, body.scopeLabel);

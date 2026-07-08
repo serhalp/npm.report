@@ -1,6 +1,7 @@
 <script lang="ts">
   import Stat from "./Stat.svelte";
   import type { ReportHistoryResponse, ReportTrustHistoryPoint } from "../lib/reportHistory";
+  import { parseOrNull, ReportHistoryResponseSchema } from "../lib/schemas";
   import type { TrustLevel } from "../lib/types";
 
   interface Props {
@@ -82,7 +83,10 @@
     fetch(`/api/reports/history?${params}`)
       .then(async (next) => {
         if (!next.ok) return { orgs: cleanOrgs, points: [] };
-        return (await next.json()) as Partial<ReportHistoryResponse>;
+        const data = await next.json();
+        return parseOrNull(ReportHistoryResponseSchema, data)
+          ? (data as ReportHistoryResponse)
+          : { orgs: cleanOrgs, points: [] };
       })
       .then((body) => {
         if (cancelled || token !== refreshKey) return;

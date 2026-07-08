@@ -84,7 +84,7 @@ describe("npm client", () => {
     expect(failures.count).toBe(0);
   });
 
-  it("treats 404 as legitimately empty and JSON parse errors as empty", async () => {
+  it("treats 404 as legitimately empty but logs a non-empty unparseable body as a failure", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(textResponse("missing", 404))
@@ -92,9 +92,15 @@ describe("npm client", () => {
     vi.stubGlobal("fetch", fetchMock);
     const failures = new FailureLog();
 
+    // 404 is a legitimately-empty result: null, nothing recorded.
     await expect(npmGet("https://registry.npmjs.org/nope", failures)).resolves.toBeNull();
-    await expect(npmGetJson("https://registry.npmjs.org/nope", failures)).resolves.toBeNull();
     expect(failures.count).toBe(0);
+
+    // A 200 whose body isn't JSON (e.g. an HTML rate-limit interstitial) is NOT
+    // empty — it must be recorded so the UI can warn results are incomplete.
+    const url = "https://registry.npmjs.org/bad";
+    await expect(npmGetJson(url, failures)).resolves.toBeNull();
+    expect(failures.failures).toEqual([{ url, reason: "unparseable JSON response" }]);
   });
 
   it("formats registry URLs and ISO epochs", () => {

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { CalendarClock } from "@lucide/svelte";
   import type { ReportRerunScheduleStatus } from "../lib/reportHistory";
+  import { parseOrNull, ReportRerunScheduleStatusSchema } from "../lib/schemas";
 
   interface Props {
     reportId: string | null;
@@ -22,7 +23,11 @@
         method: "POST",
       });
       if (!response.ok) throw new Error(`Tracking failed (${response.status})`);
-      const body = (await response.json()) as ReportRerunScheduleStatus;
+      const data = await response.json();
+      if (!parseOrNull(ReportRerunScheduleStatusSchema, data)) {
+        throw new Error("Tracking failed (unexpected response)");
+      }
+      const body = data as ReportRerunScheduleStatus;
       status = "done";
       message = `Next run ${new Date(body.nextRunAt).toISOString().slice(0, 10)}.`;
       onToast("Daily tracking enabled");
