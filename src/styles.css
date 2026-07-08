@@ -716,6 +716,30 @@ textarea {
   }
 }
 
+/* Visually-hidden but exposed to assistive tech (e.g. the progress log's
+   live region). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Honor a user's reduced-motion preference for decorative entrance/toast
+   animations. */
+@media (prefers-reduced-motion: reduce) {
+  .results,
+  .toast {
+    animation: none;
+  }
+}
+
 .results__head {
   display: flex;
   align-items: baseline;
@@ -1060,6 +1084,12 @@ table.data th .sort-button {
   all: unset;
   cursor: pointer;
   display: inline-block;
+}
+/* `all: unset` strips the default focus ring, so restore a visible one. */
+table.data th .sort-button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 table.data th .arrow {
   color: var(--gold);

@@ -102,7 +102,7 @@
   {/if}
 
   {#if result.failures.length > 0}
-    <p class="inline-error incomplete-warning">
+    <p class="inline-error incomplete-warning" role="alert">
       {result.failures.length} fetch(es) failed after retries — results may be INCOMPLETE.
     </p>
   {/if}

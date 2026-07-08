@@ -6,6 +6,10 @@
   let host: HTMLDivElement | null = $state(null);
   let failed = $state(false);
   let fallbackLog = $state("");
+  // Plain-text mirror of every line, always kept regardless of whether the
+  // canvas terminal rendered it — this backs the screen-reader live region so
+  // progress and the "results may be INCOMPLETE" warning are announced.
+  let srLog = $state("");
   let term: Terminal | null = null;
 
   function colorize(line: string): string {
@@ -69,6 +73,7 @@
   });
 
   export function writeLine(line: string) {
+    srLog += `${line}\n`;
     if (term) {
       try {
         term.writeln(colorize(line));
@@ -88,6 +93,7 @@
       // ignore clear errors
     }
     fallbackLog = "";
+    srLog = "";
   }
 </script>
 
@@ -99,8 +105,9 @@
     <span class="label">audit · stream</span>
   </div>
   {#if failed}
-    <pre class="term-fallback">{fallbackLog}</pre>
+    <pre class="term-fallback" aria-hidden="true">{fallbackLog}</pre>
   {:else}
-    <div bind:this={host} class="term-host"></div>
+    <div bind:this={host} class="term-host" aria-hidden="true"></div>
   {/if}
+  <div class="sr-only" role="log" aria-live="polite" aria-label="Audit progress log">{srLog}</div>
 </div>

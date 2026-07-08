@@ -67,7 +67,14 @@
     <thead>
       <tr>
         {#each columns as column (column.key)}
-          <th class:num={column.numeric}>
+          <th
+            class:num={column.numeric}
+            aria-sort={sortKey === column.key
+              ? dir === "asc"
+                ? "ascending"
+                : "descending"
+              : "none"}
+          >
             <button type="button" class="sort-button" title="Sort" onclick={() => sort(column)}>
               {column.header}
               {#if sortKey === column.key}
