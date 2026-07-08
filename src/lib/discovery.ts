@@ -11,7 +11,7 @@ import type { PkgMeta } from "./types";
 /**
  * All packages across the given orgs, deduped & sorted.
  *
- * registry.npmjs.org/-/org/<org>/package HARD-CAPS at 250 (alphabetical) and
+ * registry.npmjs.org/-/org/<org>/package hard-caps at 250 (alphabetical) and
  * ignores every pagination param — orgs larger than 250 lose the tail, and
  * those are private/unlisted/unreachable unauthenticated anyway. Documented
  * limitation, surfaced to the user in the UI.
@@ -49,7 +49,7 @@ interface FastMetaItem {
 /**
  * Resolve latest version + publishedAt + deprecated for each package via
  * fast-npm-meta (npm.antfu.dev), batched. Names are joined with '+'; scoped
- * names keep their literal slash. Per the original design there is DELIBERATELY
+ * names keep their literal slash. Per the original design there is deliberately
  * no registry fallback for this discovery step.
  *
  * Chunked at 100 (the upstream swallowed ~400 names in one URL, but 100 is the

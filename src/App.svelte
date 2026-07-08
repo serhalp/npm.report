@@ -33,7 +33,7 @@
     {
       kind: "recent",
       title: "package trust level",
-      desc: "Trust status (provenance / trusted publishing) of each package’s latest release.",
+      desc: "Trust status (provenance / trusted publishing) of each package's latest release.",
     },
     {
       kind: "manual",

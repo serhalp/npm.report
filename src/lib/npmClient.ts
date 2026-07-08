@@ -66,7 +66,7 @@ export function retryDelayMs(retryAfter: string | null, attempt: number): number
 
 // Upstream npm hosts that no longer reliably send CORS headers, so the browser
 // must reach them through our edge proxies (which also add a short shared
-// cache). Each host has its OWN proxy with the host hardcoded server-side — the
+// cache). Each host has its own proxy with the host hardcoded server-side — the
 // host is never sent in the request, so the proxy can't be steered elsewhere.
 const PROXY_MOUNTS: Record<string, string> = {
   "registry.npmjs.org": "/api/npm-registry",

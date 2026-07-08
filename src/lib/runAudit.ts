@@ -53,7 +53,7 @@ export async function runAudit(
 
   if (want.has("external")) {
     if (members.length === 0) {
-      log("[external] SKIPPED: no org members supplied (membership isn’t public)");
+      log("[external] SKIPPED: no org members supplied (membership isn't public)");
     } else {
       result.external = await runExternal(config, members, failures, log);
     }

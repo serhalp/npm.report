@@ -1,9 +1,5 @@
 # Product
 
-## Register
-
-product
-
 ## Users
 
 Security engineers, maintainers, and release owners auditing public npm organization packages. They use the tool during supply-chain reviews to understand trusted publishing coverage, recent manual publishes, and publish access held by non-members.

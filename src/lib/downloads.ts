@@ -5,9 +5,9 @@ import { FailureLog, npmGetJson, sleep, type NpmFetchOptions } from "./npmClient
 // ---------------------------------------------------------------------------
 // Weekly downloads — ported from npm-audit.sh `add_downloads`.
 //
-// api.npmjs.org downloads is a STRICT token bucket: ~5 requests then 429,
-// regardless of concurrency; it refills fine paced at ~2 req/s. The BULK
-// endpoint (comma-separated, up to 128) only accepts UNSCOPED names — scoped
+// api.npmjs.org downloads is a strict token bucket: ~5 requests then 429,
+// regardless of concurrency; it refills fine paced at ~2 req/s. The bulk
+// endpoint (comma-separated, up to 128) only accepts unscoped names — scoped
 // names 400. So:
 //   - unscoped: bulk, 100 per request (free)
 //   - scoped:   sequential + 500ms delay (do NOT parallelize)

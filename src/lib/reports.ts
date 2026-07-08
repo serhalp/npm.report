@@ -35,7 +35,7 @@ function inScope(meta: PkgMeta[], config: AuditConfig): PkgMeta[] {
 }
 
 // ---------------------------------------------------------------------------
-// recent — trust status of each in-scope package's `latest` release.
+// recent: trust status of each in-scope package's `latest` release.
 // ---------------------------------------------------------------------------
 
 /**
@@ -143,7 +143,7 @@ export async function runRecent(
 }
 
 // ---------------------------------------------------------------------------
-// manual — who published MANUALLY (non-bot account) in the window.
+// manual: who published manually (non-bot account) in the window.
 // ---------------------------------------------------------------------------
 
 interface Packument {
@@ -206,7 +206,7 @@ export async function runManual(
 }
 
 // ---------------------------------------------------------------------------
-// external — users who can publish NOW but aren't org members.
+// external: users who can publish now but aren't org members.
 // ---------------------------------------------------------------------------
 
 interface MaintainerDoc {
@@ -265,9 +265,9 @@ export async function runExternal(
 }
 
 // ---------------------------------------------------------------------------
-// user-publishes — versions a specific npm user PERSONALLY published in the
+// user-publishes: versions a specific npm user personally published in the
 // window (port of npm-user-publishes.sh). Universe = the user's own maintained
-// packages UNION an optional extra package set (e.g. an org's recent cache).
+// packages plus an optional extra package set (e.g. an org's recent cache).
 // ---------------------------------------------------------------------------
 
 export async function runUserPublishes(

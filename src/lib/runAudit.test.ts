@@ -78,7 +78,7 @@ describe("runAudit", () => {
     expect(result).toHaveProperty("manual");
     expect(result).not.toHaveProperty("external");
     expect(log).toHaveBeenCalledWith(
-      "[external] SKIPPED: no org members supplied (membership isn’t public)",
+      "[external] SKIPPED: no org members supplied (membership isn't public)",
     );
     expect(log).toHaveBeenLastCalledWith("Done.");
   });

@@ -13,7 +13,7 @@
 // wrapper that pins ONE upstream host and forwards through here.
 //
 // Security model (deliberate — see AGENTS.md):
-//   - The upstream host is a hardcoded argument, NEVER read from the request.
+//   - The upstream host is a hardcoded argument, never read from the request.
 //     There is no `?url=` parameter and nothing the caller sends can change
 //     which host we talk to, so this can't be turned into an open relay / SSRF
 //     pivot.
