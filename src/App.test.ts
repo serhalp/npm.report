@@ -58,7 +58,7 @@ describe("App", () => {
     expect(limitScope).not.toBeChecked();
     expect(screen.queryByRole("spinbutton", { name: "Window (months)" })).not.toBeInTheDocument();
 
-    await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
+    await user.type(screen.getByPlaceholderText(/nuxt, vue/i), "netlify{Enter}");
     expect(await screen.findByText("No history yet")).toBeInTheDocument();
 
     await user.click(limitScope);
@@ -70,7 +70,7 @@ describe("App", () => {
     const user = userEvent.setup();
     render(App);
 
-    await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
+    await user.type(screen.getByPlaceholderText(/nuxt, vue/i), "netlify{Enter}");
     await user.click(screen.getByRole("checkbox", { name: /^package trust level\b/i }));
     await user.click(screen.getByRole("checkbox", { name: /^manual\b/i }));
     await user.click(screen.getByRole("button", { name: "Run audit" }));
@@ -83,7 +83,7 @@ describe("App", () => {
     const user = userEvent.setup();
     render(App);
 
-    await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
+    await user.type(screen.getByPlaceholderText(/nuxt, vue/i), "netlify{Enter}");
     await user.click(screen.getByRole("checkbox", { name: /^package trust level\b/i }));
     await user.click(screen.getByRole("checkbox", { name: /^manual\b/i }));
     await user.click(screen.getByRole("checkbox", { name: /^external\b/i }));
@@ -101,7 +101,7 @@ describe("App", () => {
     });
     render(App);
 
-    await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
+    await user.type(screen.getByPlaceholderText(/nuxt, vue/i), "netlify{Enter}");
     await user.click(screen.getByRole("checkbox", { name: /^external\b/i }));
     await fireEvent.input(screen.getByLabelText(/org membership/i), {
       target: { value: '{"Alice": "owner", "bob": "developer"}' },
@@ -155,7 +155,7 @@ describe("App", () => {
 
     render(App);
 
-    await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
+    await user.type(screen.getByPlaceholderText(/nuxt, vue/i), "netlify{Enter}");
     await user.click(screen.getByRole("button", { name: "Run audit" }));
 
     const resultsHeading = await screen.findByRole("heading", { name: "Audit results" });
@@ -236,7 +236,7 @@ describe("App", () => {
 
     render(App);
 
-    await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
+    await user.type(screen.getByPlaceholderText(/nuxt, vue/i), "netlify{Enter}");
     await user.click(screen.getByRole("button", { name: "Run audit" }));
     await screen.findByRole("heading", { name: "Audit results" });
 
@@ -270,7 +270,7 @@ describe("App", () => {
 
     render(App);
 
-    await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
+    await user.type(screen.getByPlaceholderText(/nuxt, vue/i), "netlify{Enter}");
     await user.click(screen.getByRole("button", { name: "Run audit" }));
     await screen.findByRole("heading", { name: "Audit results" });
     expect(await screen.findByText(/netlify-2026-06-27-abc12345/)).toBeInTheDocument();
@@ -293,7 +293,7 @@ describe("App", () => {
 
     render(App);
 
-    await user.type(screen.getByPlaceholderText(/netlify, gatsbyjs/i), "netlify{Enter}");
+    await user.type(screen.getByPlaceholderText(/nuxt, vue/i), "netlify{Enter}");
     await user.click(screen.getByRole("button", { name: "Run audit" }));
     await screen.findByRole("heading", { name: "Audit results" });
     await user.type(screen.getByLabelText("npm username"), "alice");

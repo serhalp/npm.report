@@ -311,7 +311,7 @@
             id="orgs"
             values={orgs}
             onChange={(next) => (orgs = next)}
-            placeholder="e.g. netlify, gatsbyjs — Enter to add"
+            placeholder="e.g. nuxt, vue — Enter to add"
           />
           <p class="desc">
             One or more npm org slugs. The registry caps org listings at 250 packages
