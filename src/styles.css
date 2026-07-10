@@ -70,6 +70,14 @@
   --shadow: 0 12px 36px -18px rgba(0, 0, 0, 0.7);
   --row-hover: rgba(255, 255, 255, 0.02);
   --term-bg: #0b0f15;
+  /* The progress terminal is always dark (in both themes), so its text needs
+     fixed light-on-dark colors — NOT --fg etc., which flip to dark in light mode
+     and become unreadable on the dark terminal. Deliberately not redefined in the
+     light-theme block below. */
+  --term-fg: #d7dde5;
+  --term-warn: #e0a458;
+  --term-err: #e0675a;
+  --term-done: #d8a657;
   --primary-hover: #e6b66a;
 }
 
@@ -638,20 +646,20 @@ textarea {
   font-family: var(--mono);
   font-size: var(--text-md);
   line-height: 1.5;
-  color: var(--fg);
+  color: var(--term-fg);
 }
 .term-line {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .term-line--warn {
-  color: var(--warn);
+  color: var(--term-warn);
 }
 .term-line--err {
-  color: var(--danger);
+  color: var(--term-err);
 }
 .term-line--done {
-  color: var(--gold);
+  color: var(--term-done);
   font-weight: 600;
 }
 
