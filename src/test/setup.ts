@@ -59,28 +59,3 @@ afterEach(() => {
   document.documentElement.removeAttribute("data-theme-mode");
   document.documentElement.style.colorScheme = "";
 });
-
-vi.mock("ghostty-web", () => {
-  class Terminal {
-    lines: string[] = [];
-    open = vi.fn();
-    writeln = vi.fn((line: string) => {
-      this.lines.push(line);
-    });
-    clear = vi.fn(() => {
-      this.lines = [];
-    });
-    dispose = vi.fn();
-    loadAddon = vi.fn();
-  }
-
-  class FitAddon {
-    fit = vi.fn();
-  }
-
-  return {
-    init: vi.fn().mockResolvedValue(undefined),
-    Terminal,
-    FitAddon,
-  };
-});

@@ -195,7 +195,7 @@ describe("trust rerun schedules", () => {
       expect.any(Function),
     );
     const savedId = schedules.get("netlify")?.lastReportId;
-    expect(savedId).toMatch(/^netlify-2026-06-28-[a-f0-9]{8}$/);
+    expect(savedId).toMatch(/^netlify-2026-06-28-[a-f0-9]{16}$/);
     expect(schedules.get("netlify")).toMatchObject({
       lastRunAt: new Date("2026-06-28T12:00:00.000Z"),
       nextRunAt: new Date("2026-06-29T12:00:00.000Z"),
@@ -211,6 +211,64 @@ describe("trust rerun schedules", () => {
       trustedPublisher: 1,
       provenance: 1,
     });
+  });
+
+  it("records a failure and keeps the schedule enabled when the rerun throws", async () => {
+    const schedules = new Map<string, StoredRerunSchedule>([
+      [
+        "netlify",
+        {
+          orgKey: "netlify",
+          orgs: ["netlify"],
+          enabled: true,
+          nextRunAt: new Date("2026-06-28T11:00:00.000Z"),
+          lastRunAt: null,
+          lastReportId: "netlify-old",
+          lastError: null,
+          consecutiveFailures: 0,
+        },
+      ],
+    ]);
+    const { processDueTrustReruns, runAudit } = await loadProcessor(schedules);
+    runAudit.mockRejectedValueOnce(new Error("registry down"));
+
+    await expect(processDueTrustReruns()).resolves.toEqual({ checked: 1, succeeded: 0, failed: 1 });
+
+    // The failure is recorded but the schedule stays enabled and just retries in
+    // an hour — it is NOT auto-disabled (documents the open "retries forever" gap).
+    expect(schedules.get("netlify")).toMatchObject({
+      enabled: true,
+      consecutiveFailures: 1,
+      lastError: "registry down",
+      nextRunAt: new Date("2026-06-28T13:00:00.000Z"),
+    });
+  });
+
+  it("succeeds without storing history when the rerun yields no extractable summary", async () => {
+    const schedules = new Map<string, StoredRerunSchedule>([
+      [
+        "netlify",
+        {
+          orgKey: "netlify",
+          orgs: ["netlify"],
+          enabled: true,
+          nextRunAt: new Date("2026-06-28T11:00:00.000Z"),
+          lastRunAt: null,
+          lastReportId: "netlify-old",
+          lastError: null,
+          consecutiveFailures: 0,
+        },
+      ],
+    ]);
+    const { processDueTrustReruns, runAudit, reports, history } = await loadProcessor(schedules);
+    // A rerun that returns no `recent` summary yields nothing to extract.
+    runAudit.mockResolvedValueOnce({ failures: [] } as never);
+
+    await expect(processDueTrustReruns()).resolves.toEqual({ checked: 1, succeeded: 1, failed: 0 });
+
+    expect(history.size).toBe(0); // no trust-history row written
+    expect(reports.size).toBe(1); // but the report snapshot was still saved
+    expect(schedules.get("netlify")).toMatchObject({ consecutiveFailures: 0, lastError: null });
   });
 
   it("declares an hourly background schedule", async () => {

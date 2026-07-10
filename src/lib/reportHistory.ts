@@ -1,4 +1,4 @@
-import type { RecentReport, TrustLevel } from "./types";
+import type { RecentReport, TrustLevel } from "./types.ts";
 
 export type SharedReportScope = "all" | { months: number };
 

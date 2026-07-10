@@ -1,9 +1,9 @@
 // Client side of the server-run user-publishes lookup: POST to
 // /api/user-publishes-stream and consume its SSE stream (`log` → terminal,
 // `result` → the UserPublishReport). Runs server-side like the main audit.
-import { readSseStream } from "./sseStream";
-import { UserPublishReportSchema, parseOrNull } from "./schemas";
-import type { UserPublishReport } from "./types";
+import { readSseStream } from "./sseStream.ts";
+import { UserPublishReportSchema, parseOrNull } from "./schemas.ts";
+import type { UserPublishReport } from "./types.ts";
 
 export interface UserPublishStreamRequest {
   user: string;

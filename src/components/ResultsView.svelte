@@ -11,6 +11,11 @@
     { kind: "external", title: "external" },
   ];
 
+  // Namespaced URL-hash key so it can't collide with an element id — the tab
+  // buttons use `tab-<kind>` and the panels `panel-<kind>` (writing `#external`
+  // straight to the hash used to match the tab button's own id).
+  const HASH_PREFIX = "report=";
+
   interface Props {
     result: AuditResult;
     onToast: (message: string) => void;
@@ -34,7 +39,9 @@
   function hashKind(): ReportKind | null {
     if (typeof window === "undefined") return null;
     const hash = window.location.hash.replace(/^#/, "");
-    return TAB_META.some((tab) => tab.kind === hash) ? (hash as ReportKind) : null;
+    if (!hash.startsWith(HASH_PREFIX)) return null;
+    const kind = hash.slice(HASH_PREFIX.length);
+    return TAB_META.some((tab) => tab.kind === kind) ? (kind as ReportKind) : null;
   }
 
   function validTab(kind: ReportKind | null): kind is ReportKind {
@@ -63,7 +70,24 @@
 
   function selectTab(kind: ReportKind) {
     activeTab = kind;
-    window.history.replaceState(null, "", `#${kind}`);
+    window.history.replaceState(null, "", `#${HASH_PREFIX}${kind}`);
+  }
+
+  // Roving-tabindex arrow-key nav per the WAI-ARIA tabs pattern: Left/Right move
+  // focus + selection (wrapping), Home/End jump to the ends.
+  function moveTab(event: KeyboardEvent, kind: ReportKind) {
+    const i = tabs.findIndex((tab) => tab.kind === kind);
+    if (i < 0) return;
+    let next = -1;
+    if (event.key === "ArrowRight") next = (i + 1) % tabs.length;
+    else if (event.key === "ArrowLeft") next = (i - 1 + tabs.length) % tabs.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = tabs.length - 1;
+    if (next < 0) return;
+    event.preventDefault();
+    const target = tabs[next].kind;
+    selectTab(target);
+    document.getElementById(`tab-${target}`)?.focus();
   }
 
   function countFor(kind: ReportKind): number | undefined {
@@ -78,12 +102,15 @@
     <span class="tabs__label">Reports</span>
     {#each tabs as tab (tab.kind)}
       <button
-        id={tab.kind}
+        id={`tab-${tab.kind}`}
         role="tab"
         type="button"
         aria-selected={activeTab === tab.kind}
+        aria-controls={activeTab === tab.kind ? `panel-${tab.kind}` : undefined}
+        tabindex={activeTab === tab.kind ? 0 : -1}
         class={`tab${activeTab === tab.kind ? " active" : ""}`}
         onclick={() => selectTab(tab.kind)}
+        onkeydown={(event) => moveTab(event, tab.kind)}
       >
         {tab.title}
         <span class="count">{countFor(tab.kind)}</span>
@@ -92,13 +119,19 @@
   </div>
 
   {#if activeTab === "recent" && result.recent}
-    <RecentView report={result.recent} {onToast} />
+    <div id="panel-recent" role="tabpanel" aria-labelledby="tab-recent" tabindex="0">
+      <RecentView report={result.recent} {onToast} />
+    </div>
   {/if}
   {#if activeTab === "manual" && result.manual}
-    <ManualView report={result.manual} {onToast} />
+    <div id="panel-manual" role="tabpanel" aria-labelledby="tab-manual" tabindex="0">
+      <ManualView report={result.manual} {onToast} />
+    </div>
   {/if}
   {#if activeTab === "external" && result.external}
-    <ExternalView report={result.external} {onToast} />
+    <div id="panel-external" role="tabpanel" aria-labelledby="tab-external" tabindex="0">
+      <ExternalView report={result.external} {onToast} />
+    </div>
   {/if}
 
   {#if result.failures.length > 0}

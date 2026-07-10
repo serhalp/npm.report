@@ -35,4 +35,26 @@ export function getDrizzleClient(database: DatabaseConnection): DrizzleClient {
   };
 }
 
-export const db = drizzle({ client: getDrizzleClient(getDatabase()) });
+let connection: DrizzleClient | undefined;
+function connect(): DrizzleClient {
+  connection ??= drizzle({ client: getDrizzleClient(getDatabase()) });
+  return connection;
+}
+
+// Connect lazily, on first query — NOT at module load. Calling getDatabase() at
+// import time meant a missing connection string (e.g. a deploy where Netlify
+// Database isn't provisioned) threw while merely importing this module, which
+// crashed every function that imports it — including audit-stream, whose audit
+// doesn't touch the DB until the final save. Connecting on first use lets the
+// audit run and stream its result; only the save then fails, and that path
+// already degrades gracefully (the SSE `done` event carries the save error).
+export const db = new Proxy(
+  {},
+  {
+    get(_target, prop) {
+      const client = connect() as unknown as Record<string | symbol, unknown>;
+      const value = client[prop];
+      return typeof value === "function" ? value.bind(client) : value;
+    },
+  },
+) as unknown as DrizzleClient;

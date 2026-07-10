@@ -1,5 +1,5 @@
-// Valibot schemas for every JSON that crosses a trust boundary: the request
-// body of POST /api/reports (server) and every API response the client
+// Valibot schemas for every JSON that crosses a trust boundary: the audit-stream
+// request bodies the server validates, and every API response the client
 // deserializes. Parsing here replaces bare `as T` casts so a malformed payload
 // degrades gracefully (e.g. a bad shared-report payload shows an error instead
 // of throwing inside a view) rather than being trusted blindly.
@@ -7,6 +7,7 @@
 // Objects use `looseObject` so unknown/extra keys pass through — we validate the
 // fields the app actually reads, not the exact shape.
 import * as v from "valibot";
+import { MAX_ORGS } from "./auditDefaults.ts";
 
 const TrustLevel = v.picklist(["stagedPublish", "trustedPublisher", "provenance", "none"]);
 
@@ -117,26 +118,11 @@ export const ReportRerunScheduleStatusSchema = v.looseObject({
 
 // --- server side ---------------------------------------------------------
 
-// Envelope for POST /api/reports. Deliberately lenient on the payload internals
-// (stored as opaque JSON; only extractTrustHistory reads specific fields) — the
-// payload just has to be a JSON object. orgs/scope/scopeLabel/capturedAt are
-// optional and coerced downstream. Strict payload rejection + a size cap belong
-// with the write-path/abuse hardening, not here.
-export const ReportPostBodySchema = v.object({
-  // Left as unknown to match the handler's existing lenient coercion (e.g.
-  // non-array orgs -> []); the only hard requirement is a present object payload.
-  orgs: v.optional(v.unknown()),
-  scope: v.optional(v.unknown()),
-  scopeLabel: v.optional(v.unknown()),
-  capturedAt: v.optional(v.unknown()),
-  payload: v.looseObject({}),
-});
-
 // POST /api/audit-stream — the interactive audit request. The server runs the
 // audit from this (the browser no longer computes it), so this is the trust
 // boundary: whatever the server produces from a validated request is authoritative.
 export const AuditRequestSchema = v.object({
-  orgs: v.array(v.string()),
+  orgs: v.pipe(v.array(v.string()), v.maxLength(MAX_ORGS)),
   kinds: v.array(v.picklist(["recent", "manual", "external"])),
   months: v.optional(v.number(), 12),
   all: v.optional(v.boolean(), true),

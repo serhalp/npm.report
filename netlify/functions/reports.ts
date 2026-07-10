@@ -5,38 +5,12 @@ import { reportTrustHistory, reports } from "../../db/schema.js";
 import {
   normalizeOrgs,
   orgKeyFor,
-  scopeLabelFor,
   type RecentTrustReportLink,
-  type SharedReportScope,
 } from "../../src/lib/reportHistory.js";
-import {
-  historyPointFromRow,
-  recentReportLinkFromRow,
-  saveReportSnapshot,
-} from "./_shared/report-persistence.js";
+import { historyPointFromRow, recentReportLinkFromRow } from "./_shared/report-persistence.js";
 import { scheduleDailyTrustReport } from "./_shared/report-schedules.js";
-import { ReportPostBodySchema, parseOrNull } from "../../src/lib/schemas.js";
 
 const RECENT_REPORT_LIMIT = 5;
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === "object";
-}
-
-function parseScope(value: unknown, scopeLabel: unknown): SharedReportScope {
-  if (value === "all") return "all";
-  if (isObject(value) && typeof value.months === "number" && Number.isFinite(value.months)) {
-    return { months: Math.max(1, Math.floor(value.months)) };
-  }
-  return scopeLabel === "ALL org packages" ? "all" : { months: 12 };
-}
-
-function parseCapturedAt(value: unknown): string {
-  if (typeof value === "string" && !Number.isNaN(Date.parse(value))) {
-    return new Date(value).toISOString();
-  }
-  return new Date().toISOString();
-}
 
 async function getHistory(url: URL): Promise<Response> {
   const orgs = normalizeOrgs(url.searchParams.getAll("org"));
@@ -102,31 +76,9 @@ export default async (req: Request) => {
       }
       return Response.json(status, { status: 201 });
     }
-
-    if (id) return new Response("Not found", { status: 404 });
-
-    let raw: unknown;
-    try {
-      raw = await req.json();
-    } catch {
-      return new Response("Invalid JSON", { status: 400 });
-    }
-    const body = parseOrNull(ReportPostBodySchema, raw);
-    if (!body) {
-      return new Response("Missing or invalid report body", { status: 400 });
-    }
-    const orgs = Array.isArray(body.orgs) ? body.orgs.map(String) : [];
-    const scope = parseScope(body.scope, body.scopeLabel);
-    const capturedAt = parseCapturedAt(body.capturedAt);
-    const scopeLabel = typeof body.scopeLabel === "string" ? body.scopeLabel : scopeLabelFor(scope);
-    const saved = await saveReportSnapshot({
-      orgs,
-      scope,
-      scopeLabel,
-      capturedAt,
-      payload: body.payload,
-    });
-    return Response.json({ id: saved.id }, { status: 201 });
+    // Reports are written server-side by the audit-stream edge function, never
+    // posted by the browser — so there's no public report-write endpoint.
+    return new Response("Not found", { status: 404 });
   }
 
   return new Response("Method not allowed", { status: 405 });
@@ -134,10 +86,11 @@ export default async (req: Request) => {
 
 export const config: Config = {
   path: [
-    "/api/reports",
     "/api/reports/history",
     "/api/reports/recent",
     "/api/reports/:id",
     "/api/reports/:id/schedule-daily",
   ],
+  // Generous ceiling: these are small reads plus the occasional schedule write.
+  rateLimit: { windowLimit: 120, windowSize: 60, aggregateBy: ["ip"] },
 };

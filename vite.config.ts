@@ -5,10 +5,8 @@ import { defineConfig } from "vitest/config";
 
 const analyzeBundle = process.env.SONDA === "true";
 
-// The audit orchestration runs in the browser. Netlify's Vite plugin exposes
-// the narrow /api/* surface used by the per-host npm edge proxies and the small
-// report-sharing function. ghostty-web inlines its WASM as a base64 data URL in
-// the ESM build, so no special asset handling is required.
+// Netlify's Vite plugin emulates the platform locally, exposing the /api/*
+// surface for the audit-stream SSE endpoints, report links, and daily tracking.
 export default defineConfig({
   plugins: [
     svelte(),
@@ -27,9 +25,6 @@ export default defineConfig({
   build: {
     sourcemap: analyzeBundle,
     target: "es2022",
-    // The inlined WASM data URL pushes the ghostty-web chunk well past the
-    // default warning size; that's expected.
-    chunkSizeWarningLimit: 2048,
   },
   resolve: process.env.VITEST
     ? {

@@ -631,21 +631,28 @@ textarea {
   text-transform: uppercase;
   color: var(--fg-dim);
 }
-.term-host {
+.term-log {
   height: 32.5rem;
-  width: 100%;
-  padding: var(--space-sm) 0.625rem;
-}
-.term-fallback {
-  height: 32.5rem;
-  margin: 0;
-  padding: 0.625rem var(--space-md);
   overflow: auto;
+  padding: 0.625rem var(--space-md);
   font-family: var(--mono);
   font-size: var(--text-md);
   line-height: 1.5;
   color: var(--fg);
+}
+.term-line {
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.term-line--warn {
+  color: var(--warn);
+}
+.term-line--err {
+  color: var(--danger);
+}
+.term-line--done {
+  color: var(--gold);
+  font-weight: 600;
 }
 
 .report-ready {

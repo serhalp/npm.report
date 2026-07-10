@@ -5,22 +5,24 @@ describe("db connection", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.resetModules();
+    vi.doUnmock("@netlify/database");
   });
 
-  it("reads Netlify Database connection details from Netlify.env", async () => {
-    vi.stubGlobal("Netlify", {
-      env: {
-        get: (key: string) => {
-          if (key === "NETLIFY_DB_URL") return "postgresql://user:pass@example.com/db";
-          if (key === "NETLIFY_DB_DRIVER") return "server";
-          return undefined;
-        },
-      },
+  it("connects lazily — getDatabase runs on first query, not at import", async () => {
+    const getDatabase = vi.fn(() => {
+      throw new Error("lazy-check");
     });
-    delete process.env.NETLIFY_DB_URL;
-    delete process.env.NETLIFY_DB_DRIVER;
+    vi.doMock("@netlify/database", () => ({ getDatabase }));
 
-    await expect(import("./index")).resolves.toHaveProperty("db");
+    const mod = await import("./index");
+    // Importing must not touch the database, so a function that only imports this
+    // module (e.g. audit-stream, before its final save) still loads even when the
+    // connection string is absent.
+    expect(getDatabase).not.toHaveBeenCalled();
+
+    // The connection is attempted on first property access.
+    expect(() => mod.db.select()).toThrow("lazy-check");
+    expect(getDatabase).toHaveBeenCalledOnce();
   });
 
   it("routes Drizzle's serverless positional HTTP calls through Neon query()", async () => {

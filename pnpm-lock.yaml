@@ -225,9 +225,6 @@ importers:
       drizzle-orm:
         specifier: 1.0.0-rc.4-5d5b77c
         version: 1.0.0-rc.4-5d5b77c(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(pg@8.22.0)(valibot@1.4.2(typescript@6.0.3))(zod@4.4.3)
-      ghostty-web:
-        specifier: ^0.4.0
-        version: 0.4.0
       packumeta:
         specifier: 0.4.1
         version: 0.4.1
@@ -3077,9 +3074,6 @@ packages:
 
   get-tsconfig@4.14.0:
     resolution: {integrity: sha512-yTb+8DXzDREzgvYmh6s9vHsSVCHeC0G3PI5bEXNBHtmshPnO+S5O7qgLEOn0I5QvMy6kpZN8K1NKGyilLb93wA==}
-
-  ghostty-web@0.4.0:
-    resolution: {integrity: sha512-0puDBik2qapbD/QQBW9o5ZHfXnZBqZWx/ctBiVtKZ6ZLds4NYb+wZuw1cRLXZk9zYovIQ908z3rvFhexAvc5Hg==}
 
   glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}
@@ -7411,8 +7405,6 @@ snapshots:
   get-tsconfig@4.14.0:
     dependencies:
       resolve-pkg-maps: 1.0.0
-
-  ghostty-web@0.4.0: {}
 
   glob-parent@5.1.2:
     dependencies:

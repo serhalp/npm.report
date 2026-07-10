@@ -63,4 +63,9 @@ export default async (req: Request): Promise<Response> => {
   });
 };
 
-export const config: Config = { path: "/api/user-publishes-stream", method: "POST" };
+export const config: Config = {
+  path: "/api/user-publishes-stream",
+  method: "POST",
+  // Same generous per-IP ceiling as audit-stream; this also fans out to npm.
+  rateLimit: { windowLimit: 30, windowSize: 60, aggregateBy: ["ip"] },
+};

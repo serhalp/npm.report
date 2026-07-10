@@ -39,7 +39,7 @@ pnpm run preview
 
 ## Use The App
 
-1. Enter one or more npm org slugs.
+1. Enter up to five npm org slugs.
 2. By default, the audit scans all org packages. Select "Limit to recent packages" to use a
    recency window.
 3. Select package trust level, `manual`, `external`, or any combination. Package trust
@@ -51,27 +51,28 @@ pnpm run preview
    private, so the app needs your authenticated member list to compare them.
 6. Run the audit. Results render as sortable tables with JSON copy and CSV
    download actions.
-7. Copy the automatically saved report link when you want to share the read-only snapshot.
+7. The server saves each completed run automatically; copy its report link to
+   share the read-only snapshot.
 8. For all-package package trust reports, select "Track daily" to append one
    automatic trust snapshot per day.
 
 ## Architecture
 
-- Vite, Svelte 5, and TypeScript provide a static client-side app.
-- Audit orchestration runs in the browser for interactive reports.
-- Daily tracking is the narrow server-side exception: an hourly Netlify
-  scheduled background function reruns only the all-package package trust report
-  for opted-in org sets.
-- npm fetches go through thin Netlify edge proxies:
-  - `/api/npm-registry/*` -> `registry.npmjs.org`
-  - `/api/npm-downloads/*` -> `api.npmjs.org`
-  - `/api/npm-meta/*` -> `npm.antfu.dev`
-- Each proxy pins one upstream host server-side, streams the upstream response,
-  adds CORS, and applies a 5-minute shared cache for successful responses.
-- Report links and daily tracking are the only stateful features. `POST
-/api/reports` stores a completed `AuditResult` plus display metadata in
-  Netlify Database after each successful run; `/report/:id` renders that
-  snapshot read-only.
+- Vite, Svelte 5, and TypeScript provide the static client. It submits audits to
+  the server and renders the streamed progress and results.
+- Audits run server-side in Netlify edge functions and stream to the browser
+  over SSE (`POST /api/audit-stream` and `POST /api/user-publishes-stream`). The
+  browser does not compute the audit; because the server does, the saved report
+  is authoritative.
+- npm is fetched directly from the server (`registry.npmjs.org`,
+  `api.npmjs.org`, and `npm.antfu.dev`). There are no CORS proxies — the earlier
+  browser-side proxies were removed.
+- Daily tracking reruns the all-package package trust report for opted-in org
+  sets from an hourly Netlify scheduled background function.
+- Report links and daily tracking are the only stateful features. The audit
+  stream saves the completed `AuditResult` plus display metadata to Netlify
+  Database as part of the run; `/report/:id` renders that snapshot read-only.
+  There is no browser-facing report-write endpoint.
 
 ## Important Limits
 

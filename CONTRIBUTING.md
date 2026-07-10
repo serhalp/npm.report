@@ -14,8 +14,8 @@ pnpm run dev
 ```
 
 The dev server runs the Vite app at `http://localhost:5173`. The Netlify Vite
-plugin wires local `/api/*` routes for the npm edge proxies, report links, and
-daily package-trust tracking API.
+plugin emulates the platform locally, wiring the `/api/*` routes for the audit
+stream, report links, and daily package-trust tracking API.
 
 ## Before Changing Behavior
 
@@ -27,7 +27,9 @@ daily package-trust tracking API.
 - Keep the app generic. Do not hardcode a specific org, user, or package. Bot
   defaults should be broadly applicable automation accounts, not project-specific
   policy.
-- Keep npm proxying per-host. Do not create a host-generic proxy.
+- Keep audits server-side. The browser submits a request and renders the stream;
+  it must not compute the audit or POST a report. npm is fetched directly (no
+  CORS proxy); do not reintroduce one.
 - Keep scheduled reruns narrow: all-package package trust only, with direct npm
   fetches from the Netlify function runtime.
 
@@ -70,11 +72,17 @@ Svelte and TypeScript validation.
 
 - Behavior changes were checked against the shell-script reference.
 - Any new npm fetch path preserves retry/backoff and `FailureLog` semantics.
-- Edge proxy changes keep the upstream host hardcoded server-side.
+- Audit request, response, or SSE changes keep `src/lib/schemas.ts`, the edge
+  functions, and the client stream wrappers in sync.
+- Any new third-party npm dependency reachable from an edge function has an
+  `import_map.json` entry (edge bundling is beta and fails only at deploy time).
+- Files reachable from an edge function use explicit `.ts` import extensions, and
+  the edge bundle was verified with `netlify build` — local dev does not catch
+  Deno's strict module resolution.
 - User-visible behavior is reflected in `README.md`.
 - Agent-facing architecture or invariants are reflected in `AGENTS.md`.
-- New report types update types, orchestration, views, tabs, exports, and shared
-  report rendering as needed.
+- New report types update types, orchestration, dispatch, the request schema,
+  views, tabs, exports, and shared report rendering as needed.
 - Schedule or persistence changes include Drizzle schema updates and a Netlify
   Database migration.
 - Relevant checks were run, or skipped checks are explicitly called out with a

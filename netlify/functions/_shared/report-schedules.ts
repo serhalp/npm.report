@@ -56,6 +56,15 @@ export async function scheduleDailyTrustReport(
     .limit(1);
   if (!history) return null;
 
+  // Idempotent: if this org set is already tracked, return it unchanged instead
+  // of resetting the schedule clock and failure count on every repeated call.
+  const [existing] = await db
+    .select()
+    .from(reportRerunSchedules)
+    .where(eq(reportRerunSchedules.orgKey, history.orgKey))
+    .limit(1);
+  if (existing?.enabled) return statusFromRow(existing);
+
   const nextRunAt = nextDailyRunFrom(new Date(history.capturedAt), now);
   const values = {
     orgKey: history.orgKey,

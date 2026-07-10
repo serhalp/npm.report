@@ -1,5 +1,5 @@
-import { FailureLog } from "./npmClient";
-import { discoverInScope, runExternal, runManual, runRecent, type LogFn } from "./reports";
+import { FailureLog } from "./npmClient.ts";
+import { discoverInScope, runExternal, runManual, runRecent, type LogFn } from "./reports.ts";
 import type {
   AuditConfig,
   ExternalReport,
@@ -7,7 +7,7 @@ import type {
   ManualReport,
   RecentReport,
   ReportKind,
-} from "./types";
+} from "./types.ts";
 
 export interface AuditResult {
   recent?: RecentReport;

@@ -2,10 +2,10 @@
 // consume its SSE stream. `log` events feed the live terminal; `result` carries
 // the authoritative AuditResult the server computed; `done` carries the saved
 // report id/url (or a save error). The browser no longer runs the audit itself.
-import { readSseStream } from "./sseStream";
-import { AuditResultSchema, parseOrNull } from "./schemas";
-import type { AuditResult } from "./runAudit";
-import type { ReportKind } from "./types";
+import { readSseStream } from "./sseStream.ts";
+import { AuditResultSchema, parseOrNull } from "./schemas.ts";
+import type { AuditResult } from "./runAudit.ts";
+import type { ReportKind } from "./types.ts";
 
 export interface AuditStreamRequest {
   orgs: string[];

@@ -1,5 +1,5 @@
 import type { Config } from "@netlify/edge-functions";
-import { FETCH_CONCURRENCY } from "../../src/lib/auditDefaults.ts";
+import { FETCH_CONCURRENCY, isBlockedOrg } from "../../src/lib/auditDefaults.ts";
 import { scopeLabelFor, type SharedReportScope } from "../../src/lib/reportHistory.ts";
 import { AuditRequestSchema, parseOrNull } from "../../src/lib/schemas.ts";
 import { type AuditResult, runAudit } from "../../src/lib/runAudit.ts";
@@ -7,11 +7,11 @@ import type { AuditConfig } from "../../src/lib/types.ts";
 import { saveReportSnapshot } from "../functions/_shared/report-persistence.ts";
 
 // Interactive audits run HERE, server-side, and stream progress to the browser
-// over SSE (the ghostty terminal consumes `log` events). Because the server
+// over SSE (the progress log consumes `log` events). Because the server
 // runs the audit, the resulting report is authoritative by construction — no
 // browser-submitted trust data, no CORS proxies. `runAudit` and its dependency
-// graph are dependency-free of node: builtins, so they run in the Deno edge
-// runtime; `direct` fetch mode hits npm without the proxies the browser needed.
+// graph are free of node: builtins, so they run in the Deno edge runtime and
+// fetch npm directly.
 
 const encoder = new TextEncoder();
 
@@ -30,6 +30,10 @@ export default async (req: Request): Promise<Response> => {
   const body = parseOrNull(AuditRequestSchema, raw);
   if (!body) return new Response("invalid audit request", { status: 400 });
   if (body.orgs.length === 0) return new Response("no orgs supplied", { status: 400 });
+  const blockedOrg = body.orgs.find(isBlockedOrg);
+  if (blockedOrg) {
+    return new Response(`the '${blockedOrg}' org is too large to audit`, { status: 400 });
+  }
   if (body.kinds.length === 0) return new Response("no reports selected", { status: 400 });
   // `external` needs a member list; mirror the client-side guard.
   if (body.kinds.includes("external") && body.members.length === 0) {
@@ -93,4 +97,11 @@ export default async (req: Request): Promise<Response> => {
   });
 };
 
-export const config: Config = { path: "/api/audit-stream", method: "POST" };
+export const config: Config = {
+  path: "/api/audit-stream",
+  method: "POST",
+  // Report creation runs a full server-side audit; cap abuse while staying
+  // generous for real use (an audit takes seconds+, so 30/min/IP is well above
+  // any human's rate). Netlify enforces this at the edge before this runs.
+  rateLimit: { windowLimit: 30, windowSize: 60, aggregateBy: ["ip"] },
+};

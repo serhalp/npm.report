@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop -- api.npmjs.org has a strict token bucket; scoped downloads must remain sequential and paced. */
-import { chunk } from "./concurrency";
-import { FailureLog, npmGetJson, sleep } from "./npmClient";
+import { chunk } from "./concurrency.ts";
+import { FailureLog, npmGetJson, sleep } from "./npmClient.ts";
 
 // ---------------------------------------------------------------------------
 // Weekly downloads — ported from npm-audit.sh `add_downloads`.
@@ -11,7 +11,8 @@ import { FailureLog, npmGetJson, sleep } from "./npmClient";
 // names 400. So:
 //   - unscoped: bulk, 100 per request (free)
 //   - scoped:   sequential + 500ms delay (do NOT parallelize)
-// Missing/failed lookups become null ("?" in the shell version).
+// A package the endpoint returns a null entry for is a real zero (0 downloads).
+// Only a failed/absent fetch stays unknown (renders as "?").
 // ---------------------------------------------------------------------------
 
 interface BulkResp {
@@ -48,7 +49,9 @@ export async function fetchWeeklyDownloads(
       } else {
         for (const [key, val] of Object.entries(json)) {
           const v = val as { downloads?: number } | null;
-          if (v && typeof v.downloads === "number") map.set(key, v.downloads);
+          // A present-but-null entry means npm has the package but zero weekly
+          // downloads — record 0, not a missing "?".
+          map.set(key, v && typeof v.downloads === "number" ? v.downloads : 0);
         }
       }
     }
@@ -63,7 +66,9 @@ export async function fetchWeeklyDownloads(
       failures,
       5,
     );
-    if (json && typeof json.downloads === "number") map.set(p, json.downloads);
+    // A fetched response with a non-numeric count is a real 0; only a failed
+    // fetch (json === null) stays unknown.
+    if (json) map.set(p, typeof json.downloads === "number" ? json.downloads : 0);
     done++;
     onProgress?.(done, total);
     await sleep(500);

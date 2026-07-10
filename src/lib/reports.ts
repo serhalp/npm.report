@@ -1,9 +1,9 @@
 /* eslint-disable no-underscore-dangle -- npm packuments expose publisher metadata as the documented `_npmUser` field. */
-import { mapLimit } from "./concurrency";
-import { resolveMeta, listOrgPackages } from "./discovery";
-import { fetchWeeklyDownloads } from "./downloads";
-import { FailureLog, npmGetJson, pkgUrl, toEpoch, versionUrl } from "./npmClient";
-import { getTrustStatus } from "./trust";
+import { mapLimit } from "./concurrency.ts";
+import { resolveMeta, listOrgPackages } from "./discovery.ts";
+import { fetchWeeklyDownloads } from "./downloads.ts";
+import { FailureLog, npmGetJson, pkgUrl, toEpoch, versionUrl } from "./npmClient.ts";
+import { getTrustStatus } from "./trust.ts";
 import type {
   AuditConfig,
   ExternalReport,
@@ -16,7 +16,7 @@ import type {
   TrustLevel,
   UserPublishReport,
   UserPublishRow,
-} from "./types";
+} from "./types.ts";
 
 export type LogFn = (msg: string) => void;
 
@@ -75,7 +75,15 @@ export async function runRecent(
       failures,
       5,
     );
-    const trust = getTrustStatus(manifest ?? {});
+    if (!manifest) {
+      // A missing per-version manifest (404 or exhausted retries) would make the
+      // package read as trust "none" instead of "unknown" — a silently wrong
+      // classification. Fail the whole report rather than assert a bad level.
+      throw new Error(
+        `Could not fetch the manifest for ${m.name}@${m.version}; the trust report would be incomplete.`,
+      );
+    }
+    const trust = getTrustStatus(manifest);
     done++;
     if (done % 25 === 0 || done === inScopeMeta.length)
       log(`[recent]   trust ${done}/${inScopeMeta.length}`);

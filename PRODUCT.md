@@ -6,7 +6,7 @@ Security engineers, maintainers, and release owners auditing public npm organiza
 
 ## Product Purpose
 
-Audit npm organizations in the browser against public npm data, preserving the documented behavior of the original shell scripts while making the results easier to run, inspect, export, and share as read-only snapshots.
+Audit npm organizations against public npm data, preserving the documented behavior of the original shell scripts while making the results easier to run, inspect, export, and share as read-only snapshots.
 
 ## Brand Personality
 

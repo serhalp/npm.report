@@ -1,5 +1,5 @@
-import { db } from "../../../db/index.js";
-import { reportTrustHistory, reports } from "../../../db/schema.js";
+import { db } from "../../../db/index.ts";
+import { reportTrustHistory, reports } from "../../../db/schema.ts";
 import {
   extractTrustHistory,
   scopeLabelFor,
@@ -7,7 +7,7 @@ import {
   type ReportTrustHistoryPoint,
   type SharedReportScope,
   type TrustHistorySnapshot,
-} from "../../../src/lib/reportHistory.js";
+} from "../../../src/lib/reportHistory.ts";
 
 export interface SaveReportSnapshotInput {
   orgs: string[];
@@ -46,7 +46,9 @@ export async function buildReportId(
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   const hash = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0"))
     .join("")
-    .slice(0, 8);
+    // 16 hex chars (64 bits): wide enough that same-org, same-day content-hash
+    // collisions (which onConflictDoNothing would silently coalesce) are infeasible.
+    .slice(0, 16);
   const date = now.toISOString().slice(0, 10);
   return `${slugifyOrgs(orgs)}-${date}-${hash}`;
 }

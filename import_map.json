@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "valibot": "https://esm.sh/valibot@1.4.2",
+    "packumeta": "https://esm.sh/packumeta@0.4.1"
+  }
+}

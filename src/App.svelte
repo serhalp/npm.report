@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ArrowDown, CircleCheck } from "@lucide/svelte";
-  import GhosttyTerminal from "./components/GhosttyTerminal.svelte";
+  import LogTerminal from "./components/LogTerminal.svelte";
   import HistoryPanel from "./components/HistoryPanel.svelte";
   import RecentReports from "./components/RecentReports.svelte";
   import DailyTrackingButton from "./components/DailyTrackingButton.svelte";
@@ -8,7 +8,7 @@
   import TagInput from "./components/TagInput.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import UserPublishView from "./components/UserPublishView.svelte";
-  import { DEFAULT_BOT_EXCLUSIONS } from "./lib/auditDefaults";
+  import { DEFAULT_BOT_EXCLUSIONS, MAX_ORGS, isBlockedOrg } from "./lib/auditDefaults";
   import { streamAudit } from "./lib/auditStream";
   import { parseMembers } from "./lib/members";
   import type { AuditResult } from "./lib/runAudit";
@@ -38,19 +38,69 @@
     },
   ];
 
+  // A shared report's "Re-run this audit" button links here with the run config
+  // in the query string; pre-fill the form from it (and, when the run won't be
+  // blocked on a missing member list, run immediately).
+  interface Prefill {
+    orgs: string[];
+    all: boolean;
+    months: number;
+    bots: string[];
+    selected: Record<ReportKind, boolean>;
+    run: boolean;
+  }
+  function readPrefillFromUrl(): Prefill | null {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    const orgsParam = params.get("orgs");
+    if (!orgsParam) return null;
+    const orgs = orgsParam
+      .split(",")
+      .map((slug) => slug.trim())
+      .filter(Boolean)
+      .slice(0, MAX_ORGS);
+    if (orgs.length === 0) return null;
+
+    const scope = params.get("scope");
+    const all = scope === null || scope === "all";
+    const monthsRaw = Number(scope);
+    const months = !all && Number.isFinite(monthsRaw) && monthsRaw > 0 ? Math.floor(monthsRaw) : 12;
+
+    const kinds = new Set((params.get("kinds") ?? "recent").split(",").map((kind) => kind.trim()));
+    const selected: Record<ReportKind, boolean> = {
+      recent: kinds.has("recent"),
+      manual: kinds.has("manual"),
+      external: kinds.has("external"),
+    };
+    if (!selected.recent && !selected.manual && !selected.external) selected.recent = true;
+
+    const botsParam = params.get("bots");
+    const bots = botsParam
+      ? botsParam
+          .split(",")
+          .map((bot) => bot.trim())
+          .filter(Boolean)
+      : [...DEFAULT_BOT_EXCLUSIONS];
+
+    return { orgs, all, months, bots, selected, run: params.get("run") === "1" };
+  }
+  const prefill = readPrefillFromUrl();
+
   let terminal: TerminalHandle | null = $state(null);
   let resultsHeading: HTMLHeadingElement | null = $state(null);
   const log = (message: string) => terminal?.writeLine(message);
 
-  let orgs: string[] = $state([]);
-  let months = $state(12);
-  let all = $state(true);
-  let bots: string[] = $state([...DEFAULT_BOT_EXCLUSIONS]);
-  let selected: Record<ReportKind, boolean> = $state({
-    recent: true,
-    manual: true,
-    external: false,
-  });
+  let orgs: string[] = $state(prefill?.orgs ?? []);
+  let months = $state(prefill?.months ?? 12);
+  let all = $state(prefill?.all ?? true);
+  let bots: string[] = $state(prefill?.bots ?? [...DEFAULT_BOT_EXCLUSIONS]);
+  let selected: Record<ReportKind, boolean> = $state(
+    prefill?.selected ?? {
+      recent: true,
+      manual: true,
+      external: false,
+    },
+  );
   let membersRaw = $state("");
 
   let running = $state(false);
@@ -77,6 +127,17 @@
   let selectedKinds = $derived(
     (Object.keys(selected) as ReportKind[]).filter((kind) => selected[kind]),
   );
+  // One audit or user lookup at a time — they share the live log.
+  let busy = $derived(running || upRunning);
+  // Mirrors the server guards (AuditRequestSchema cap + blocked-org check) so the
+  // problem is shown before submit, not just rejected after.
+  let orgIssue = $derived.by(() => {
+    const blocked = orgs.find(isBlockedOrg);
+    if (blocked) return `The "${blocked}" org is too large to audit here — remove it.`;
+    if (orgs.length > MAX_ORGS)
+      return `Limit an audit to ${MAX_ORGS} orgs (you have ${orgs.length}).`;
+    return null;
+  });
   function containsReports(value: AuditResult | null): boolean {
     return !!(value?.recent || value?.manual || value?.external);
   }
@@ -112,10 +173,25 @@
     return () => window.clearTimeout(timer);
   });
 
+  // One-shot: if we arrived from a shared report's "Re-run" link, strip the query
+  // from the URL (so a refresh doesn't silently re-run) and run — unless the run
+  // needs an org member list (external), which the viewer has to paste first.
+  let prefillHandled = false;
+  $effect(() => {
+    if (prefillHandled || !prefill) return;
+    prefillHandled = true;
+    history.replaceState(null, "", window.location.pathname);
+    if (prefill.run && !prefill.selected.external) handleRun();
+  });
+
   async function handleRun() {
     error = null;
     if (orgs.length === 0) {
       error = "Add at least one npm organization.";
+      return;
+    }
+    if (orgIssue) {
+      error = orgIssue;
       return;
     }
     if (selectedKinds.length === 0) {
@@ -263,9 +339,12 @@
             placeholder="e.g. nuxt, vue — Enter to add"
           />
           <p class="desc">
-            One or more npm org slugs. The registry caps org listings at 250 packages
-            (private/unlisted are not reachable unauthenticated).
+            One or more npm org slugs (up to {MAX_ORGS}). The registry caps org listings at 250
+            packages (private/unlisted are not reachable unauthenticated).
           </p>
+          {#if orgIssue}
+            <p class="inline-error">{orgIssue}</p>
+          {/if}
         </div>
 
         <div class="field scope-field">
@@ -358,11 +437,13 @@
         {/if}
 
         <div class="run-bar">
-          <button class="btn btn--primary" type="button" onclick={handleRun} disabled={running}>
+          <button class="btn btn--primary" type="button" onclick={handleRun} disabled={busy}>
             {running ? "Running…" : "Run audit"}
           </button>
           {#if running}
             <span class="status">streaming to terminal →</span>
+          {:else if upRunning}
+            <span class="status">paused — user lookup running</span>
           {/if}
         </div>
         {#if error}
@@ -372,7 +453,7 @@
     </section>
 
     <section>
-      <GhosttyTerminal bind:this={terminal} />
+      <LogTerminal bind:this={terminal} />
       <p class="note">
         <strong>Live log</strong> shows audit progress and warnings. Network and rate-limit failures are
         counted so incomplete results stay visible.
@@ -486,12 +567,14 @@
           class="btn btn--primary"
           type="button"
           onclick={handleRunUserPublishes}
-          disabled={upRunning}
+          disabled={busy}
         >
           {upRunning ? "Scanning…" : "Look up"}
         </button>
         {#if upRunning}
           <span class="status">streaming to terminal →</span>
+        {:else if running}
+          <span class="status">paused — audit running</span>
         {/if}
       </div>
       {#if upError}

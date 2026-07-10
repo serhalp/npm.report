@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop -- Discovery intentionally resolves orgs and fast-npm-meta batches in a bounded sequence so failures stay attributable and upstream request shape matches the shell reference. */
-import { chunk } from "./concurrency";
-import { FailureLog, npmGet, npmGetJson } from "./npmClient";
-import type { PkgMeta } from "./types";
+import { chunk } from "./concurrency.ts";
+import { FailureLog, npmGet, npmGetJson } from "./npmClient.ts";
+import type { PkgMeta } from "./types.ts";
 
 // ---------------------------------------------------------------------------
 // Discovery — ported from npm-audit.sh `list_org_packages` and the fast-npm-meta

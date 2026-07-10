@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { RefreshCw } from "@lucide/svelte";
   import HistoryPanel from "./components/HistoryPanel.svelte";
   import DailyTrackingButton from "./components/DailyTrackingButton.svelte";
   import ResultsView from "./components/ResultsView.svelte";
@@ -33,6 +34,30 @@
   let historyEnabled = $derived(
     record?.scopeLabel === "ALL org packages" && !!record.payload.recent,
   );
+
+  const REPORT_KINDS = ["recent", "manual", "external"] as const;
+
+  function monthsFromLabel(label: string): number {
+    const match = label.match(/last (\d+) months/);
+    return match ? Number(match[1]) : 12;
+  }
+
+  // Build the auditor URL that re-runs this report's config. External needs a
+  // member list (never stored), so App.svelte pre-fills but doesn't auto-run it.
+  function rerunHref(rec: ReportRecord): string {
+    const orgs = (rec.payload.recent?.summary.orgs ?? rec.orgs.split(/,\s*/)).filter(Boolean);
+    const kinds = REPORT_KINDS.filter((kind) => rec.payload[kind]);
+    const params = new URLSearchParams();
+    params.set("orgs", orgs.join(","));
+    params.set(
+      "scope",
+      rec.scopeLabel === "ALL org packages" ? "all" : String(monthsFromLabel(rec.scopeLabel)),
+    );
+    if (kinds.length) params.set("kinds", kinds.join(","));
+    if (rec.payload.manual?.bots?.length) params.set("bots", rec.payload.manual.bots.join(","));
+    params.set("run", "1");
+    return `/?${params.toString()}`;
+  }
 
   function showToast(message: string) {
     toast = message;
@@ -110,6 +135,16 @@
 
   {#if record}
     <div class="shared-actions">
+      <button
+        class="btn btn--primary"
+        type="button"
+        onclick={() => {
+          if (record) window.location.href = rerunHref(record);
+        }}
+      >
+        <RefreshCw aria-hidden="true" size={15} strokeWidth={2} />
+        Re-run this audit
+      </button>
       <DailyTrackingButton reportId={record.id} enabled={historyEnabled} onToast={showToast} />
     </div>
     <HistoryPanel orgs={historyOrgs} enabled={historyEnabled} currentReportId={record.id} />

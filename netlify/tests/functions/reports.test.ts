@@ -138,6 +138,9 @@ async function loadHandler(
 ) {
   vi.resetModules();
   const db = makeDb(rows, historyRows, scheduleRows);
+  // Capture the column too (not just the value) so tests can assert predicate
+  // correctness — that a query targets org_key / id, not merely "some column".
+  const eq = vi.fn((column: unknown, value: unknown) => ({ column, value }));
   vi.doMock("drizzle-orm", async (importOriginal) => {
     const actual = await importOriginal<typeof import("drizzle-orm")>();
     return {
@@ -145,13 +148,13 @@ async function loadHandler(
       and: vi.fn((...predicates: unknown[]) => ({ predicates })),
       asc: vi.fn((column: unknown) => ({ column })),
       desc: vi.fn((column: unknown) => ({ column })),
-      eq: vi.fn((_column: unknown, value: string) => ({ value })),
+      eq,
       lte: vi.fn((_column: unknown, value: Date) => ({ value })),
     };
   });
   vi.doMock("../../../db/index.js", () => ({ db }));
   const mod = await import("../../functions/reports");
-  return { handler: mod.default, config: mod.config, db, rows, historyRows, scheduleRows };
+  return { handler: mod.default, config: mod.config, db, eq, rows, historyRows, scheduleRows };
 }
 
 beforeEach(() => {
@@ -165,114 +168,7 @@ afterEach(() => {
   vi.doUnmock("../../../db/index.js");
 });
 
-function jsonPost(body: unknown) {
-  return new Request("https://audit.example/api/reports", {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-}
-
 describe("reports function", () => {
-  it("stores saved reports under stable human-readable content IDs", async () => {
-    const { handler, rows } = await loadHandler();
-    const payload = { recent: { rows: [] }, failures: [] };
-
-    const first = await handler(
-      jsonPost({
-        orgs: ["Netlify", "Gatsby"],
-        scopeLabel: "last 6 months",
-        payload,
-      }),
-    );
-    const second = await handler(
-      jsonPost({
-        orgs: ["Netlify", "Gatsby"],
-        scopeLabel: "last 6 months",
-        payload,
-      }),
-    );
-
-    expect(first.status).toBe(201);
-    expect(second.status).toBe(201);
-    const { id } = (await first.json()) as { id: string };
-    await expect(second.json()).resolves.toEqual({ id });
-    expect(id).toMatch(/^netlify-gatsby-2026-06-27-[a-f0-9]{8}$/);
-    expect(rows.size).toBe(1);
-    expect(rows.get(id)).toEqual({
-      id,
-      orgs: "Netlify, Gatsby",
-      scopeLabel: "last 6 months",
-      payload,
-    });
-  });
-
-  it("stores all-scope recent trust history separately from shared report payloads", async () => {
-    const { handler, historyRows } = await loadHandler();
-    const payload = {
-      recent: {
-        summary: {
-          scopeLabel: "ALL org packages",
-          orgs: ["Netlify"],
-          total: 4,
-          deprecated: 1,
-          byLevel: {
-            stagedPublish: 1,
-            trustedPublisher: 2,
-            provenance: 0,
-            none: 1,
-          },
-        },
-        rows: [{ pkg: "secret-free" }],
-      },
-      manual: { rows: [{ who: "sensitive-publisher" }] },
-      external: { rows: [{ user: "sensitive-user", pkg: "pkg" }] },
-      failures: [{ url: "https://registry.npmjs.org/pkg", reason: "http 429" }],
-    };
-
-    const response = await handler(
-      jsonPost({
-        orgs: ["Netlify"],
-        scope: "all",
-        capturedAt: "2026-06-27T10:00:00.000Z",
-        payload,
-      }),
-    );
-
-    const { id } = (await response.json()) as { id: string };
-    expect(historyRows.get(id)).toEqual({
-      reportId: id,
-      orgKey: "netlify",
-      orgs: ["netlify"],
-      capturedAt: new Date("2026-06-27T10:00:00.000Z"),
-      total: 4,
-      stagedPublish: 1,
-      trustedPublisher: 2,
-      provenance: 0,
-      none: 1,
-      deprecated: 1,
-      failureCount: 1,
-    });
-  });
-
-  it("does not store history for manual or external only saves", async () => {
-    const { handler, historyRows } = await loadHandler();
-
-    await handler(
-      jsonPost({
-        orgs: ["netlify"],
-        scope: "all",
-        capturedAt: "2026-06-27T10:00:00.000Z",
-        payload: {
-          manual: { rows: [{ who: "sensitive-publisher" }] },
-          external: { rows: [{ user: "sensitive-user", pkg: "pkg" }] },
-          failures: [],
-        },
-      }),
-    );
-
-    expect(historyRows.size).toBe(0);
-  });
-
   it("serves public trust history by exact normalized org set without payloads", async () => {
     const alpha: StoredTrustHistory = {
       reportId: "netlify-gatsby-2026-06-26-aaaaaaaa",
@@ -307,13 +203,17 @@ describe("reports function", () => {
       [other.reportId, other],
       [alpha.reportId, alpha],
     ]);
-    const { handler } = await loadHandler(new Map(), historyRows);
+    const { handler, eq } = await loadHandler(new Map(), historyRows);
+    const schema = await import("../../../db/schema");
 
     const response = await handler(
       new Request("https://audit.example/api/reports/history?org=Netlify&org=gatsbyjs"),
     );
 
     expect(response.status).toBe(200);
+    // Predicate correctness: the history query filters on the org_key column
+    // with the normalized key — a wrong-column query would fail this.
+    expect(eq).toHaveBeenCalledWith(schema.reportTrustHistory.orgKey, "gatsbyjs,netlify");
     await expect(response.json()).resolves.toEqual({
       orgs: ["gatsbyjs", "netlify"],
       points: [
@@ -478,12 +378,15 @@ describe("reports function", () => {
       scopeLabel: "last 6 months",
       payload: { failures: [] },
     };
-    const { handler } = await loadHandler(new Map([[row.id, row]]));
+    const { handler, eq } = await loadHandler(new Map([[row.id, row]]));
+    const schema = await import("../../../db/schema");
 
     const found = await handler(new Request(`https://audit.example/api/reports/${row.id}`));
 
     expect(found.status).toBe(200);
     await expect(found.json()).resolves.toEqual(row);
+    // Predicate correctness: the lookup filters on the reports.id column.
+    expect(eq).toHaveBeenCalledWith(schema.reports.id, row.id);
 
     const missing = await handler(new Request("https://audit.example/api/reports/missing"));
 
@@ -491,16 +394,18 @@ describe("reports function", () => {
     await expect(missing.text()).resolves.toBe("Not found");
   });
 
-  it("rejects invalid requests and unsupported methods", async () => {
+  it("has no public report-write endpoint and rejects unsupported methods", async () => {
     const { handler, config } = await loadHandler();
 
+    // Reports are saved server-side by the audit-stream edge function, so there
+    // is no browser-facing write route: a bare POST is a no-op 404 and never
+    // even reads the body (invalid JSON included).
     await expect(
       handler(
         new Request("https://audit.example/api/reports", { method: "POST", body: "not json" }),
       ),
-    ).resolves.toMatchObject({ status: 400 });
+    ).resolves.toMatchObject({ status: 404 });
 
-    await expect(handler(jsonPost({ orgs: ["netlify"] }))).resolves.toMatchObject({ status: 400 });
     await expect(
       handler(new Request("https://audit.example/api/reports", { method: "DELETE" })),
     ).resolves.toMatchObject({ status: 405 });
@@ -510,12 +415,12 @@ describe("reports function", () => {
 
     expect(config).toEqual({
       path: [
-        "/api/reports",
         "/api/reports/history",
         "/api/reports/recent",
         "/api/reports/:id",
         "/api/reports/:id/schedule-daily",
       ],
+      rateLimit: { windowLimit: 120, windowSize: 60, aggregateBy: ["ip"] },
     });
   });
 });

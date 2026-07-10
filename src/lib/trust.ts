@@ -5,7 +5,7 @@ import {
   getTrustStatus as getPackumetaTrustStatus,
   type TrustStatus as PackumetaTrustStatus,
 } from "packumeta";
-import type { TrustLevel, TrustStatus } from "./types";
+import type { TrustLevel, TrustStatus } from "./types.ts";
 
 function publisherOf(manifest: unknown): string {
   if (typeof manifest !== "object" || manifest === null) return "?";

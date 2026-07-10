@@ -4,69 +4,128 @@ Architecture and rules for agents editing this project.
 
 ## Project Shape
 
-This is a browser app for npm supply-chain audits. It is a TypeScript port of
-two shell scripts in `scripts/`; those scripts are the reference specification
-for audit behavior. When changing audit semantics, diff against the scripts and
+This is a web app for npm supply-chain audits. It is a TypeScript port of two
+shell scripts in `scripts/`; those scripts are the reference specification for
+audit behavior. When changing audit semantics, diff against the scripts and
 preserve their documented behavior unless the user explicitly asks otherwise.
 
-Interactive audits are client-side. The browser orchestrates package discovery,
-trust checks, downloads lookups, manual-publish scans, and external-maintainer
-checks. Do not add a general backend audit worker.
+Audits run server-side and stream to the browser. When the user runs an audit
+the browser POSTs a validated request to a Netlify **edge function**, which runs
+the audit and streams progress and the final result back over SSE (see the SSE
+Contract below). The browser is a thin client: it submits the request, renders
+the streamed `log` lines in the terminal, and renders the streamed `result` in
+the tables. It does not orchestrate discovery, trust, downloads, or maintainer
+checks itself.
 
-The only server-side audit path is daily package trust tracking. It reruns the
-all-package `recent`/package-trust report for opted-in org sets so the public
-timeline can grow without a browser session. It must not run, derive, store, or
-query `manual` or `external` report data.
+This is deliberate. Because the server computes the report, the report is
+authoritative by construction — the browser never submits trust data — and there
+is no CORS-proxy/SSRF surface to maintain. Do not move audit computation back
+into the browser, and do not add a browser-submitted report-write path.
 
-Server-side code exists only for narrow Netlify integration:
+The audit library (`src/lib/*`) therefore runs in BOTH the browser (bundled by
+Vite) and the Deno edge runtime. Keep it free of `node:` builtins and
+browser-only globals: hashing uses Web Crypto (`crypto.subtle`), not
+`node:crypto`.
 
-- Netlify edge functions in `netlify/edge-functions/` proxy npm hosts for CORS,
-  response streaming, and short CDN caching.
-- `netlify/lib/npm-proxy.ts` contains the shared proxy core and intentionally
-  lives outside `netlify/edge-functions/` so Netlify does not mount it as a
-  function.
-- `netlify/functions/reports.ts` is a serverless function for storing completed
-  small JSON reports and daily tracking schedules through Netlify Database. It
-  is not used for npm packument proxying.
-- `netlify/functions/trust-reruns-background.ts` is an hourly scheduled
-  background function. It only processes due daily package-trust schedules.
+The server-side entry points are:
 
-## npm Proxy Rules
+- `netlify/edge-functions/audit-stream.ts` — `POST /api/audit-stream`. Runs
+  `runAudit` for the `recent`/`manual`/`external` kinds, streams `log`/`result`,
+  saves the completed report server-side, and streams a final `done` with the
+  saved report id. This is the trust boundary.
+- `netlify/edge-functions/user-publishes-stream.ts` —
+  `POST /api/user-publishes-stream`. Runs `runUserPublishes` and streams
+  `log`/`result`. It does not persist anything.
+- `netlify/functions/trust-reruns-background.ts` — an hourly scheduled background
+  function. It reruns the all-package `recent`/package-trust report for opted-in
+  org sets so the public timeline can grow without a browser session. It must not
+  run, derive, store, or query `manual` or `external` report data.
+- `netlify/functions/reports.ts` — a serverless function for reading stored
+  reports and the public trust timeline, and for creating daily tracking
+  schedules, through Netlify Database. It does not compute audits and has no
+  report-write endpoint.
 
-Keep the npm proxies as edge functions, not serverless functions. Edge functions
-stream upstream bodies and avoid both serverless timeouts and response-size caps;
-full packuments can be large.
+## npm Access
 
-Each proxy pins exactly one upstream host as a hardcoded literal:
+npm is fetched directly from the server. Because audits run in edge/background
+functions, not the browser, there is no cross-origin restriction to work around,
+so the CORS proxies (and their shared proxy core) were removed. There is no
+host-generic proxy and no request-controlled upstream host — i.e. no SSRF
+surface to defend.
 
-- `npm-registry-proxy` -> `registry.npmjs.org`
-- `npm-downloads-proxy` -> `api.npmjs.org`
-- `npm-meta-proxy` -> `npm.antfu.dev`
+`src/lib/npmClient.ts` (`npmGet`/`npmGetJson`) fetches the upstream hosts
+directly, with the retry/backoff/`FailureLog` semantics under Invariants:
 
-Do not read an upstream host from the request. There must be no host-generic
-`?url=` proxy and no open relay or SSRF surface.
+- `registry.npmjs.org` — packuments and per-version manifests.
+- `api.npmjs.org` — weekly download counts.
+- `npm.antfu.dev` (fast-npm-meta) — batched discovery metadata.
 
-The upstream resource is carried in the proxy path after the fixed `/api/npm-*`
-mount. Preserve scoped package `%2f`, send fast-npm-meta `+` separators as
-`%2B`, and preserve query strings. The shared proxy core rejects control
-characters, backslashes, malformed encoding, and decoded `..` path segments.
-Keeping the resource in the path also keeps CDN cache keys distinct per upstream
-object.
+When adding a new npm upstream, add the URL helper in `npmClient.ts` and fetch
+it directly; do not reintroduce a proxy layer.
 
-The client-side host mapping is in `src/lib/npmClient.ts` (`proxied()`). When
-adding a new npm upstream host, add a new per-host edge proxy and a matching
-client mapping. Server-side daily reruns pass `npmFetchMode: "direct"` and fetch
-the same upstream URLs without the browser CORS proxies.
+## Edge Bundling (Deno)
+
+The edge functions run on Deno, and Netlify's npm-in-edge bundling is still beta:
+it fails to load some clean-ESM third-party packages the audit graph pulls in
+(currently `valibot` and `packumeta`). Those are mapped to esm.sh in
+`import_map.json`, wired via `deno_import_map` in `netlify.toml`, so the edge
+bundler resolves Deno-compatible builds at deploy time. The Vite browser build
+and vitest ignore the import map and keep resolving the same bare specifiers from
+`node_modules`, so nothing changes for the client.
+
+- Relative imports in any file reachable from an edge function MUST carry an
+  explicit `.ts` extension. Deno resolves the literal specifier — it does not add
+  extensions or map `.js` -> `.ts` — so extensionless or `.js` relative imports
+  bundle fine in Vite/vitest/Node but fail the edge bundler. That is why
+  `src/lib/*` and the edge-reachable `_shared`/`db` imports use `.ts`
+  (`tsconfig` enables `allowImportingTsExtensions`). Node-only files (e.g.
+  `report-schedules.ts` and the serverless functions) keep `.js`; they never enter
+  an edge bundle.
+- This failure only surfaces at deploy-time edge bundling, NOT in local dev — the
+  `@netlify/vite-plugin` bundles the edge functions differently and resolves npm
+  deps and extensionless imports fine. Do not assume a green local run means the
+  edge bundle is deployable; verify with `pnpm dlx netlify-cli build` (aka
+  `netlify build`), which runs the real edge bundler.
+- Any NEW third-party npm dependency reachable from `runAudit` /
+  `runUserPublishes` (i.e. bundled into an edge function) may need an
+  `import_map.json` entry. Keep the pinned esm.sh versions in sync with
+  `package.json`.
+- The `drizzle-orm` / `@netlify/database` stack is deliberately NOT mapped: they
+  are Netlify-first-party (resolved natively) and drizzle is pinned to a
+  git-snapshot version esm.sh can't build.
+
+## SSE Contract
+
+Both audit endpoints stream `text/event-stream`, one JSON payload per `data:`
+line, with these events:
+
+- `log` — a progress line (string). The browser appends it to the terminal.
+- `result` — the full report object. Streamed as soon as it is computed, before
+  the save, so the UI renders without waiting on persistence.
+- `done` — terminal success. For `audit-stream`, `{ id, url }` of the saved
+  report (or `{ error }` if only the save failed — the result already streamed).
+  For `user-publishes-stream`, `{}` (nothing is persisted).
+- `error` — terminal failure (string): the audit itself failed.
+
+Client readers live in `src/lib/sseStream.ts` (`readSseStream`, which reassembles
+frames across chunks), with `src/lib/auditStream.ts` (`streamAudit`) and
+`src/lib/userPublishStream.ts` (`streamUserPublishes`) wrapping the two
+endpoints. Request bodies are validated server-side with valibot
+(`AuditRequestSchema`, `UserPublishRequestSchema` in `src/lib/schemas.ts`); the
+validated request is the trust boundary.
 
 ## Report Sharing
 
-Report links are stateful. After a completed audit, the app automatically sends
-`POST /api/reports` with the `AuditResult` plus completed-run context (`orgs`,
-`scope`, `scopeLabel`, `capturedAt`) and stores it in Netlify Database. The
-function returns an id of the form `<orgs>-<yyyy-mm-dd>-<shorthash>`. The hash is
-derived from the payload, so saving the same report on the same day is
-idempotent. `GET /api/reports/:id` returns the stored row. The UI share action
-only copies the already-created report link.
+Report links are stateful, and the server owns the write. As part of a completed
+`/api/audit-stream` run, `audit-stream.ts` calls `saveReportSnapshot` to store
+the `AuditResult` plus completed-run context (`orgs`, `scope`, `scopeLabel`,
+`capturedAt`) in Netlify Database, then streams the saved id in the `done` event.
+The id has the form `<orgs>-<yyyy-mm-dd>-<shorthash>`; the hash is derived from
+the payload, so saving the same report on the same day is idempotent. There is
+no browser-facing report-write endpoint — the browser never POSTs a report.
+
+`GET /api/reports/:id` returns the stored row. The UI share action only copies
+the already-created report link.
 
 Daily tracking is created with `POST /api/reports/:id/schedule-daily`. The
 endpoint is eligible only when the saved report already has a
@@ -74,43 +133,53 @@ endpoint is eligible only when the saved report already has a
 report. Schedules are keyed by the same normalized org set as the timeline.
 
 The client detects `/report/:id` in `src/main.ts`, renders
-`src/SharedReport.svelte`, and reuses `components/ResultsView.svelte` for the read-only
-snapshot.
+`src/SharedReport.svelte`, and reuses `components/ResultsView.svelte` for the
+read-only snapshot.
 
-This payload is small JSON, so a serverless function is appropriate here. The
-edge-vs-serverless rule is specifically about npm proxying.
+Reads and schedule writes are small JSON, so `reports.ts` stays a serverless
+function. Only the audit stream needs an edge function: SSE streaming with no
+serverless timeout and no response-size cap on large packument-derived results.
 
 ## Layout
 
 ```text
 index.html              Vite entry; loads IBM Plex fonts
-netlify.toml            Netlify static publish of dist/ plus SPA redirect
+netlify.toml            Netlify static publish of dist/, SPA redirect, security headers, edge import map
+import_map.json         Deno import map: edge-only npm deps (valibot, packumeta) -> esm.sh
 scripts/                Original shell scripts; behavior reference, not executed
 db/                     Drizzle schema and Netlify Database connection
 netlify/
-  edge-functions/       Per-host npm edge proxies
-  functions/            Report link API and daily package-trust scheduled reruns
-    _shared/            Shared report persistence and schedule helpers
-  lib/npm-proxy.ts      Shared proxy core
+  edge-functions/
+    audit-stream.ts             POST /api/audit-stream: run audit, stream SSE, save report
+    user-publishes-stream.ts    POST /api/user-publishes-stream: run user history, stream SSE
+  functions/
+    reports.ts                  Serverless: read stored reports + trust timeline, create schedules
+    trust-reruns-background.ts  Hourly background rerun of due daily package-trust schedules
+    _shared/                    Shared report persistence and schedule helpers
 src/
   main.ts               Svelte root and tiny /report/:id path switch
-  App.svelte            Live audit UI, state, run orchestration, automatic report-link save
+  App.svelte            Live audit UI; submits audits to the server, renders streamed progress + result
   SharedReport.svelte   Read-only shared report route
   styles.css            Design system and app styling
   lib/
     types.ts            Shared types; field names mirror script TSV columns
+    schemas.ts          valibot schemas for serialization boundaries (SSE requests, stored reports)
     auditDefaults.ts    Shared fetch concurrency and generic bot defaults
-    npmClient.ts        npmGet, retry/backoff, FailureLog, URL helpers
+    npmClient.ts        npmGet/npmGetJson (direct npm fetch), retry/backoff, FailureLog, URL helpers
+    sseStream.ts        readSseStream: SSE frame reassembly across chunks
+    auditStream.ts      streamAudit: POST /api/audit-stream and consume the stream
+    userPublishStream.ts streamUserPublishes: POST /api/user-publishes-stream and consume the stream
     concurrency.ts      pLimit, mapLimit, chunk
     trust.ts            Thin adapter around packumeta trust logic
     discovery.ts        Org listing and fast-npm-meta batch resolve
     downloads.ts        Weekly downloads, including paced scoped lookups
     members.ts          Parse npm org ls JSON or a plain member list
-    reports.ts          Report-specific orchestration
+    reports.ts          Audit orchestration (recent/manual/external/user-publishes)
     runAudit.ts         Top-level audit dispatch
+    reportHistory.ts    Org normalization, scope labels, trust-history extraction
     export.ts           Copy JSON and CSV download helpers
   components/
-    GhosttyTerminal.svelte Display-only progress terminal with pre fallback
+    LogTerminal.svelte     Display-only progress log of streamed audit output
     DataTable.svelte       Generic sortable table
     TagInput.svelte        Chip multi-value input
     ExportButtons.svelte   Per-report export controls
@@ -126,7 +195,10 @@ src/
 - No silent failure. `npmGet` retries 429, 5xx, and network failures. It honors a
   valid `Retry-After` header, otherwise uses 1, 4, 9, and 16 second backoff.
   Exhausted or unexpected failures go into `FailureLog`; the UI warns that
-  results may be incomplete. 404 is treated as legitimately empty.
+  results may be incomplete. 404 is treated as legitimately empty. One case is
+  escalated past a warning: a per-version manifest that can't be fetched during a
+  `recent` trust check throws and fails the whole report, because a missing
+  manifest would misclassify the package as trust "none" rather than "unknown".
 - Trust classification in `src/lib/trust.ts` delegates to `packumeta`; do not
   reimplement that logic locally. The adapter only adds fields the app needs for
   reports (`level`, numeric `order`, and `publisher`). Follow `packumeta`'s
@@ -142,7 +214,8 @@ src/
   full packuments because they need per-version `_npmUser` data.
 - Downloads from `api.npmjs.org` are paced deliberately. Unscoped packages use
   the bulk endpoint in batches of 100. Scoped packages are fetched sequentially
-  with a 500 ms delay. Do not parallelize scoped downloads.
+  with a 500 ms delay. Do not parallelize scoped downloads. A present-but-null
+  entry is a real 0; only a failed/absent fetch stays unknown ("?").
 - `recent` and `manual` share one discovery pass. `manual` scans the package set
   from that cache: all packages under `-A`, otherwise only recency-filtered
   packages. `external` ignores that cache and enumerates the full org list
@@ -150,7 +223,23 @@ src/
 - Do not hardcode a real org, user, or package. This is a generic tool and those
   values are user input. Generic automation-account defaults are allowed only
   when they are broadly applicable, such as the current `GitHub Actions` manual
-  exclusion default.
+  exclusion default. Two bounded exceptions live in `auditDefaults.ts` and are
+  enforced on both the browser and the server trust boundary: `MAX_ORGS` (5) caps
+  orgs per audit, and `BLOCKED_ORGS` (currently `types`) denylists orgs too large
+  to audit within platform limits. These bound cost/abuse — they are not defaults
+  that audit a specific org.
+- The audit library runs in both the browser bundle and the Deno edge runtime.
+  Nothing reachable from `runAudit`/`runUserPublishes` in `src/lib/*` may use
+  `node:` builtins or browser-only globals; hashing uses Web Crypto.
+- Reports are authoritative because the server computes them. `audit-stream.ts`
+  owns the save; there is no browser-submitted report-write path, and the daily
+  background rerun writes only `recent`/package-trust data.
+- The report-creation endpoints are rate-limited per IP at the Netlify edge (the
+  `rateLimit` field in each function's `config`): `audit-stream` and
+  `user-publishes-stream` at 30/min, `reports.ts` at 120/min. This is the abuse
+  bound chosen in lieu of authenticating the endpoints; keep it when editing them.
+- `schedule-daily` is idempotent: an already-enabled schedule for the same
+  normalized org set is returned unchanged, not reset.
 
 ## Tooling Rules
 
@@ -164,16 +253,18 @@ src/
   `pnpm run knip`, and targeted file inspection when they are relevant.
 - `pnpm run test` runs unit tests, typecheck, format check, and lint.
 
-## ghostty-web
+## Progress Log
 
-- `GhosttyTerminal` imports `init`, `Terminal`, and `FitAddon` from
-  `ghostty-web` v0.4.0.
-- The WASM is inlined as a base64 data URL in the ESM build. `await init()` takes
-  no arguments and there is no separate `.wasm` asset to copy.
-- The terminal is display-only. It renders the live progress log and never runs a
-  shell.
-- If WASM initialization fails, `GhosttyTerminal` falls back to a `<pre>` mirror
-  so the log is not lost.
+- `LogTerminal` renders the streamed audit progress (the SSE `log` events) as a
+  plain, scrolling, display-only log. It exposes `writeLine(line)` / `clear()`,
+  which `App.svelte` binds and calls as the stream arrives.
+- No runtime dependency, no shell. The visible log is itself the screen-reader
+  live region (`role="log"`, `aria-live="polite"`), so progress and the "results
+  may be INCOMPLETE" warning are announced.
+- It replaced a `ghostty-web` WASM terminal that inlined ~413 KB of base64 WASM
+  into the browser bundle (~85% of it) to render append-only text. Do not
+  reintroduce a WASM terminal for a display-only log; removing it also let the CSP
+  drop `'wasm-unsafe-eval'`.
 
 ## Change Recipes
 
@@ -183,9 +274,12 @@ Adding a report:
 2. Add the report orchestrator in `src/lib/reports.ts`; accept `FailureLog` and
    `LogFn`.
 3. Wire dispatch through `src/lib/runAudit.ts` and `ReportKind`.
-4. Add the view in `src/components/`.
-5. Add the tab metadata in `src/App.svelte` and, if it belongs in shared snapshots,
-   `src/components/ResultsView.svelte`.
+4. Allow the kind server-side: add it to the `kinds` picklist in
+   `AuditRequestSchema` (`src/lib/schemas.ts`), or the edge function rejects the
+   request before the audit runs.
+5. Add the view in `src/components/`.
+6. Add the tab metadata in `src/App.svelte` and, if it belongs in shared
+   snapshots, `src/components/ResultsView.svelte`.
 
 Changing audit behavior:
 
@@ -195,6 +289,14 @@ Changing audit behavior:
    per-version manifests for trust, full packuments only where needed.
 4. Update README and CONTRIBUTING if user-visible behavior or required workflow
    changes.
+
+Changing the audit request or SSE contract:
+
+1. Update the valibot schema in `src/lib/schemas.ts`. The server validates the
+   request; the validated request is the trust boundary.
+2. Update the matching edge function in `netlify/edge-functions/` and the client
+   wrapper (`auditStream.ts` / `userPublishStream.ts`).
+3. Keep the event names (`log`/`result`/`done`/`error`) in sync on both sides.
 
 Changing persistence:
 
