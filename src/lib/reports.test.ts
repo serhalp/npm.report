@@ -36,8 +36,8 @@ describe("report builders", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-27T00:00:00.000Z"));
     installRoutes({
-      "/api/npm-registry/-/org/acme/package": { recent: {}, old: {}, blank: {} },
-      "/api/npm-meta/blank%2Bold%2Brecent?metadata=true": [
+      "https://registry.npmjs.org/-/org/acme/package": { recent: {}, old: {}, blank: {} },
+      "https://npm.antfu.dev/blank+old+recent?metadata=true": [
         {
           name: "recent",
           version: "1.0.0",
@@ -75,8 +75,8 @@ describe("report builders", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-27T00:00:00.000Z"));
     installRoutes({
-      "/api/npm-registry/-/org/acme/package": { recent: {}, old: {}, blank: {} },
-      "/api/npm-meta/blank%2Bold%2Brecent?metadata=true": [
+      "https://registry.npmjs.org/-/org/acme/package": { recent: {}, old: {}, blank: {} },
+      "https://npm.antfu.dev/blank+old+recent?metadata=true": [
         {
           name: "recent",
           version: "1.0.0",
@@ -121,19 +121,19 @@ describe("report builders", () => {
   it("builds recent trust/download rows and summary from a supplied discovery scope", async () => {
     vi.useFakeTimers();
     installRoutes({
-      "/api/npm-registry/pkg/1.0.0": {
+      "https://registry.npmjs.org/pkg/1.0.0": {
         _npmUser: { name: "alice" },
         dist: { attestations: { provenance: true } },
       },
-      "/api/npm-registry/@scope%2fpkg/2.0.0": {
+      "https://registry.npmjs.org/@scope%2fpkg/2.0.0": {
         _npmUser: { name: "GitHub Actions", trustedPublisher: true },
         dist: { attestations: { provenance: true } },
       },
-      "/api/npm-downloads/downloads/point/last-week/pkg": {
+      "https://api.npmjs.org/downloads/point/last-week/pkg": {
         package: "pkg",
         downloads: 10,
       },
-      "/api/npm-downloads/downloads/point/last-week/@scope/pkg": {
+      "https://api.npmjs.org/downloads/point/last-week/@scope/pkg": {
         downloads: 2,
       },
     });
@@ -206,7 +206,7 @@ describe("report builders", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-27T00:00:00.000Z"));
     installRoutes({
-      "/api/npm-registry/pkg": {
+      "https://registry.npmjs.org/pkg": {
         name: "pkg",
         versions: {
           "1.0.0": { _npmUser: { name: "alice" } },
@@ -236,12 +236,12 @@ describe("report builders", () => {
 
   it("reports current maintainers outside the supplied org member list", async () => {
     installRoutes({
-      "/api/npm-registry/-/org/acme/package": { pkg: {}, other: {} },
-      "/api/npm-registry/pkg": {
+      "https://registry.npmjs.org/-/org/acme/package": { pkg: {}, other: {} },
+      "https://registry.npmjs.org/pkg": {
         name: "pkg",
         maintainers: [{ name: "Alice" }, { name: "mallory" }],
       },
-      "/api/npm-registry/other": {
+      "https://registry.npmjs.org/other": {
         name: "other",
         maintainers: [{ name: "mallory" }],
       },
@@ -261,8 +261,8 @@ describe("report builders", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-27T00:00:00.000Z"));
     installRoutes({
-      "/api/npm-registry/-/user/alice/package": { mine: {} },
-      "/api/npm-registry/mine": {
+      "https://registry.npmjs.org/-/user/alice/package": { mine: {} },
+      "https://registry.npmjs.org/mine": {
         name: "mine",
         versions: {
           "1.0.0": { _npmUser: { name: "alice" } },
@@ -271,7 +271,7 @@ describe("report builders", () => {
           "1.0.0": "2026-06-01T00:00:00.000Z",
         },
       },
-      "/api/npm-registry/extra": {
+      "https://registry.npmjs.org/extra": {
         name: "extra",
         versions: {
           "2.0.0": { _npmUser: { name: "alice" } },

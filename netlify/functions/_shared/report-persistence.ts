@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { db } from "../../../db/index.js";
 import { reportTrustHistory, reports } from "../../../db/schema.js";
 import {
@@ -36,8 +35,18 @@ export function slugifyOrgs(orgs: string[]): string {
 // Build the human-readable primary key: <orgs>-<yyyy-mm-dd>-<shorthash>.
 // The short hash is content-derived (sha256 of the payload), so saving an
 // identical report yields the same id for the same UTC day.
-export function buildReportId(orgs: string[], payload: unknown, now = new Date()): string {
-  const hash = createHash("sha256").update(JSON.stringify(payload)).digest("hex").slice(0, 8);
+export async function buildReportId(
+  orgs: string[],
+  payload: unknown,
+  now = new Date(),
+): Promise<string> {
+  // Web Crypto (not node:crypto) so this runs unchanged in edge/Deno as well as
+  // Node — the audit + save now runs in an edge function.
+  const bytes = new TextEncoder().encode(JSON.stringify(payload));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const hash = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 8);
   const date = now.toISOString().slice(0, 10);
   return `${slugifyOrgs(orgs)}-${date}-${hash}`;
 }
@@ -98,7 +107,7 @@ export async function storeTrustHistory(reportId: string, history: TrustHistoryS
 export async function saveReportSnapshot(
   input: SaveReportSnapshotInput,
 ): Promise<SavedReportSnapshot> {
-  const id = buildReportId(input.orgs, input.payload);
+  const id = await buildReportId(input.orgs, input.payload);
   const scopeLabel = input.scopeLabel ?? scopeLabelFor(input.scope);
   await db
     .insert(reports)

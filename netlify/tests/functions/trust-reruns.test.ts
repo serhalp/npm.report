@@ -189,7 +189,6 @@ describe("trust rerun schedules", () => {
         all: true,
         bots: [],
         jobs: 12,
-        npmFetchMode: "direct",
       },
       ["recent"],
       [],

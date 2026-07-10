@@ -1,6 +1,5 @@
 /* eslint-disable no-await-in-loop -- Retry/backoff must wait between attempts; parallelizing retries would violate rate-limit handling. */
 import type { FetchFailure } from "./types";
-import type { NpmFetchMode } from "./types";
 
 // ---------------------------------------------------------------------------
 // npm_get — direct port of the bash helper shared by both scripts.
@@ -64,65 +63,21 @@ export function retryDelayMs(retryAfter: string | null, attempt: number): number
   return backoff;
 }
 
-// Upstream npm hosts that no longer reliably send CORS headers, so the browser
-// must reach them through our edge proxies (which also add a short shared
-// cache). Each host has its own proxy with the host hardcoded server-side — the
-// host is never sent in the request, so the proxy can't be steered elsewhere.
-const PROXY_MOUNTS: Record<string, string> = {
-  "registry.npmjs.org": "/api/npm-registry",
-  "api.npmjs.org": "/api/npm-downloads",
-  "npm.antfu.dev": "/api/npm-meta",
-};
-
-export interface NpmFetchOptions {
-  mode?: NpmFetchMode;
-}
-
-function defaultFetchMode(): NpmFetchMode {
-  return typeof window === "undefined" ? "direct" : "browser-proxy";
-}
-
-/**
- * Rewrite an upstream npm URL to go through its dedicated `/api/npm-*` edge
- * proxy. The upstream path + query is carried in the proxy URL's PATH (not a
- * query param), so `%2f` in scoped names survives intact, fast-npm-meta `+`
- * separators are sent as `%2B` so they cannot be normalized to spaces, and
- * every resource gets a distinct path — which keeps the CDN cache from serving
- * one cached body for a different resource.
- * Non-npm or relative URLs are returned untouched.
- */
-function proxied(url: string): string {
-  try {
-    const u = new URL(url);
-    const mount = PROXY_MOUNTS[u.hostname];
-    // `u.pathname` preserves `%2f`; encode literal `+` so intermediaries never
-    // normalize fast-npm-meta batch separators into spaces before edge parsing.
-    if (mount) return `${mount}${u.pathname.replaceAll("+", "%2B")}${u.search}`;
-  } catch {
-    // not an absolute URL — leave it alone
-  }
-  return url;
-}
-
-export async function npmGet(
-  url: string,
-  failures: FailureLog,
-  tries = 5,
-  options: NpmFetchOptions = {},
-): Promise<string | null> {
+// Audits run server-side (edge functions), so npm is fetched directly — the
+// browser CORS proxies are gone.
+export async function npmGet(url: string, failures: FailureLog, tries = 5): Promise<string | null> {
   let i = 0;
-  const target = (options.mode ?? defaultFetchMode()) === "browser-proxy" ? proxied(url) : url;
   for (;;) {
     i++;
     let code = 0;
     let retryAfter: string | null = null;
     try {
-      const res = await fetch(target, { headers: { Accept: "application/json" } });
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
       code = res.status;
       if (code >= 200 && code < 300) return await res.text();
       if (code === 404) return null;
-      // Grab the host's own retry guidance (the edge proxy forwards it on
-      // non-2xx) so the backoff below can honor it instead of guessing.
+      // Grab the host's own retry guidance (Retry-After on a non-2xx) so the
+      // backoff below can honor it instead of guessing.
       retryAfter = res.headers.get("retry-after");
     } catch {
       code = 0; // network error / CORS / abort
@@ -152,9 +107,8 @@ export async function npmGetJson<T = unknown>(
   url: string,
   failures: FailureLog,
   tries = 5,
-  options: NpmFetchOptions = {},
 ): Promise<T | null> {
-  const body = await npmGet(url, failures, tries, options);
+  const body = await npmGet(url, failures, tries);
   if (!body) return null;
   try {
     return JSON.parse(body) as T;

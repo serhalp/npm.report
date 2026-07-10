@@ -41,8 +41,8 @@ describe("fetchWeeklyDownloads", () => {
     const downloads = await promise;
 
     expect(seen).toEqual([
-      "/api/npm-downloads/downloads/point/last-week/left-pad,is-number",
-      "/api/npm-downloads/downloads/point/last-week/@scope/pkg",
+      "https://api.npmjs.org/downloads/point/last-week/left-pad,is-number",
+      "https://api.npmjs.org/downloads/point/last-week/@scope/pkg",
     ]);
     expect([...downloads.entries()].toSorted()).toEqual([
       ["@scope/pkg", 3],

@@ -8,27 +8,17 @@
   import TagInput from "./components/TagInput.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import UserPublishView from "./components/UserPublishView.svelte";
-  import { DEFAULT_BOT_EXCLUSIONS, FETCH_CONCURRENCY } from "./lib/auditDefaults";
+  import { DEFAULT_BOT_EXCLUSIONS } from "./lib/auditDefaults";
+  import { streamAudit } from "./lib/auditStream";
   import { parseMembers } from "./lib/members";
-  import { FailureLog } from "./lib/npmClient";
-  import type { SharedReportScope } from "./lib/reportHistory";
-  import { scopeLabelFor } from "./lib/reportHistory";
-  import { runUserPublishes } from "./lib/reports";
-  import { runAudit, type AuditResult } from "./lib/runAudit";
-  import { parseOrNull, SaveResponseSchema } from "./lib/schemas";
-  import type { AuditConfig, ReportKind, UserPublishReport } from "./lib/types";
+  import type { AuditResult } from "./lib/runAudit";
+  import type { ReportKind, UserPublishReport } from "./lib/types";
+  import { streamUserPublishes } from "./lib/userPublishStream";
 
   type TerminalHandle = {
     writeLine: (line: string) => void;
     clear: () => void;
   };
-
-  interface CompletedRunContext {
-    orgs: string[];
-    scope: SharedReportScope;
-    scopeLabel: string;
-    capturedAt: string;
-  }
 
   const REPORT_META: { kind: ReportKind; title: string; desc: string }[] = [
     {
@@ -69,7 +59,6 @@
   let firstTab: ReportKind = $state("recent");
   let toast: string | null = $state(null);
 
-  let savingReport = $state(false);
   let reportSaveError = $state<string | null>(null);
   let shareUrl = $state<string | null>(null);
   let savedReportId = $state<string | null>(null);
@@ -123,43 +112,6 @@
     return () => window.clearTimeout(timer);
   });
 
-  async function saveReportSnapshot(
-    nextResult: AuditResult,
-    context: CompletedRunContext,
-    attempt: number,
-  ) {
-    savingReport = true;
-    reportSaveError = null;
-    try {
-      const response = await fetch("/api/reports", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          orgs: context.orgs,
-          scope: context.scope,
-          scopeLabel: context.scopeLabel,
-          capturedAt: context.capturedAt,
-          payload: nextResult,
-        }),
-      });
-      if (!response.ok) throw new Error(`Save failed (${response.status})`);
-      const data = await response.json();
-      if (!parseOrNull(SaveResponseSchema, data))
-        throw new Error("Save failed (unexpected response)");
-      const { id } = data as { id: string };
-      if (attempt !== saveAttempt) return;
-      savedReportId = id;
-      savedReportCanTrackDaily = context.scope === "all" && !!nextResult.recent;
-      shareUrl = `${window.location.origin}/report/${id}`;
-      historyRefreshKey++;
-    } catch (reason) {
-      if (attempt !== saveAttempt) return;
-      reportSaveError = reason instanceof Error ? reason.message : "Save failed";
-    } finally {
-      if (attempt === saveAttempt) savingReport = false;
-    }
-  }
-
   async function handleRun() {
     error = null;
     if (orgs.length === 0) {
@@ -176,43 +128,51 @@
       return;
     }
 
-    const config: AuditConfig = { orgs, months, all, bots, jobs: FETCH_CONCURRENCY };
     const attempt = ++saveAttempt;
     running = true;
     result = null;
     shareUrl = null;
     savedReportId = null;
     savedReportCanTrackDaily = false;
-    savingReport = false;
     reportSaveError = null;
     terminal?.clear();
     log(`→ audit ${orgs.join(", ")} | reports: ${selectedKinds.join(",")}`);
     log(all ? "→ scope: ALL org packages (-A)" : `→ scope: last ${months} months`);
 
     try {
-      const response = await runAudit(config, selectedKinds, members, log);
-      result = response;
-      const scope: SharedReportScope = config.all ? "all" : { months: config.months };
-      const context: CompletedRunContext = {
-        orgs: [...config.orgs],
-        scope,
-        scopeLabel: scopeLabelFor(scope),
-        capturedAt: new Date().toISOString(),
-      };
-      const first = selectedKinds.find(
-        (kind) =>
-          (kind === "recent" && response.recent) ||
-          (kind === "manual" && response.manual) ||
-          (kind === "external" && response.external),
+      // The audit runs server-side; we stream its progress into the terminal and
+      // render the authoritative result it returns.
+      const outcome = await streamAudit(
+        { orgs, kinds: selectedKinds, months, all, bots, members },
+        log,
       );
-      if (first) firstTab = first;
-      void saveReportSnapshot(response, context, attempt);
+      if (attempt !== saveAttempt) return;
+      result = outcome.result;
+      if (outcome.result) {
+        const ready = outcome.result;
+        const first = selectedKinds.find(
+          (kind) =>
+            (kind === "recent" && ready.recent) ||
+            (kind === "manual" && ready.manual) ||
+            (kind === "external" && ready.external),
+        );
+        if (first) firstTab = first;
+      }
+      if (outcome.reportId) {
+        savedReportId = outcome.reportId;
+        shareUrl = `${window.location.origin}${outcome.reportUrl ?? `/report/${outcome.reportId}`}`;
+        savedReportCanTrackDaily = all && !!outcome.result?.recent;
+        historyRefreshKey++;
+      } else if (outcome.saveError) {
+        reportSaveError = outcome.saveError;
+      }
     } catch (reason) {
-      const message = reason instanceof Error ? reason.message : String(reason);
+      if (attempt !== saveAttempt) return;
+      const message = reason instanceof Error ? reason.message : "Audit failed.";
       log(`Error: ${message}`);
-      error = reason instanceof Error ? reason.message : "Audit failed.";
+      error = message;
     } finally {
-      running = false;
+      if (attempt === saveAttempt) running = false;
     }
   }
 
@@ -231,21 +191,10 @@
     log(`→ user-publishes: ${user} (last ${upMonths} months)`);
 
     try {
-      const failures = new FailureLog();
-      const report = await runUserPublishes(
-        user,
-        upMonths,
-        FETCH_CONCURRENCY,
-        extra,
-        failures,
+      upResult = await streamUserPublishes(
+        { user, months: upMonths, useCachePackages: extra },
         log,
       );
-      if (failures.count > 0) {
-        log(
-          `WARNING: ${failures.count} fetch(es) failed after retries — results may be INCOMPLETE.`,
-        );
-      }
-      upResult = report;
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : String(reason);
       log(`Error: ${message}`);
@@ -292,8 +241,8 @@
     <p>
       Point this at any npm organizations to track trusted-publishing / provenance rollout, find
       packages published manually rather than via CI, and surface maintainers who can publish but
-      aren&rsquo;t org members. Audit execution runs in your browser against public npm data; a
-      read-only snapshot is saved automatically after each completed audit.
+      aren&rsquo;t org members. Audits run on the server against public npm data and stream progress
+      here live; a read-only snapshot is saved automatically after each completed audit.
     </p>
   </header>
 
@@ -456,9 +405,7 @@
       <div class="share-bar">
         <div>
           <strong class="share-bar__title">Report link</strong>
-          {#if savingReport}
-            <span class="share-bar__hint">Saving read-only snapshot…</span>
-          {:else if shareUrl}
+          {#if shareUrl}
             <span class="share-bar__hint">Saved automatically after this run.</span>
           {:else if reportSaveError}
             <span class="share-bar__hint">Report link unavailable: {reportSaveError}</span>

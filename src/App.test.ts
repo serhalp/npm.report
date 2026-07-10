@@ -1,34 +1,32 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/svelte";
+import { fireEvent, render, screen } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import App from "./App.svelte";
 import { auditResult } from "./test/fixtures";
-import { runAudit } from "./lib/runAudit";
-import { runUserPublishes } from "./lib/reports";
+import { streamAudit } from "./lib/auditStream";
+import { streamUserPublishes } from "./lib/userPublishStream";
 
-vi.mock("./lib/runAudit", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./lib/runAudit")>();
+// Both the audit and user-publishes now run server-side; the client streams them.
+vi.mock("./lib/auditStream", () => ({ streamAudit: vi.fn() }));
+vi.mock("./lib/userPublishStream", () => ({ streamUserPublishes: vi.fn() }));
+
+const mockedStreamAudit = vi.mocked(streamAudit);
+const mockedStreamUserPublishes = vi.mocked(streamUserPublishes);
+
+/** Default streamAudit outcome: a completed, saved report. */
+function savedOutcome(overrides = {}) {
   return {
-    ...actual,
-    runAudit: vi.fn(),
+    result: auditResult,
+    reportId: "netlify-2026-06-27-abc12345",
+    reportUrl: "/report/netlify-2026-06-27-abc12345",
+    ...overrides,
   };
-});
-
-vi.mock("./lib/reports", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./lib/reports")>();
-  return {
-    ...actual,
-    runUserPublishes: vi.fn(),
-  };
-});
-
-const mockedRunAudit = vi.mocked(runAudit);
-const mockedRunUserPublishes = vi.mocked(runUserPublishes);
+}
 
 describe("App", () => {
   beforeEach(() => {
-    mockedRunAudit.mockReset();
-    mockedRunUserPublishes.mockReset();
+    mockedStreamAudit.mockReset();
+    mockedStreamUserPublishes.mockReset();
     vi.unstubAllGlobals();
     vi.mocked(navigator.clipboard.writeText).mockClear();
     vi.stubGlobal(
@@ -40,6 +38,8 @@ describe("App", () => {
     );
   });
 
+  afterEach(() => vi.unstubAllGlobals());
+
   test("validates required organizations before running", async () => {
     const user = userEvent.setup();
     render(App);
@@ -47,7 +47,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Run audit" }));
 
     expect(screen.getByText("Add at least one npm organization.")).toBeInTheDocument();
-    expect(mockedRunAudit).not.toHaveBeenCalled();
+    expect(mockedStreamAudit).not.toHaveBeenCalled();
   });
 
   test("defaults to all scope and shows history only for all-scope org sets", async () => {
@@ -76,10 +76,10 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Run audit" }));
 
     expect(screen.getByText("Select at least one report.")).toBeInTheDocument();
-    expect(mockedRunAudit).not.toHaveBeenCalled();
+    expect(mockedStreamAudit).not.toHaveBeenCalled();
   });
 
-  test("validates external-only reports require pasted members", async () => {
+  test("validates that external reports require pasted members", async () => {
     const user = userEvent.setup();
     render(App);
 
@@ -90,15 +90,16 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Run audit" }));
 
     expect(screen.getByText(/external report needs your npm org member list/i)).toBeInTheDocument();
-    expect(mockedRunAudit).not.toHaveBeenCalled();
+    expect(mockedStreamAudit).not.toHaveBeenCalled();
   });
 
-  test("passes parsed external members into audit runs", async () => {
+  test("passes parsed external members into the audit request", async () => {
     const user = userEvent.setup();
-    mockedRunAudit.mockResolvedValue({
-      ...auditResult,
-      external: { rows: [], distinctUsers: 0, byUser: [] },
-    });
+    mockedStreamAudit.mockResolvedValue(
+      savedOutcome({
+        result: { ...auditResult, external: { rows: [], distinctUsers: 0, byUser: [] } },
+      }),
+    );
     render(App);
 
     await user.type(screen.getByPlaceholderText(/nuxt, vue/i), "netlify{Enter}");
@@ -109,24 +110,20 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Run audit" }));
 
     await screen.findByRole("heading", { name: "Audit results" });
-    expect(mockedRunAudit).toHaveBeenCalledWith(
-      expect.objectContaining({ orgs: ["netlify"] }),
-      ["recent", "manual", "external"],
-      ["alice", "bob"],
+    expect(mockedStreamAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orgs: ["netlify"],
+        kinds: ["recent", "manual", "external"],
+        members: ["alice", "bob"],
+      }),
       expect.any(Function),
     );
   });
 
-  test("runs an audit, renders results, saves a report link, and copies it on request", async () => {
+  test("streams an audit, renders results, shows the saved link, and copies it on request", async () => {
     const user = userEvent.setup();
     const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
-      if (String(input) === "/api/reports") {
-        return {
-          ok: true,
-          json: async () => ({ id: "netlify-2026-06-27-abc12345" }),
-        };
-      }
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       if (String(input) === "/api/reports/netlify-2026-06-27-abc12345/schedule-daily") {
         return {
           ok: true,
@@ -140,17 +137,14 @@ describe("App", () => {
           }),
         };
       }
-      return {
-        ok: true,
-        json: async () => ({ orgs: ["netlify"], points: [] }),
-      };
+      return { ok: true, json: async () => ({ orgs: ["netlify"], points: [] }) };
     });
     const scrollIntoView = vi.fn();
     Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", {
       configurable: true,
       value: scrollIntoView,
     });
-    mockedRunAudit.mockResolvedValue(auditResult);
+    mockedStreamAudit.mockResolvedValue(savedOutcome());
     vi.stubGlobal("fetch", fetchMock);
 
     render(App);
@@ -163,16 +157,15 @@ describe("App", () => {
     expect(
       screen.getByText("2 package trust rows · 1 manual publish · 1 fetch warning"),
     ).toBeInTheDocument();
-    expect(mockedRunAudit).toHaveBeenCalledWith(
+    expect(mockedStreamAudit).toHaveBeenCalledWith(
       {
         orgs: ["netlify"],
+        kinds: ["recent", "manual"],
         months: 12,
         all: true,
         bots: ["GitHub Actions"],
-        jobs: 12,
+        members: [],
       },
-      ["recent", "manual"],
-      [],
       expect.any(Function),
     );
 
@@ -182,19 +175,6 @@ describe("App", () => {
     );
     expect(resultsHeading).toHaveFocus();
 
-    await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith("/api/reports", expect.any(Object));
-    });
-    const saveCall = fetchMock.mock.calls.find(([input]) => String(input) === "/api/reports");
-    expect(saveCall).toBeDefined();
-    const saveBody = JSON.parse(String((saveCall![1] as RequestInit).body));
-    expect(saveBody).toMatchObject({
-      orgs: ["netlify"],
-      scope: "all",
-      scopeLabel: "ALL org packages",
-      payload: auditResult,
-    });
-    expect(typeof saveBody.capturedAt).toBe("string");
     expect(await screen.findByText(/netlify-2026-06-27-abc12345/)).toBeInTheDocument();
     expect(screen.getByText("Saved automatically after this run.")).toBeInTheDocument();
     expect(screen.getByText("Package trust only.")).toBeInTheDocument();
@@ -208,29 +188,19 @@ describe("App", () => {
     expect(screen.getByText("Next run 2026-06-28.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Copy link" }));
-
     expect(writeText).toHaveBeenCalledWith(
       "http://localhost:3000/report/netlify-2026-06-27-abc12345",
     );
     expect(await screen.findByText("Link copied")).toBeInTheDocument();
   });
 
-  test("surfaces automatic report save failures inline", async () => {
+  test("surfaces a server-side save failure inline", async () => {
     const user = userEvent.setup();
-    mockedRunAudit.mockResolvedValue(auditResult);
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        if (String(input) === "/api/reports") {
-          return {
-            ok: false,
-            status: 500,
-          };
-        }
-        return {
-          ok: true,
-          json: async () => ({ orgs: ["netlify"], points: [] }),
-        };
+    mockedStreamAudit.mockResolvedValue(
+      savedOutcome({
+        reportId: undefined,
+        reportUrl: undefined,
+        saveError: "could not save report",
       }),
     );
 
@@ -241,7 +211,7 @@ describe("App", () => {
     await screen.findByRole("heading", { name: "Audit results" });
 
     expect(
-      await screen.findByText("Report link unavailable: Save failed (500)"),
+      await screen.findByText("Report link unavailable: could not save report"),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy link" })).toBeDisabled();
   });
@@ -251,22 +221,7 @@ describe("App", () => {
     const writeText = vi
       .spyOn(navigator.clipboard, "writeText")
       .mockRejectedValue(new Error("denied"));
-    mockedRunAudit.mockResolvedValue(auditResult);
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        if (String(input) === "/api/reports") {
-          return {
-            ok: true,
-            json: async () => ({ id: "netlify-2026-06-27-abc12345" }),
-          };
-        }
-        return {
-          ok: true,
-          json: async () => ({ orgs: ["netlify"], points: [] }),
-        };
-      }),
-    );
+    mockedStreamAudit.mockResolvedValue(savedOutcome());
 
     render(App);
 
@@ -282,10 +237,10 @@ describe("App", () => {
     );
   });
 
-  test("runs user publish lookup with packages from the recent cache", async () => {
+  test("runs user publish lookup with packages from the streamed result", async () => {
     const user = userEvent.setup();
-    mockedRunAudit.mockResolvedValue(auditResult);
-    mockedRunUserPublishes.mockResolvedValue({
+    mockedStreamAudit.mockResolvedValue(savedOutcome());
+    mockedStreamUserPublishes.mockResolvedValue({
       user: "alice",
       scanned: 2,
       rows: [{ when: "2026-06-01T00:00:00.000Z", ref: "alpha@1.0.0" }],
@@ -299,12 +254,8 @@ describe("App", () => {
     await user.type(screen.getByLabelText("npm username"), "alice");
     await user.click(screen.getByRole("button", { name: "Look up" }));
 
-    expect(mockedRunUserPublishes).toHaveBeenCalledWith(
-      "alice",
-      12,
-      12,
-      ["alpha", "beta"],
-      expect.anything(),
+    expect(mockedStreamUserPublishes).toHaveBeenCalledWith(
+      { user: "alice", months: 12, useCachePackages: ["alpha", "beta"] },
       expect.any(Function),
     );
     expect(await screen.findByText("alpha@1.0.0")).toBeInTheDocument();

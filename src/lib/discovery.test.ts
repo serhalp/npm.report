@@ -51,9 +51,12 @@ describe("discovery", () => {
       progress.push([done, total]),
     );
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/npm-meta/@scope/pkg%2Bleft-pad?metadata=true", {
-      headers: { Accept: "application/json" },
-    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://npm.antfu.dev/@scope/pkg+left-pad?metadata=true",
+      {
+        headers: { Accept: "application/json" },
+      },
+    );
     expect(meta).toEqual([
       {
         name: "@scope/pkg",

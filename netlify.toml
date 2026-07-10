@@ -12,7 +12,7 @@ to = "/index.html"
 status = 200
 
 [[headers]]
-for = "/"
+for = "/*"
 [headers.values]
 X-Content-Type-Options = "nosniff"
 X-Frame-Options = "DENY"

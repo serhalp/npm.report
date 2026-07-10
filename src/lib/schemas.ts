@@ -77,9 +77,6 @@ export const ReportRecordSchema = v.looseObject({
   createdAt: v.nullable(v.string()),
 });
 
-/** Response of POST /api/reports. */
-export const SaveResponseSchema = v.looseObject({ id: v.string() });
-
 const TrustHistoryPoint = v.looseObject({
   id: v.string(),
   url: v.string(),
@@ -133,6 +130,32 @@ export const ReportPostBodySchema = v.object({
   scopeLabel: v.optional(v.unknown()),
   capturedAt: v.optional(v.unknown()),
   payload: v.looseObject({}),
+});
+
+// POST /api/audit-stream — the interactive audit request. The server runs the
+// audit from this (the browser no longer computes it), so this is the trust
+// boundary: whatever the server produces from a validated request is authoritative.
+export const AuditRequestSchema = v.object({
+  orgs: v.array(v.string()),
+  kinds: v.array(v.picklist(["recent", "manual", "external"])),
+  months: v.optional(v.number(), 12),
+  all: v.optional(v.boolean(), true),
+  bots: v.optional(v.array(v.string()), []),
+  members: v.optional(v.array(v.string()), []),
+});
+
+// POST /api/user-publishes-stream — the per-user publish-history request.
+export const UserPublishRequestSchema = v.object({
+  user: v.string(),
+  months: v.optional(v.number(), 12),
+  useCachePackages: v.optional(v.array(v.string()), []),
+});
+
+// The user-publishes result streamed back for the client to render.
+export const UserPublishReportSchema = v.looseObject({
+  user: v.string(),
+  scanned: v.number(),
+  rows: v.array(v.looseObject({ when: v.string(), ref: v.string() })),
 });
 
 /** Parse `value` against `schema`, returning the typed value or null on failure. */

@@ -30,7 +30,7 @@ describe("npm client", () => {
     expect(retryDelayMs(null, 3)).toBe(9_000);
   });
 
-  it("proxies npm hosts and records exhausted retryable failures", async () => {
+  it("fetches npm directly and records exhausted retryable failures", async () => {
     const fetchMock = vi.fn().mockResolvedValue(textResponse("rate limited", 429));
     vi.stubGlobal("fetch", fetchMock);
     const failures = new FailureLog();
@@ -38,29 +38,18 @@ describe("npm client", () => {
 
     await expect(npmGet(url, failures, 1)).resolves.toBeNull();
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/npm-registry/@scope%2fpkg?write=true", {
+    expect(fetchMock).toHaveBeenCalledWith(url, {
       headers: { Accept: "application/json" },
     });
     expect(failures.failures).toEqual([{ url, reason: "http 429" }]);
   });
 
-  it("encodes fast-npm-meta plus separators in proxy paths", async () => {
+  it("sends the request URL verbatim (scoped names and + separators intact)", async () => {
     const fetchMock = vi.fn().mockResolvedValue(textResponse("[]"));
     vi.stubGlobal("fetch", fetchMock);
+    const url = "https://npm.antfu.dev/@scope/pkg+left-pad?metadata=true";
 
-    await npmGet("https://npm.antfu.dev/@scope/pkg+left-pad?metadata=true", new FailureLog());
-
-    expect(fetchMock).toHaveBeenCalledWith("/api/npm-meta/@scope/pkg%2Bleft-pad?metadata=true", {
-      headers: { Accept: "application/json" },
-    });
-  });
-
-  it("can fetch npm hosts directly for server-side reruns", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(textResponse("{}"));
-    vi.stubGlobal("fetch", fetchMock);
-    const url = "https://registry.npmjs.org/pkg";
-
-    await npmGet(url, new FailureLog(), 1, { mode: "direct" });
+    await npmGet(url, new FailureLog());
 
     expect(fetchMock).toHaveBeenCalledWith(url, {
       headers: { Accept: "application/json" },

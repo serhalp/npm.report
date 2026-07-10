@@ -3,7 +3,6 @@
 // TSV columns those scripts produced so the semantics carry over 1:1.
 
 export type ReportKind = "recent" | "manual" | "external";
-export type NpmFetchMode = "browser-proxy" | "direct";
 
 export interface AuditConfig {
   /** npm org slugs, e.g. ["netlify", "gatsbyjs"]. Not hardcoded — user supplied. */
@@ -16,8 +15,6 @@ export interface AuditConfig {
   bots: string[];
   /** Parallel fetch jobs. The UI uses a fixed code constant for this value. */
   jobs: number;
-  /** Browser audits use edge proxies for CORS; server-side scheduled reruns fetch npm directly. */
-  npmFetchMode?: NpmFetchMode;
 }
 
 export interface PkgMeta {
