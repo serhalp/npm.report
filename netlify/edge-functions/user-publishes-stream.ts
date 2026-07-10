@@ -26,6 +26,11 @@ export default async (req: Request): Promise<Response> => {
   const user = body?.user.trim();
   if (!body || !user) return new Response("an npm username is required", { status: 400 });
 
+  // Server-side breadcrumbs — same rationale as audit-stream: SSE `log` events go
+  // to the browser, so the function logs are otherwise empty.
+  const startedAt = Date.now();
+  console.log(`[user-publishes] start user=${user} months=${body.months}`);
+
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const log = (message: string) => controller.enqueue(sse("log", message));
@@ -46,7 +51,9 @@ export default async (req: Request): Promise<Response> => {
         }
         controller.enqueue(sse("result", report));
         controller.enqueue(sse("done", {}));
+        console.log(`[user-publishes] done user=${user} in ${Date.now() - startedAt}ms`);
       } catch (error) {
+        console.error(`[user-publishes] failed after ${Date.now() - startedAt}ms:`, error);
         controller.enqueue(sse("error", error instanceof Error ? error.message : "lookup failed"));
       } finally {
         controller.close();

@@ -48,6 +48,15 @@ export default async (req: Request): Promise<Response> => {
     jobs: FETCH_CONCURRENCY,
   };
 
+  // Server-side breadcrumbs (Netlify function logs). The SSE `log` events go to
+  // the browser, not the console, so without these a failure — or a platform
+  // termination mid-stream — leaves nothing to find. A `start` with no matching
+  // `done`/`error` line means the function was killed (e.g. hit an edge limit).
+  const startedAt = Date.now();
+  console.log(
+    `[audit-stream] start orgs=${config.orgs.join("+")} kinds=${body.kinds.join(",")} all=${config.all}`,
+  );
+
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const log = (message: string) => controller.enqueue(sse("log", message));
@@ -69,8 +78,10 @@ export default async (req: Request): Promise<Response> => {
             payload: result,
           });
           controller.enqueue(sse("done", { id: saved.id, url: `/report/${saved.id}` }));
+          console.log(`[audit-stream] done id=${saved.id} in ${Date.now() - startedAt}ms`);
         } catch (saveError) {
           // The result already streamed; report the save failure separately.
+          console.error(`[audit-stream] save failed after ${Date.now() - startedAt}ms:`, saveError);
           controller.enqueue(
             sse("done", {
               error: saveError instanceof Error ? saveError.message : "could not save report",
@@ -78,6 +89,7 @@ export default async (req: Request): Promise<Response> => {
           );
         }
       } catch (auditError) {
+        console.error(`[audit-stream] audit failed after ${Date.now() - startedAt}ms:`, auditError);
         controller.enqueue(
           sse("error", auditError instanceof Error ? auditError.message : "audit failed"),
         );
