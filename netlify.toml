@@ -5,6 +5,10 @@ publish = "dist"
 [build.environment]
 NODE_VERSION = "26"
 
+[dev]
+command = "vite dev"
+targetPort = 5173
+
 [functions]
 # Edge functions run on Deno, and Netlify's npm-in-edge bundling is still beta —
 # it fails to load some clean-ESM third-party deps the audit graph pulls in

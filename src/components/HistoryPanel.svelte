@@ -1,6 +1,13 @@
 <script lang="ts">
   import Stat from "./Stat.svelte";
-  import type { ReportHistoryResponse, ReportTrustHistoryPoint } from "../lib/reportHistory";
+  import TrustTrend from "./TrustTrend.svelte";
+  import {
+    anyTrustCount,
+    strongTrustCount,
+    trustPercent,
+    type ReportHistoryResponse,
+    type ReportTrustHistoryPoint,
+  } from "../lib/reportHistory";
   import { parseOrNull, ReportHistoryResponseSchema } from "../lib/schemas";
   import type { TrustLevel } from "../lib/types";
 
@@ -25,31 +32,22 @@
 
   let cleanOrgs = $derived(orgs.map((org) => org.trim()).filter(Boolean));
   let points = $derived(response?.points ?? []);
-  let first = $derived(points[0] ?? null);
   let latest = $derived(points.at(-1) ?? null);
 
   function formatDay(value: string): string {
     return new Date(value).toISOString().slice(0, 10);
   }
 
-  function trustedCount(point: ReportTrustHistoryPoint): number {
-    return point.total - point.byLevel.none;
-  }
-
-  function coverage(point: ReportTrustHistoryPoint | null): number {
-    if (!point || point.total <= 0) return 0;
-    return (trustedCount(point) / point.total) * 100;
-  }
-
   function formatPercent(value: number): string {
     return `${value.toFixed(value % 1 === 0 ? 0 : 1)}%`;
   }
 
-  function deltaLabel(): string {
-    const delta = coverage(latest) - coverage(first);
-    if (points.length < 2) return "baseline";
-    return `${delta >= 0 ? "+" : ""}${delta.toFixed(1)} pts`;
-  }
+  let latestStrong = $derived(
+    latest ? formatPercent(trustPercent(strongTrustCount(latest), latest.total)) : "—",
+  );
+  let latestAny = $derived(
+    latest ? formatPercent(trustPercent(anyTrustCount(latest), latest.total)) : "—",
+  );
 
   function segmentWidth(point: ReportTrustHistoryPoint, level: TrustLevel): string {
     if (point.total <= 0) return "width: 0%";
@@ -130,10 +128,14 @@
         </div>
       {:else}
         <div class="statgrid history-stats">
-          <Stat k="Latest coverage" v={formatPercent(coverage(latest))} sub="any trust signal" />
-          <Stat k="Change" v={deltaLabel()} sub={`${points.length} snapshot(s)`} />
+          <Stat k="Strong trust" v={latestStrong} sub="staged + trusted" variant="accent" />
+          <Stat k="Any trust" v={latestAny} sub="incl. provenance" />
           <Stat k="Latest failures" v={latest?.failureCount ?? 0} />
         </div>
+
+        {#if points.length > 1}
+          <TrustTrend {points} />
+        {/if}
 
         <div class="history-legend" aria-label="Trust level legend">
           {#each LEVELS as level (level.key)}
@@ -151,8 +153,8 @@
                 {/each}
               </div>
               <span class="history-total">
-                {trustedCount(point)}/{point.total}
-                <span class="muted">trusted</span>
+                {anyTrustCount(point)}/{point.total}
+                <span class="muted">any trust</span>
               </span>
             </li>
           {/each}

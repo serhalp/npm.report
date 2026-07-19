@@ -94,13 +94,36 @@ describe("HistoryPanel", () => {
       props: { orgs: ["netlify"], currentReportId: "netlify-2026-06-27-bbbbbbbb" },
     });
 
-    expect(await screen.findByText("75%")).toBeInTheDocument();
-    expect(screen.getByText("+25.0 pts")).toBeInTheDocument();
-    expect(screen.getByText("2")).toBeInTheDocument();
+    expect(await screen.findByText("50%")).toBeInTheDocument(); // Strong trust: staged + trusted
+    expect(screen.getByText("75%")).toBeInTheDocument(); // Any trust: excludes none
+    expect(screen.getByText("2")).toBeInTheDocument(); // latest failures
+    expect(screen.getByRole("img", { name: /across 2 snapshots/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "2026-06-27" })).toHaveAttribute(
       "href",
       "/report/netlify-2026-06-27-bbbbbbbb",
     );
     expect(screen.getByLabelText(/2026-06-27 trust summary/i)).toBeInTheDocument();
+  });
+
+  test("hides the trend chart with a single snapshot", async () => {
+    mockHistory({
+      orgs: ["netlify"],
+      points: [
+        {
+          id: "netlify-2026-06-27-bbbbbbbb",
+          url: "/report/netlify-2026-06-27-bbbbbbbb",
+          capturedAt: "2026-06-27T10:00:00.000Z",
+          total: 4,
+          byLevel: { stagedPublish: 1, trustedPublisher: 1, provenance: 1, none: 1 },
+          deprecated: 0,
+          failureCount: 0,
+        },
+      ],
+    });
+
+    render(HistoryPanel, { props: { orgs: ["netlify"] } });
+
+    expect(await screen.findByText("50%")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: /snapshots/i })).not.toBeInTheDocument();
   });
 });

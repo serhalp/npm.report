@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { extractTrustHistory, normalizeOrgs, orgKeyFor } from "./reportHistory";
+import {
+  anyTrustCount,
+  extractTrustHistory,
+  normalizeOrgs,
+  orgKeyFor,
+  strongTrustCount,
+  trustPercent,
+} from "./reportHistory";
 import { trustReport } from "../test/fixtures";
 
 describe("report history helpers", () => {
@@ -9,6 +16,29 @@ describe("report history helpers", () => {
       "netlify",
     ]);
     expect(orgKeyFor(["Netlify", "gatsbyjs"])).toBe("gatsbyjs,netlify");
+  });
+
+  const point = {
+    id: "x",
+    url: "/report/x",
+    capturedAt: "2026-06-27T12:00:00.000Z",
+    total: 10,
+    deprecated: 0,
+    failureCount: 0,
+    byLevel: { stagedPublish: 2, trustedPublisher: 3, provenance: 1, none: 4 },
+  };
+
+  it("strongTrustCount counts only the gold-accented tiers (staged + trusted)", () => {
+    expect(strongTrustCount(point)).toBe(5);
+  });
+
+  it("anyTrustCount counts every signal except none", () => {
+    expect(anyTrustCount(point)).toBe(6);
+  });
+
+  it("trustPercent is a plain ratio and guards an empty total", () => {
+    expect(trustPercent(6, 10)).toBe(60);
+    expect(trustPercent(0, 0)).toBe(0);
   });
 
   it("extracts trust history from all-scope recent reports", () => {
