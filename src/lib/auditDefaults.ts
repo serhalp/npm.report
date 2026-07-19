@@ -15,3 +15,8 @@ export const BLOCKED_ORGS = new Set(["types"]);
 export function isBlockedOrg(org: string): boolean {
   return BLOCKED_ORGS.has(org.trim().toLowerCase());
 }
+
+/** Easter-egg rejection shown (client + server) when someone tries a blocked org. */
+export function blockedOrgMessage(org: string): string {
+  return `"${org}" is DefinitelyTyped in a trenchcoat — thousands of packages posing as a single org. Auditing it would outlive us both, so it's blocked. Try a smaller org. 🧥`;
+}

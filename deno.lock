@@ -30,7 +30,6 @@
         "npm:@vitest/coverage-v8@4.1.9",
         "npm:drizzle-kit@1.0.0-rc.4-ca0f029",
         "npm:drizzle-orm@1.0.0-rc.4-5d5b77c",
-        "npm:ghostty-web@0.4",
         "npm:jsdom@^29.1.1",
         "npm:knip@^6.23.0",
         "npm:oxfmt@0.57",

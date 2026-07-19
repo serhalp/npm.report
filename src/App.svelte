@@ -8,7 +8,12 @@
   import TagInput from "./components/TagInput.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import UserPublishView from "./components/UserPublishView.svelte";
-  import { DEFAULT_BOT_EXCLUSIONS, MAX_ORGS, isBlockedOrg } from "./lib/auditDefaults";
+  import {
+    DEFAULT_BOT_EXCLUSIONS,
+    MAX_ORGS,
+    blockedOrgMessage,
+    isBlockedOrg,
+  } from "./lib/auditDefaults";
   import { streamAudit } from "./lib/auditStream";
   import { parseMembers } from "./lib/members";
   import type { AuditResult } from "./lib/runAudit";
@@ -133,7 +138,7 @@
   // problem is shown before submit, not just rejected after.
   let orgIssue = $derived.by(() => {
     const blocked = orgs.find(isBlockedOrg);
-    if (blocked) return `The "${blocked}" org is too large to audit here — remove it.`;
+    if (blocked) return blockedOrgMessage(blocked);
     if (orgs.length > MAX_ORGS)
       return `Limit an audit to ${MAX_ORGS} orgs (you have ${orgs.length}).`;
     return null;

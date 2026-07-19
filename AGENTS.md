@@ -32,7 +32,9 @@ The server-side entry points are:
 - `netlify/edge-functions/audit-stream.ts` — `POST /api/audit-stream`. Runs
   `runAudit` for the `trust`/`manual`/`external` kinds, streams `log`/`result`,
   saves the completed report server-side, and streams a final `done` with the
-  saved report id. This is the trust boundary.
+  saved report id. This is the trust boundary. The run is a resumable durable job
+  (keyed by a client `jobId`; see the SSE Contract) so it survives the platform's
+  ~60s connection recycle — the first request runs the audit, reconnects tail it.
 - `netlify/edge-functions/user-publishes-stream.ts` —
   `POST /api/user-publishes-stream`. Runs `runUserPublishes` and streams
   `log`/`result`. It does not persist anything.
@@ -40,6 +42,9 @@ The server-side entry points are:
   function. It reruns the all-package `recent`/package-trust report for opted-in
   org sets so the public timeline can grow without a browser session. It must not
   run, derive, store, or query `manual` or `external` report data.
+- `netlify/functions/audit-jobs-cleanup-background.ts` — an hourly scheduled
+  background function that prunes `audit_jobs` rows older than 2h (the resumable
+  audit's transient progress store; the durable report lives in `reports`).
 - `netlify/functions/reports.ts` — a serverless function for reading stored
   reports and the public trust timeline, and for creating daily tracking
   schedules, through Netlify Database. It does not compute audits and has no
@@ -99,20 +104,37 @@ and vitest ignore the import map and keep resolving the same bare specifiers fro
 Both audit endpoints stream `text/event-stream`, one JSON payload per `data:`
 line, with these events:
 
-- `log` — a progress line (string). The browser appends it to the terminal.
-- `result` — the full report object. Streamed as soon as it is computed, before
-  the save, so the UI renders without waiting on persistence.
+- `log` — a progress line (string), carrying an `id:` (a monotonic sequence
+  number) so a reconnecting client can resume after the last line it saw. The
+  browser appends it to the terminal.
+- `result` — the full report object.
 - `done` — terminal success. For `audit-stream`, `{ id, url }` of the saved
-  report (or `{ error }` if only the save failed — the result already streamed).
+  report (or `{ error }` if only the save failed — the result still streamed).
   For `user-publishes-stream`, `{}` (nothing is persisted).
 - `error` — terminal failure (string): the audit itself failed.
 
+`audit-stream` is **resumable**. The client-facing connection is recycled by the
+platform (~60s), far shorter than a scope-heavy audit, so one connection can't
+carry the whole run and no keepalive beats a total cut. Each run is instead a
+durable job keyed by a client-generated `jobId` (the `audit_jobs` table and
+`netlify/functions/_shared/audit-jobs.ts`): the FIRST request runs the audit,
+persisting its progress log — and, on completion, the result and saved report id
+— and keeps running even if its own client disconnects. A reconnecting request
+(same `jobId`, `from` = last `log` id it saw) does NOT re-run; it replays stored
+lines after `from`, tails the job until it finishes, and forwards the result/link
+(or error) the run recorded. `streamAudit` drives this loop transparently, so the
+terminal keeps scrolling and reports stay complete however long the audit runs.
+This is the platform-intended SSE pattern — reconnect + resume, as Netlify's own
+EventSource examples rely on — implemented over POST because the request body
+(esp. `external` member lists) can exceed URL limits. `user-publishes-stream` is
+not resumable and persists nothing.
+
 Client readers live in `src/lib/sseStream.ts` (`readSseStream`, which reassembles
-frames across chunks), with `src/lib/auditStream.ts` (`streamAudit`) and
-`src/lib/userPublishStream.ts` (`streamUserPublishes`) wrapping the two
-endpoints. Request bodies are validated server-side with valibot
-(`AuditRequestSchema`, `UserPublishRequestSchema` in `src/lib/schemas.ts`); the
-validated request is the trust boundary.
+frames across chunks and parses the `id:`), with `src/lib/auditStream.ts`
+(`streamAudit`, which reconnects/resumes) and `src/lib/userPublishStream.ts`
+(`streamUserPublishes`) wrapping the two endpoints. Request bodies are validated
+server-side with valibot (`AuditRequestSchema`, `UserPublishRequestSchema` in
+`src/lib/schemas.ts`); the validated request is the trust boundary.
 
 ## Report Sharing
 
@@ -150,12 +172,13 @@ scripts/                Original shell scripts; behavior reference, not executed
 db/                     Drizzle schema and Netlify Database connection
 netlify/
   edge-functions/
-    audit-stream.ts             POST /api/audit-stream: run audit, stream SSE, save report
+    audit-stream.ts             POST /api/audit-stream: run resumable audit, stream SSE, save report
     user-publishes-stream.ts    POST /api/user-publishes-stream: run user history, stream SSE
   functions/
     reports.ts                  Serverless: read stored reports + trust timeline, create schedules
     trust-reruns-background.ts  Hourly background rerun of due daily package-trust schedules
-    _shared/                    Shared report persistence and schedule helpers
+    audit-jobs-cleanup-background.ts  Hourly prune of transient audit_jobs (resumable-audit) rows
+    _shared/                    Shared report persistence, schedule, and audit-job helpers
 src/
   main.ts               Svelte root and tiny /report/:id path switch
   App.svelte            Live audit UI; submits audits to the server, renders streamed progress + result
@@ -166,8 +189,8 @@ src/
     schemas.ts          valibot schemas for serialization boundaries (SSE requests, stored reports)
     auditDefaults.ts    Shared fetch concurrency and generic bot defaults
     npmClient.ts        npmGet/npmGetJson (direct npm fetch), retry/backoff, FailureLog, URL helpers
-    sseStream.ts        readSseStream: SSE frame reassembly across chunks
-    auditStream.ts      streamAudit: POST /api/audit-stream and consume the stream
+    sseStream.ts        readSseStream: SSE frame reassembly + id parsing across chunks
+    auditStream.ts      streamAudit: POST /api/audit-stream, reconnect/resume, consume the stream
     userPublishStream.ts streamUserPublishes: POST /api/user-publishes-stream and consume the stream
     concurrency.ts      pLimit, mapLimit, chunk
     trust.ts            Thin adapter around packumeta trust logic
@@ -234,10 +257,20 @@ src/
 - Reports are authoritative because the server computes them. `audit-stream.ts`
   owns the save; there is no browser-submitted report-write path, and the daily
   background rerun writes only `recent`/package-trust data.
+- The interactive audit is a resumable durable job. The client-facing SSE
+  connection is recycled (~60s), so `audit-stream` persists progress to the
+  `audit_jobs` table keyed by a client `jobId`, and the client reconnects to
+  resume — the first request runs the audit (and finishes it even if the client
+  disconnects, so the report still saves); a reconnect only tails. Rows are
+  throwaway (the durable report is in `reports`) and pruned hourly by
+  `audit-jobs-cleanup-background.ts`. Do not reintroduce a keepalive: it cannot
+  beat a total connection cut — reconnect + resume is the fix.
 - The report-creation endpoints are rate-limited per IP at the Netlify edge (the
   `rateLimit` field in each function's `config`): `audit-stream` and
   `user-publishes-stream` at 30/min, `reports.ts` at 120/min. This is the abuse
   bound chosen in lieu of authenticating the endpoints; keep it when editing them.
+  A long audit reconnects a few times, each re-hitting `audit-stream`, so keep the
+  window above those extra requests.
 - `schedule-daily` is idempotent: an already-enabled schedule for the same
   normalized org set is returned unchanged, not reset.
 

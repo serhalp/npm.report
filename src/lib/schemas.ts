@@ -122,6 +122,11 @@ export const ReportRerunScheduleStatusSchema = v.looseObject({
 // audit from this (the browser no longer computes it), so this is the trust
 // boundary: whatever the server produces from a validated request is authoritative.
 export const AuditRequestSchema = v.object({
+  // Client-generated id for this run. It keys the durable job that lets the SSE
+  // stream resume across the platform's ~60s connection recycles; `from` is the
+  // last log line the client already has, so a reconnect replays only newer ones.
+  jobId: v.pipe(v.string(), v.regex(/^[A-Za-z0-9_-]{1,64}$/)),
+  from: v.optional(v.number(), -1),
   orgs: v.pipe(v.array(v.string()), v.maxLength(MAX_ORGS)),
   kinds: v.array(v.picklist(["trust", "manual", "external"])),
   months: v.optional(v.number(), 12),

@@ -5,6 +5,9 @@
 // isn't valid JSON are skipped.
 export interface SseFrame {
   event: string;
+  /** The SSE `id:` field, if present — the audit client uses it to resume after
+   *  the last line it saw when the connection is recycled. */
+  id?: number;
   data: unknown;
 }
 
@@ -18,14 +21,18 @@ export async function readSseStream(
 
   const flush = (raw: string) => {
     let event = "message";
+    let id: number | undefined;
     let data = "";
     for (const line of raw.split("\n")) {
       if (line.startsWith("event:")) event = line.slice(6).trim();
-      else if (line.startsWith("data:")) data += line.slice(5).trimStart();
+      else if (line.startsWith("id:")) {
+        const parsed = Number(line.slice(3).trim());
+        if (Number.isFinite(parsed)) id = parsed;
+      } else if (line.startsWith("data:")) data += line.slice(5).trimStart();
     }
     if (!data) return;
     try {
-      onFrame({ event, data: JSON.parse(data) });
+      onFrame({ event, id, data: JSON.parse(data) });
     } catch {
       // ignore a frame with unparseable data
     }

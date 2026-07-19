@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { streamAudit } from "./auditStream";
 
-const evt = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+const evt = (event: string, data: unknown, id?: number) => {
+  const idLine = id === undefined ? "" : `id: ${id}\n`;
+  return `event: ${event}\n${idLine}data: ${JSON.stringify(data)}\n\n`;
+};
 
 function sseResponse(frames: string[], { chunkBytes = false } = {}) {
   const text = frames.join("");
@@ -49,7 +52,10 @@ const RESULT = {
   },
 };
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
+});
 
 describe("streamAudit", () => {
   it("streams log lines and returns the result + saved report link", async () => {
@@ -137,6 +143,40 @@ describe("streamAudit", () => {
     );
     const body = JSON.parse(String(fetchMock.mock.calls[0][1].body));
     expect(body).toMatchObject({ orgs: ["netlify"], kinds: ["trust"], all: true });
+  });
+
+  it("reconnects with jobId + from and resumes after a mid-stream disconnect", async () => {
+    const bodies: Array<{ jobId: string; from: number }> = [];
+    const fetchMock = vi.fn(async (_url: string, init: { body: string }) => {
+      bodies.push(JSON.parse(init.body));
+      if (bodies.length === 1) {
+        // First connection: two log lines, then the stream ends with NO terminal
+        // event — the platform's ~60s connection recycle.
+        return sseResponse([evt("log", "line 0", 0), evt("log", "line 1", 1)]);
+      }
+      // Reconnect: the server replays only newer lines, then finishes.
+      return sseResponse([
+        evt("log", "line 2", 2),
+        evt("result", RESULT),
+        evt("done", { id: "vue-x", url: "/report/vue-x" }),
+      ]);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.useFakeTimers();
+
+    const logs: string[] = [];
+    const promise = streamAudit(REQUEST, (line) => logs.push(line));
+    await vi.runAllTimersAsync();
+    const outcome = await promise;
+
+    expect(logs).toEqual(["line 0", "line 1", "line 2"]);
+    expect(outcome.reportId).toBe("vue-x");
+    expect(outcome.result?.trust?.summary.total).toBe(0);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // Same run resumed from the last line it saw.
+    expect(bodies[0].jobId).toBe(bodies[1].jobId);
+    expect(bodies[0].from).toBe(-1);
+    expect(bodies[1].from).toBe(1);
   });
 
   it("ignores SSE keepalive comment frames", async () => {
