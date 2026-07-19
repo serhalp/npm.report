@@ -120,7 +120,7 @@ async function runSchedule(row: typeof reportRerunSchedules.$inferSelect, now: D
       bots: [],
       jobs: FETCH_CONCURRENCY,
     };
-    const payload: AuditResult = await runAudit(config, ["recent"], [], (message) =>
+    const payload: AuditResult = await runAudit(config, ["trust"], [], (message) =>
       console.log(`[trust-rerun:${row.orgKey}] ${message}`),
     );
     const saved = await saveReportSnapshot({

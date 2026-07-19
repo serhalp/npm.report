@@ -1,12 +1,12 @@
 <script lang="ts">
   import ExternalView from "./ExternalView.svelte";
   import ManualView from "./ManualView.svelte";
-  import RecentView from "./RecentView.svelte";
+  import TrustView from "./TrustView.svelte";
   import type { AuditResult } from "../lib/runAudit";
   import type { ReportKind } from "../lib/types";
 
   const TAB_META: { kind: ReportKind; title: string }[] = [
-    { kind: "recent", title: "package trust level" },
+    { kind: "trust", title: "package trust level" },
     { kind: "manual", title: "manual" },
     { kind: "external", title: "external" },
   ];
@@ -27,13 +27,13 @@
   let tabs = $derived(
     TAB_META.filter(
       (tab) =>
-        (tab.kind === "recent" && result.recent) ||
+        (tab.kind === "trust" && result.trust) ||
         (tab.kind === "manual" && result.manual) ||
         (tab.kind === "external" && result.external),
     ),
   );
 
-  let activeTab: ReportKind = $state("recent");
+  let activeTab: ReportKind = $state("trust");
   let initialized = $state(false);
 
   function hashKind(): ReportKind | null {
@@ -91,7 +91,7 @@
   }
 
   function countFor(kind: ReportKind): number | undefined {
-    if (kind === "recent") return result.recent?.summary.total;
+    if (kind === "trust") return result.trust?.summary.total;
     if (kind === "manual") return result.manual?.rows.length;
     return result.external?.distinctUsers;
   }
@@ -118,9 +118,9 @@
     {/each}
   </div>
 
-  {#if activeTab === "recent" && result.recent}
-    <div id="panel-recent" role="tabpanel" aria-labelledby="tab-recent" tabindex="0">
-      <RecentView report={result.recent} {onToast} />
+  {#if activeTab === "trust" && result.trust}
+    <div id="panel-trust" role="tabpanel" aria-labelledby="tab-trust" tabindex="0">
+      <TrustView report={result.trust} {onToast} />
     </div>
   {/if}
   {#if activeTab === "manual" && result.manual}

@@ -1,7 +1,7 @@
 import type { AuditResult } from "../lib/runAudit";
-import type { RecentReport } from "../lib/types";
+import type { TrustReport } from "../lib/types";
 
-export const recentReport: RecentReport = {
+export const trustReport: TrustReport = {
   summary: {
     scopeLabel: "last 12 months",
     orgs: ["netlify"],
@@ -46,7 +46,7 @@ export const recentReport: RecentReport = {
 };
 
 export const auditResult: AuditResult = {
-  recent: recentReport,
+  trust: trustReport,
   manual: {
     totalScanned: 2,
     bots: ["bot"],

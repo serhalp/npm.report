@@ -1,16 +1,16 @@
 import { FailureLog } from "./npmClient.ts";
-import { discoverInScope, runExternal, runManual, runRecent, type LogFn } from "./reports.ts";
+import { discoverInScope, runExternal, runManual, runTrust, type LogFn } from "./reports.ts";
 import type {
   AuditConfig,
   ExternalReport,
   FetchFailure,
   ManualReport,
-  RecentReport,
+  TrustReport,
   ReportKind,
 } from "./types.ts";
 
 export interface AuditResult {
-  recent?: RecentReport;
+  trust?: TrustReport;
   manual?: ManualReport;
   external?: ExternalReport;
   failures: FetchFailure[];
@@ -19,7 +19,7 @@ export interface AuditResult {
 /**
  * Top-level orchestration mirroring npm-audit.sh's dispatch.
  *
- * `recent` and `manual` share one discovery pass (the recent-packages "cache":
+ * `trust` and `manual` share one discovery pass (the recent-packages "cache":
  * org list -> latest version/recency -> in-scope subset). `manual` reads col1
  * of that cache — so under `-A` it scans every org package, otherwise only the
  * recency-filtered ones. `external` ignores the cache entirely and enumerates
@@ -36,10 +36,10 @@ export async function runAudit(
   const want = new Set(reports);
   const result: AuditResult = { failures: failures.failures };
 
-  if (want.has("recent") || want.has("manual")) {
+  if (want.has("trust") || want.has("manual")) {
     const scope = await discoverInScope(config, failures, log);
-    if (want.has("recent")) {
-      result.recent = await runRecent(config, failures, log, scope);
+    if (want.has("trust")) {
+      result.trust = await runTrust(config, failures, log, scope);
     }
     if (want.has("manual")) {
       result.manual = await runManual(

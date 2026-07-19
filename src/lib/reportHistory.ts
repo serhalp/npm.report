@@ -1,4 +1,4 @@
-import type { RecentReport, TrustLevel } from "./types.ts";
+import type { TrustReport, TrustLevel } from "./types.ts";
 
 export type SharedReportScope = "all" | { months: number };
 
@@ -101,16 +101,16 @@ export function extractTrustHistory(input: HistoryInput): TrustHistorySnapshot |
   if (!isAllScope(input.scope) || Number.isNaN(Date.parse(input.capturedAt))) return null;
   if (!isObject(input.payload)) return null;
 
-  const recent = input.payload.recent as RecentReport | undefined;
-  if (!recent || !isObject(recent.summary)) return null;
+  const trust = input.payload.trust as TrustReport | undefined;
+  if (!trust || !isObject(trust.summary)) return null;
 
-  const summary = recent.summary as unknown as Record<string, unknown>;
+  const summary = trust.summary as unknown as Record<string, unknown>;
   const total = numberFrom(summary.total);
   const deprecated = numberFrom(summary.deprecated);
   const byLevel = readByLevel(summary);
   if (total === null || deprecated === null || !byLevel) return null;
 
-  const orgs = normalizeOrgs(input.orgs.length > 0 ? input.orgs : recent.summary.orgs);
+  const orgs = normalizeOrgs(input.orgs.length > 0 ? input.orgs : trust.summary.orgs);
   if (orgs.length === 0) return null;
 
   return {

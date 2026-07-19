@@ -3,11 +3,11 @@
   import type { Column } from "./dataTableTypes";
   import ExportButtons from "./ExportButtons.svelte";
   import Stat from "./Stat.svelte";
-  import type { RecentReport, RecentRow } from "../lib/types";
+  import type { TrustReport, TrustRow } from "../lib/types";
   import { fmtDate, LEVEL_LABEL, LEVEL_ORDER, yn } from "./reportFormatting";
 
   interface Props {
-    report: RecentReport;
+    report: TrustReport;
     onToast: (message: string) => void;
   }
 
@@ -16,7 +16,7 @@
   let rows = $derived(report.rows);
   let summary = $derived(report.summary);
 
-  const columns: Column<RecentRow>[] = [
+  const columns: Column<TrustRow>[] = [
     { key: "pkg", header: "Package" },
     { key: "version", header: "Version" },
     {

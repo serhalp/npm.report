@@ -15,7 +15,7 @@ describe("ResultsView", () => {
       props: {
         result: auditResult,
         onToast: vi.fn(),
-        initialTab: "recent",
+        initialTab: "trust",
       },
     });
 
@@ -43,30 +43,30 @@ describe("ResultsView", () => {
       "aria-selected",
       "true",
     );
-    expect(location.hash).toBe("#report=recent");
-    expect(replace).toHaveBeenLastCalledWith(null, "", "#report=recent");
+    expect(location.hash).toBe("#report=trust");
+    expect(replace).toHaveBeenLastCalledWith(null, "", "#report=trust");
   });
 
   test("completes the tabs ARIA pattern with arrow-key navigation", async () => {
     const user = userEvent.setup();
     history.replaceState(null, "", "/");
     render(ResultsView, {
-      props: { result: auditResult, onToast: vi.fn(), initialTab: "recent" },
+      props: { result: auditResult, onToast: vi.fn(), initialTab: "trust" },
     });
 
-    const recentTab = screen.getByRole("tab", { name: /package trust level 2/i });
+    const trustTab = screen.getByRole("tab", { name: /package trust level 2/i });
     const manualTab = screen.getByRole("tab", { name: /manual 1/i });
 
     // The active panel is wired to its tab, and only the active tab is tabbable.
     const panel = screen.getByRole("tabpanel");
-    expect(panel).toHaveAttribute("id", "panel-recent");
-    expect(panel).toHaveAttribute("aria-labelledby", "tab-recent");
-    expect(recentTab).toHaveAttribute("aria-controls", "panel-recent");
-    expect(recentTab).toHaveAttribute("tabindex", "0");
+    expect(panel).toHaveAttribute("id", "panel-trust");
+    expect(panel).toHaveAttribute("aria-labelledby", "tab-trust");
+    expect(trustTab).toHaveAttribute("aria-controls", "panel-trust");
+    expect(trustTab).toHaveAttribute("tabindex", "0");
     expect(manualTab).toHaveAttribute("tabindex", "-1");
 
     // ArrowRight moves focus + selection to the next tab.
-    recentTab.focus();
+    trustTab.focus();
     await user.keyboard("{ArrowRight}");
     expect(manualTab).toHaveAttribute("aria-selected", "true");
     expect(manualTab).toHaveFocus();

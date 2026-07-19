@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runAudit } from "./runAudit";
-import { discoverInScope, runExternal, runManual, runRecent } from "./reports";
+import { discoverInScope, runExternal, runManual, runTrust } from "./reports";
 import type { AuditConfig, PkgMeta } from "./types";
 
 vi.mock("./reports", () => ({
   discoverInScope: vi.fn(),
   runExternal: vi.fn(),
   runManual: vi.fn(),
-  runRecent: vi.fn(),
+  runTrust: vi.fn(),
 }));
 
 const config: AuditConfig = {
@@ -29,7 +29,7 @@ const scope: PkgMeta[] = [
 
 beforeEach(() => {
   vi.mocked(discoverInScope).mockResolvedValue(scope);
-  vi.mocked(runRecent).mockResolvedValue({
+  vi.mocked(runTrust).mockResolvedValue({
     rows: [],
     summary: {
       scopeLabel: "last 3 months",
@@ -65,16 +65,16 @@ describe("runAudit", () => {
     vi.clearAllMocks();
   });
 
-  it("shares discovery for recent/manual and skips external without members", async () => {
+  it("shares discovery for trust/manual and skips external without members", async () => {
     const log = vi.fn();
 
-    const result = await runAudit(config, ["recent", "manual", "external"], [], log);
+    const result = await runAudit(config, ["trust", "manual", "external"], [], log);
 
     expect(discoverInScope).toHaveBeenCalledTimes(1);
-    expect(runRecent).toHaveBeenCalledWith(config, expect.anything(), log, scope);
+    expect(runTrust).toHaveBeenCalledWith(config, expect.anything(), log, scope);
     expect(runManual).toHaveBeenCalledWith(config, ["pkg"], expect.anything(), log);
     expect(runExternal).not.toHaveBeenCalled();
-    expect(result).toHaveProperty("recent");
+    expect(result).toHaveProperty("trust");
     expect(result).toHaveProperty("manual");
     expect(result).not.toHaveProperty("external");
     expect(log).toHaveBeenCalledWith(
@@ -83,13 +83,13 @@ describe("runAudit", () => {
     expect(log).toHaveBeenLastCalledWith("Done.");
   });
 
-  it("runs external-only audits without recent/manual discovery", async () => {
+  it("runs external-only audits without trust/manual discovery", async () => {
     const log = vi.fn();
 
     const result = await runAudit(config, ["external"], ["alice"], log);
 
     expect(discoverInScope).not.toHaveBeenCalled();
-    expect(runRecent).not.toHaveBeenCalled();
+    expect(runTrust).not.toHaveBeenCalled();
     expect(runManual).not.toHaveBeenCalled();
     expect(runExternal).toHaveBeenCalledWith(config, ["alice"], expect.anything(), log);
     expect(result).toHaveProperty("external");

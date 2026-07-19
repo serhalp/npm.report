@@ -25,7 +25,7 @@ function sseResponse(frames: string[], { chunkBytes = false } = {}) {
 
 const REQUEST = {
   orgs: ["netlify"],
-  kinds: ["recent"] as const,
+  kinds: ["trust"] as const,
   months: 12,
   all: true,
   bots: [],
@@ -34,7 +34,7 @@ const REQUEST = {
 
 const RESULT = {
   failures: [],
-  recent: {
+  trust: {
     rows: [],
     summary: {
       scopeLabel: "ALL org packages",
@@ -57,7 +57,7 @@ describe("streamAudit", () => {
       "fetch",
       vi.fn().mockResolvedValue(
         sseResponse([
-          evt("log", "[recent] listing packages"),
+          evt("log", "[trust] listing packages"),
           evt("log", "Done."),
           evt("result", RESULT),
           evt("done", {
@@ -70,8 +70,8 @@ describe("streamAudit", () => {
     const logs: string[] = [];
     const outcome = await streamAudit(REQUEST, (line) => logs.push(line));
 
-    expect(logs).toEqual(["[recent] listing packages", "Done."]);
-    expect(outcome.result?.recent?.summary.total).toBe(0);
+    expect(logs).toEqual(["[trust] listing packages", "Done."]);
+    expect(outcome.result?.trust?.summary.total).toBe(0);
     expect(outcome.reportId).toBe("netlify-2026-07-09-abc12345");
     expect(outcome.reportUrl).toBe("/report/netlify-2026-07-09-abc12345");
     expect(outcome.saveError).toBeUndefined();
@@ -136,6 +136,27 @@ describe("streamAudit", () => {
       expect.objectContaining({ method: "POST" }),
     );
     const body = JSON.parse(String(fetchMock.mock.calls[0][1].body));
-    expect(body).toMatchObject({ orgs: ["netlify"], kinds: ["recent"], all: true });
+    expect(body).toMatchObject({ orgs: ["netlify"], kinds: ["trust"], all: true });
+  });
+
+  it("ignores SSE keepalive comment frames", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          sseResponse([
+            ": keepalive\n\n",
+            evt("log", "working"),
+            ": keepalive\n\n",
+            evt("result", RESULT),
+            evt("done", { id: "x", url: "/report/x" }),
+          ]),
+        ),
+    );
+    const logs: string[] = [];
+    const outcome = await streamAudit(REQUEST, (line) => logs.push(line));
+    expect(logs).toEqual(["working"]);
+    expect(outcome.reportId).toBe("x");
   });
 });

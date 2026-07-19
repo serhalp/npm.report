@@ -113,7 +113,7 @@ describe("App", () => {
     expect(mockedStreamAudit).toHaveBeenCalledWith(
       expect.objectContaining({
         orgs: ["netlify"],
-        kinds: ["recent", "manual", "external"],
+        kinds: ["trust", "manual", "external"],
         members: ["alice", "bob"],
       }),
       expect.any(Function),
@@ -160,7 +160,7 @@ describe("App", () => {
     expect(mockedStreamAudit).toHaveBeenCalledWith(
       {
         orgs: ["netlify"],
-        kinds: ["recent", "manual"],
+        kinds: ["trust", "manual"],
         months: 12,
         all: true,
         bots: ["GitHub Actions"],

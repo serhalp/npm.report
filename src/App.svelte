@@ -22,7 +22,7 @@
 
   const REPORT_META: { kind: ReportKind; title: string; desc: string }[] = [
     {
-      kind: "recent",
+      kind: "trust",
       title: "package trust level",
       desc: "Trust status (provenance / trusted publishing) of each package's latest release.",
     },
@@ -66,13 +66,13 @@
     const monthsRaw = Number(scope);
     const months = !all && Number.isFinite(monthsRaw) && monthsRaw > 0 ? Math.floor(monthsRaw) : 12;
 
-    const kinds = new Set((params.get("kinds") ?? "recent").split(",").map((kind) => kind.trim()));
+    const kinds = new Set((params.get("kinds") ?? "trust").split(",").map((kind) => kind.trim()));
     const selected: Record<ReportKind, boolean> = {
-      recent: kinds.has("recent"),
+      trust: kinds.has("trust"),
       manual: kinds.has("manual"),
       external: kinds.has("external"),
     };
-    if (!selected.recent && !selected.manual && !selected.external) selected.recent = true;
+    if (!selected.trust && !selected.manual && !selected.external) selected.trust = true;
 
     const botsParam = params.get("bots");
     const bots = botsParam
@@ -96,7 +96,7 @@
   let bots: string[] = $state(prefill?.bots ?? [...DEFAULT_BOT_EXCLUSIONS]);
   let selected: Record<ReportKind, boolean> = $state(
     prefill?.selected ?? {
-      recent: true,
+      trust: true,
       manual: true,
       external: false,
     },
@@ -106,7 +106,7 @@
   let running = $state(false);
   let result = $state<AuditResult | null>(null);
   let error = $state<string | null>(null);
-  let firstTab: ReportKind = $state("recent");
+  let firstTab: ReportKind = $state("trust");
   let toast: string | null = $state(null);
 
   let reportSaveError = $state<string | null>(null);
@@ -139,7 +139,7 @@
     return null;
   });
   function containsReports(value: AuditResult | null): boolean {
-    return !!(value?.recent || value?.manual || value?.external);
+    return !!(value?.trust || value?.manual || value?.external);
   }
 
   let hasReports = $derived(containsReports(result));
@@ -153,7 +153,7 @@
 
   function summarizeReadyReport(value: AuditResult): string {
     const parts: string[] = [];
-    if (value.recent) parts.push(plural(value.recent.rows.length, "package trust row"));
+    if (value.trust) parts.push(plural(value.trust.rows.length, "package trust row"));
     if (value.manual)
       parts.push(plural(value.manual.rows.length, "manual publish", "manual publishes"));
     if (value.external) parts.push(plural(value.external.distinctUsers, "external account"));
@@ -228,7 +228,7 @@
         const ready = outcome.result;
         const first = selectedKinds.find(
           (kind) =>
-            (kind === "recent" && ready.recent) ||
+            (kind === "trust" && ready.trust) ||
             (kind === "manual" && ready.manual) ||
             (kind === "external" && ready.external),
         );
@@ -237,7 +237,7 @@
       if (outcome.reportId) {
         savedReportId = outcome.reportId;
         shareUrl = `${window.location.origin}${outcome.reportUrl ?? `/report/${outcome.reportId}`}`;
-        savedReportCanTrackDaily = all && !!outcome.result?.recent;
+        savedReportCanTrackDaily = all && !!outcome.result?.trust;
         historyRefreshKey++;
       } else if (outcome.saveError) {
         reportSaveError = outcome.saveError;
@@ -260,7 +260,7 @@
       return;
     }
 
-    const extra = upUseCache && result?.recent ? result.recent.rows.map((row) => row.pkg) : [];
+    const extra = upUseCache && result?.trust ? result.trust.rows.map((row) => row.pkg) : [];
     upRunning = true;
     upResult = null;
     terminal?.clear();
@@ -553,11 +553,11 @@
           <input
             type="checkbox"
             checked={upUseCache}
-            disabled={!result?.recent}
+            disabled={!result?.trust}
             onchange={(event) => (upUseCache = event.currentTarget.checked)}
           />
           Also scan packages from the last audit run
-          {#if !result?.recent}
+          {#if !result?.trust}
             (run an audit first)
           {/if}
         </label>

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FailureLog } from "./npmClient";
-import { discoverInScope, runExternal, runManual, runRecent, runUserPublishes } from "./reports";
+import { discoverInScope, runExternal, runManual, runTrust, runUserPublishes } from "./reports";
 import type { AuditConfig } from "./types";
 
 const config: AuditConfig = {
@@ -68,7 +68,7 @@ describe("report builders", () => {
         deprecated: false,
       },
     ]);
-    expect(log).toHaveBeenCalledWith("[recent] in scope (last 6 months): 1 packages");
+    expect(log).toHaveBeenCalledWith("[trust] in scope (last 6 months): 1 packages");
   });
 
   it("discovers all versioned packages when all-packages mode is enabled", async () => {
@@ -115,7 +115,7 @@ describe("report builders", () => {
         },
       ],
     );
-    expect(log).toHaveBeenCalledWith("[recent] in scope (ALL org packages): 2 packages");
+    expect(log).toHaveBeenCalledWith("[trust] in scope (ALL org packages): 2 packages");
   });
 
   it("builds recent trust/download rows and summary from a supplied discovery scope", async () => {
@@ -140,7 +140,7 @@ describe("report builders", () => {
     const failures = new FailureLog();
     const log = vi.fn();
 
-    const promise = runRecent(config, failures, log, [
+    const promise = runTrust(config, failures, log, [
       {
         name: "pkg",
         version: "1.0.0",
@@ -199,7 +199,7 @@ describe("report builders", () => {
       },
     });
     expect(failures.count).toBe(0);
-    expect(log).toHaveBeenCalledWith("[recent] fetching weekly downloads (1 scoped)...");
+    expect(log).toHaveBeenCalledWith("[trust] fetching weekly downloads (1 scoped)...");
   });
 
   it("filters manual publishes by cutoff and configured bots", async () => {

@@ -18,7 +18,7 @@ const ByLevel = v.object({
   none: v.number(),
 });
 
-const RecentRow = v.looseObject({
+const TrustRow = v.looseObject({
   pkg: v.string(),
   latestPublish: v.string(),
   version: v.string(),
@@ -31,8 +31,8 @@ const RecentRow = v.looseObject({
   downloads: v.nullable(v.number()),
 });
 
-const RecentReport = v.looseObject({
-  rows: v.array(RecentRow),
+const TrustReport = v.looseObject({
+  rows: v.array(TrustRow),
   summary: v.looseObject({
     scopeLabel: v.string(),
     orgs: v.array(v.string()),
@@ -60,10 +60,10 @@ const ExternalReport = v.looseObject({
 
 const FetchFailure = v.looseObject({ url: v.string(), reason: v.string() });
 
-/** A completed audit result. recent/manual/external are present only for the
+/** A completed audit result. trust/manual/external are present only for the
  *  reports that were run; failures is always an array. */
 export const AuditResultSchema = v.looseObject({
-  recent: v.optional(RecentReport),
+  trust: v.optional(TrustReport),
   manual: v.optional(ManualReport),
   external: v.optional(ExternalReport),
   failures: v.array(FetchFailure),
@@ -123,7 +123,7 @@ export const ReportRerunScheduleStatusSchema = v.looseObject({
 // boundary: whatever the server produces from a validated request is authoritative.
 export const AuditRequestSchema = v.object({
   orgs: v.pipe(v.array(v.string()), v.maxLength(MAX_ORGS)),
-  kinds: v.array(v.picklist(["recent", "manual", "external"])),
+  kinds: v.array(v.picklist(["trust", "manual", "external"])),
   months: v.optional(v.number(), 12),
   all: v.optional(v.boolean(), true),
   bots: v.optional(v.array(v.string()), []),

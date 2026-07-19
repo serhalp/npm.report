@@ -30,12 +30,12 @@
   }
 
   let when = $derived(generatedDay(record));
-  let historyOrgs = $derived(record?.payload.recent?.summary.orgs ?? []);
+  let historyOrgs = $derived(record?.payload.trust?.summary.orgs ?? []);
   let historyEnabled = $derived(
-    record?.scopeLabel === "ALL org packages" && !!record.payload.recent,
+    record?.scopeLabel === "ALL org packages" && !!record.payload.trust,
   );
 
-  const REPORT_KINDS = ["recent", "manual", "external"] as const;
+  const REPORT_KINDS = ["trust", "manual", "external"] as const;
 
   function monthsFromLabel(label: string): number {
     const match = label.match(/last (\d+) months/);
@@ -45,7 +45,7 @@
   // Build the auditor URL that re-runs this report's config. External needs a
   // member list (never stored), so App.svelte pre-fills but doesn't auto-run it.
   function rerunHref(rec: ReportRecord): string {
-    const orgs = (rec.payload.recent?.summary.orgs ?? rec.orgs.split(/,\s*/)).filter(Boolean);
+    const orgs = (rec.payload.trust?.summary.orgs ?? rec.orgs.split(/,\s*/)).filter(Boolean);
     const kinds = REPORT_KINDS.filter((kind) => rec.payload[kind]);
     const params = new URLSearchParams();
     params.set("orgs", orgs.join(","));

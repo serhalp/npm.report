@@ -107,7 +107,7 @@ async function loadProcessor(
   vi.resetModules();
   const db = makeDb(reports, history, schedules);
   const runAudit = vi.fn(async () => ({
-    recent: {
+    trust: {
       rows: [],
       summary: {
         scopeLabel: "ALL org packages",
@@ -190,7 +190,7 @@ describe("trust rerun schedules", () => {
         bots: [],
         jobs: 12,
       },
-      ["recent"],
+      ["trust"],
       [],
       expect.any(Function),
     );
@@ -261,7 +261,7 @@ describe("trust rerun schedules", () => {
       ],
     ]);
     const { processDueTrustReruns, runAudit, reports, history } = await loadProcessor(schedules);
-    // A rerun that returns no `recent` summary yields nothing to extract.
+    // A rerun that returns no `trust` summary yields nothing to extract.
     runAudit.mockResolvedValueOnce({ failures: [] } as never);
 
     await expect(processDueTrustReruns()).resolves.toEqual({ checked: 1, succeeded: 1, failed: 0 });

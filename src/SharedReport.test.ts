@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import SharedReport from "./SharedReport.svelte";
-import { auditResult, recentReport } from "./test/fixtures";
+import { auditResult, trustReport } from "./test/fixtures";
 
 describe("SharedReport", () => {
   test("loads and renders a read-only shared report", async () => {
@@ -45,10 +45,10 @@ describe("SharedReport", () => {
               scopeLabel: "ALL org packages",
               payload: {
                 ...auditResult,
-                recent: {
-                  ...recentReport,
+                trust: {
+                  ...trustReport,
                   summary: {
-                    ...recentReport.summary,
+                    ...trustReport.summary,
                     scopeLabel: "ALL org packages",
                   },
                 },
@@ -82,7 +82,7 @@ describe("SharedReport", () => {
                 url: "/report/report-id",
                 capturedAt: "2026-06-27T12:34:56.000Z",
                 total: 2,
-                byLevel: recentReport.summary.byLevel,
+                byLevel: trustReport.summary.byLevel,
                 deprecated: 1,
                 failureCount: 1,
               },

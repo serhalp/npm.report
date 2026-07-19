@@ -2,7 +2,7 @@
 // Ported from npm-audit.sh / npm-user-publishes.sh — the field names mirror the
 // TSV columns those scripts produced so the semantics carry over 1:1.
 
-export type ReportKind = "recent" | "manual" | "external";
+export type ReportKind = "trust" | "manual" | "external";
 
 export interface AuditConfig {
   /** npm org slugs, e.g. ["netlify", "gatsbyjs"]. Not hardcoded — user supplied. */
@@ -37,8 +37,8 @@ export interface TrustStatus {
   publisher: string;
 }
 
-/** One row of the `recent` report / recent-packages cache. */
-export interface RecentRow {
+/** One row of the `trust` report / recent-packages cache. */
+export interface TrustRow {
   pkg: string;
   latestPublish: string;
   version: string;
@@ -52,7 +52,7 @@ export interface RecentRow {
   downloads: number | null;
 }
 
-export interface RecentSummary {
+export interface TrustSummary {
   scopeLabel: string;
   orgs: string[];
   total: number;
@@ -63,9 +63,9 @@ export interface RecentSummary {
   byLevel: Record<TrustLevel, number>;
 }
 
-export interface RecentReport {
-  rows: RecentRow[];
-  summary: RecentSummary;
+export interface TrustReport {
+  rows: TrustRow[];
+  summary: TrustSummary;
 }
 
 export interface ManualRow {

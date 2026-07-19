@@ -11,8 +11,8 @@ import type {
   ManualReport,
   ManualRow,
   PkgMeta,
-  RecentReport,
-  RecentRow,
+  TrustReport,
+  TrustRow,
   TrustLevel,
   UserPublishReport,
   UserPublishRow,
@@ -35,12 +35,12 @@ function inScope(meta: PkgMeta[], config: AuditConfig): PkgMeta[] {
 }
 
 // ---------------------------------------------------------------------------
-// recent: trust status of each in-scope package's `latest` release.
+// trust: trust status of each in-scope package's `latest` release.
 // ---------------------------------------------------------------------------
 
 /**
  * Shared discovery step: org package list -> latest version + recency +
- * deprecated -> in-scope subset. Used by `recent` (which then adds trust +
+ * deprecated -> in-scope subset. Used by `trust` (which then adds trust +
  * downloads) and by `manual` (which only needs the package names — col1 of the
  * cache in the shell version).
  */
@@ -49,27 +49,27 @@ export async function discoverInScope(
   failures: FailureLog,
   log: LogFn,
 ): Promise<PkgMeta[]> {
-  log(`[recent] listing packages in: ${config.orgs.join(" ")}`);
+  log(`[trust] listing packages in: ${config.orgs.join(" ")}`);
   const pkgs = await listOrgPackages(config.orgs, failures);
-  log(`[recent] ${pkgs.length} packages; checking latest release metadata...`);
-  const meta = await resolveMeta(pkgs, failures, (d, t) => log(`[recent]   resolved ${d}/${t}`));
+  log(`[trust] ${pkgs.length} packages; checking latest release metadata...`);
+  const meta = await resolveMeta(pkgs, failures, (d, t) => log(`[trust]   resolved ${d}/${t}`));
   const scope = inScope(meta, config);
   const scopeLabel = config.all ? "ALL org packages" : `last ${config.months} months`;
-  log(`[recent] in scope (${scopeLabel}): ${scope.length} packages`);
+  log(`[trust] in scope (${scopeLabel}): ${scope.length} packages`);
   return scope;
 }
 
-export async function runRecent(
+export async function runTrust(
   config: AuditConfig,
   failures: FailureLog,
   log: LogFn,
   scope?: PkgMeta[],
-): Promise<RecentReport> {
+): Promise<TrustReport> {
   const inScopeMeta = scope ?? (await discoverInScope(config, failures, log));
-  log(`[recent] checking trust status (${inScopeMeta.length})...`);
+  log(`[trust] checking trust status (${inScopeMeta.length})...`);
 
   let done = 0;
-  const rows: RecentRow[] = await mapLimit(inScopeMeta, config.jobs, async (m) => {
+  const rows: TrustRow[] = await mapLimit(inScopeMeta, config.jobs, async (m) => {
     const manifest = await npmGetJson<Record<string, unknown>>(
       versionUrl(m.name, m.version),
       failures,
@@ -86,7 +86,7 @@ export async function runRecent(
     const trust = getTrustStatus(manifest);
     done++;
     if (done % 25 === 0 || done === inScopeMeta.length)
-      log(`[recent]   trust ${done}/${inScopeMeta.length}`);
+      log(`[trust]   trust ${done}/${inScopeMeta.length}`);
     return {
       pkg: m.name,
       latestPublish: m.publishedAt,
@@ -103,12 +103,12 @@ export async function runRecent(
 
   // Weekly downloads (the api.npmjs.org token bucket — bulk unscoped, paced scoped).
   const nScoped = rows.filter((r) => r.pkg.startsWith("@")).length;
-  log(`[recent] fetching weekly downloads (${nScoped} scoped)...`);
+  log(`[trust] fetching weekly downloads (${nScoped} scoped)...`);
   const dl = await fetchWeeklyDownloads(
     rows.map((r) => r.pkg),
     failures,
     (d, t) => {
-      if (d % 20 === 0 || d === t) log(`[recent]   downloads ${d}/${t}`);
+      if (d % 20 === 0 || d === t) log(`[trust]   downloads ${d}/${t}`);
     },
   );
   for (const r of rows) {
@@ -137,7 +137,7 @@ export async function runRecent(
     byLevel,
   };
   log(
-    `[recent] trust: provenance=${summary.provenance} trustedPublisher=${summary.trustedPublisher} stagedPublish=${summary.stagedPublish} deprecated=${summary.deprecated} of ${summary.total}`,
+    `[trust] provenance=${summary.provenance} trustedPublisher=${summary.trustedPublisher} stagedPublish=${summary.stagedPublish} deprecated=${summary.deprecated} of ${summary.total}`,
   );
   return { rows, summary };
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { extractTrustHistory, normalizeOrgs, orgKeyFor } from "./reportHistory";
-import { recentReport } from "../test/fixtures";
+import { trustReport } from "../test/fixtures";
 
 describe("report history helpers", () => {
   it("normalizes org sets for exact matching", () => {
@@ -18,7 +18,7 @@ describe("report history helpers", () => {
         scope: "all",
         capturedAt: "2026-06-27T12:00:00.000Z",
         payload: {
-          recent: recentReport,
+          trust: trustReport,
           failures: [{ url: "https://registry.npmjs.org/beta", reason: "http 429" }],
         },
       }),
@@ -27,7 +27,7 @@ describe("report history helpers", () => {
       orgs: ["netlify"],
       capturedAt: "2026-06-27T12:00:00.000Z",
       total: 2,
-      byLevel: recentReport.summary.byLevel,
+      byLevel: trustReport.summary.byLevel,
       deprecated: 1,
       failureCount: 1,
     });
@@ -39,7 +39,7 @@ describe("report history helpers", () => {
         orgs: ["netlify"],
         scope: { months: 12 },
         capturedAt: "2026-06-27T12:00:00.000Z",
-        payload: { recent: recentReport, failures: [] },
+        payload: { trust: trustReport, failures: [] },
       }),
     ).toBeNull();
 
@@ -59,7 +59,7 @@ describe("report history helpers", () => {
 
   it("does not read manual or external fields while extracting history", () => {
     const payload = {
-      recent: recentReport,
+      trust: trustReport,
       failures: [],
       get manual() {
         throw new Error("manual should not be read");

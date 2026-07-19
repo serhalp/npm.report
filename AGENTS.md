@@ -30,7 +30,7 @@ browser-only globals: hashing uses Web Crypto (`crypto.subtle`), not
 The server-side entry points are:
 
 - `netlify/edge-functions/audit-stream.ts` — `POST /api/audit-stream`. Runs
-  `runAudit` for the `recent`/`manual`/`external` kinds, streams `log`/`result`,
+  `runAudit` for the `trust`/`manual`/`external` kinds, streams `log`/`result`,
   saves the completed report server-side, and streams a final `done` with the
   saved report id. This is the trust boundary.
 - `netlify/edge-functions/user-publishes-stream.ts` —
@@ -174,7 +174,7 @@ src/
     discovery.ts        Org listing and fast-npm-meta batch resolve
     downloads.ts        Weekly downloads, including paced scoped lookups
     members.ts          Parse npm org ls JSON or a plain member list
-    reports.ts          Audit orchestration (recent/manual/external/user-publishes)
+    reports.ts          Audit orchestration (trust/manual/external/user-publishes)
     runAudit.ts         Top-level audit dispatch
     reportHistory.ts    Org normalization, scope labels, trust-history extraction
     export.ts           Copy JSON and CSV download helpers
@@ -183,7 +183,7 @@ src/
     DataTable.svelte       Generic sortable table
     TagInput.svelte        Chip multi-value input
     ExportButtons.svelte   Per-report export controls
-    RecentView.svelte      Package trust level report view (`recent` internally)
+    TrustView.svelte       Package trust level report view (`trust` internally)
     ManualView.svelte      Manual report view
     ExternalView.svelte    External report view
     UserPublishView.svelte User publish-history view
@@ -197,7 +197,7 @@ src/
   Exhausted or unexpected failures go into `FailureLog`; the UI warns that
   results may be incomplete. 404 is treated as legitimately empty. One case is
   escalated past a warning: a per-version manifest that can't be fetched during a
-  `recent` trust check throws and fails the whole report, because a missing
+  `trust` trust check throws and fails the whole report, because a missing
   manifest would misclassify the package as trust "none" rather than "unknown".
 - Trust classification in `src/lib/trust.ts` delegates to `packumeta`; do not
   reimplement that logic locally. The adapter only adds fields the app needs for
@@ -216,7 +216,7 @@ src/
   the bulk endpoint in batches of 100. Scoped packages are fetched sequentially
   with a 500 ms delay. Do not parallelize scoped downloads. A present-but-null
   entry is a real 0; only a failed/absent fetch stays unknown ("?").
-- `recent` and `manual` share one discovery pass. `manual` scans the package set
+- `trust` and `manual` share one discovery pass. `manual` scans the package set
   from that cache: all packages under `-A`, otherwise only recency-filtered
   packages. `external` ignores that cache and enumerates the full org list
   because dormant packages can still have live maintainers.
