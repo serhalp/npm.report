@@ -19,6 +19,15 @@ function sse(event: string, data: unknown): Uint8Array {
   return encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 }
 
+// A scope-heavy audit can run for minutes (scoped-download lookups are paced +
+// rate-limited), and the progress log can go quiet for long stretches. Send an
+// SSE keepalive comment on this interval so the connection never sits idle long
+// enough for the platform/proxy to cut it — that idle cut is what killed the
+// stream mid-audit. The comment is ignored by the client parser (no
+// `event:`/`data:` line), so reports stay complete however long they take.
+const KEEPALIVE_MS = 15_000;
+const KEEPALIVE = encoder.encode(": keepalive\n\n");
+
 export default async (req: Request): Promise<Response> => {
   let raw: unknown;
   try {
@@ -57,14 +66,30 @@ export default async (req: Request): Promise<Response> => {
     `[audit-stream] start orgs=${config.orgs.join("+")} kinds=${body.kinds.join(",")} all=${config.all}`,
   );
 
+  // Guard every write: the client can disconnect mid-audit, after which the
+  // stream controller is dead and enqueue() throws. `open` + the try/catch keep a
+  // late write (or the keepalive) from crashing the still-running audit.
+  let open = true;
+  let keepaliveTimer: ReturnType<typeof setInterval> | undefined;
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const log = (message: string) => controller.enqueue(sse("log", message));
+      const enqueue = (chunk: Uint8Array) => {
+        if (!open) return;
+        try {
+          controller.enqueue(chunk);
+        } catch {
+          open = false;
+        }
+      };
+      const send = (event: string, data: unknown) => enqueue(sse(event, data));
+      const log = (message: string) => send("log", message);
+      // Heartbeat so a slow, quiet phase can't trip the idle-connection timeout.
+      keepaliveTimer = setInterval(enqueue, KEEPALIVE_MS, KEEPALIVE);
       try {
         const result: AuditResult = await runAudit(config, body.kinds, body.members, log);
         // Stream the result immediately so the browser renders without waiting
         // on the save.
-        controller.enqueue(sse("result", result));
+        send("result", result);
 
         // Persist server-side: the report is authoritative, so the server owns
         // the write (no browser POST of trusted data).
@@ -77,25 +102,33 @@ export default async (req: Request): Promise<Response> => {
             capturedAt: new Date().toISOString(),
             payload: result,
           });
-          controller.enqueue(sse("done", { id: saved.id, url: `/report/${saved.id}` }));
+          send("done", { id: saved.id, url: `/report/${saved.id}` });
           console.log(`[audit-stream] done id=${saved.id} in ${Date.now() - startedAt}ms`);
         } catch (saveError) {
           // The result already streamed; report the save failure separately.
           console.error(`[audit-stream] save failed after ${Date.now() - startedAt}ms:`, saveError);
-          controller.enqueue(
-            sse("done", {
-              error: saveError instanceof Error ? saveError.message : "could not save report",
-            }),
-          );
+          send("done", {
+            error: saveError instanceof Error ? saveError.message : "could not save report",
+          });
         }
       } catch (auditError) {
         console.error(`[audit-stream] audit failed after ${Date.now() - startedAt}ms:`, auditError);
-        controller.enqueue(
-          sse("error", auditError instanceof Error ? auditError.message : "audit failed"),
-        );
+        send("error", auditError instanceof Error ? auditError.message : "audit failed");
       } finally {
-        controller.close();
+        clearInterval(keepaliveTimer);
+        if (open) {
+          try {
+            controller.close();
+          } catch {
+            open = false;
+          }
+        }
       }
+    },
+    cancel() {
+      // Client went away; stop the heartbeat and further writes.
+      open = false;
+      clearInterval(keepaliveTimer);
     },
   });
 
