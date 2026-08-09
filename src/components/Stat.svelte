@@ -8,8 +8,8 @@
     variant?: "accent" | "risk";
     /** Optional trend series — renders a sparkline under the value. */
     spark?: number[];
-    /** Optional [start, end] x-axis labels for the sparkline. */
-    sparkLabels?: [string, string];
+    /** Optional evenly spaced x-axis labels for the sparkline. */
+    sparkLabels?: string[];
   }
 
   let { k, v, sub, variant, spark, sparkLabels }: Props = $props();

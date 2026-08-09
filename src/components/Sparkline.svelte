@@ -2,8 +2,8 @@
   // Tiny trend chart for a stat tile: one line on a fixed 0–100 scale so tiles stay comparable.
   interface Props {
     values: number[];
-    /** Optional [start, end] x-axis labels (e.g. dates). */
-    labels?: [string, string];
+    /** Optional evenly spaced x-axis labels (e.g. dates). */
+    labels?: string[];
   }
 
   let { values, labels }: Props = $props();
@@ -11,6 +11,7 @@
   const W = 100;
   const H = 30;
   const PAD = 2;
+  const GRID_VALUES = [25, 50, 75];
 
   const xAt = (i: number, n: number): number =>
     n <= 1 ? W / 2 : PAD + (i / (n - 1)) * (W - 2 * PAD);
@@ -33,14 +34,17 @@
       preserveAspectRatio="none"
       aria-hidden="true"
     >
-      <line class="sparkline__grid" x1="0" x2={W} y1={yAt(50)} y2={yAt(50)} />
+      {#each GRID_VALUES as value (value)}
+        <line class="sparkline__grid" x1="0" x2={W} y1={yAt(value)} y2={yAt(value)} />
+      {/each}
       <polyline class="sparkline__line" {points} />
     </svg>
   </div>
   {#if labels}
     <div class="sparkline__xaxis" aria-hidden="true">
-      <span>{labels[0]}</span>
-      <span>{labels[1]}</span>
+      {#each labels as label (label)}
+        <span>{label}</span>
+      {/each}
     </div>
   {/if}
 </figure>

@@ -57,6 +57,43 @@
       deprecated: true,
     },
   ];
+
+  const TOTAL_PACKAGES = 60;
+  const TREND_COUNTS: { strong: number; any: number }[] = [
+    { strong: 6, any: 15 },
+    { strong: 6, any: 15 },
+    { strong: 6, any: 15 },
+    { strong: 6, any: 15 },
+    { strong: 6, any: 16 },
+    { strong: 7, any: 16 },
+    { strong: 7, any: 16 },
+    { strong: 7, any: 16 },
+    { strong: 7, any: 25 },
+    { strong: 14, any: 25 },
+    { strong: 14, any: 25 },
+    { strong: 14, any: 25 },
+    { strong: 14, any: 25 },
+    { strong: 14, any: 25 },
+    { strong: 14, any: 25 },
+    { strong: 14, any: 26 },
+    { strong: 15, any: 26 },
+    { strong: 15, any: 26 },
+    { strong: 15, any: 26 },
+    { strong: 15, any: 26 },
+    { strong: 22, any: 36 },
+    { strong: 22, any: 36 },
+    { strong: 22, any: 36 },
+    { strong: 22, any: 36 },
+    { strong: 22, any: 36 },
+    { strong: 24, any: 39 },
+    { strong: 24, any: 39 },
+    { strong: 24, any: 39 },
+  ];
+
+  const toPercent = (count: number): number => Math.round((count / TOTAL_PACKAGES) * 100);
+  const STRONG_TREND = TREND_COUNTS.map(({ strong }) => toPercent(strong));
+  const ANY_TRUST_TREND = TREND_COUNTS.map(({ any }) => toPercent(any));
+  const NO_TRUST_TREND = ANY_TRUST_TREND.map((any) => 100 - any);
 </script>
 
 <section class="preview" aria-labelledby="preview-tag">
@@ -70,22 +107,22 @@
       v="40% (24)"
       sub="staged or trusted"
       variant="accent"
-      spark={[30, 32, 34, 36, 38, 40]}
-      sparkLabels={["07-14", "07-19"]}
+      spark={STRONG_TREND}
+      sparkLabels={["06-22", "07-01", "07-10", "07-19"]}
     />
     <Stat
       k="Any trust"
       v="65% (39)"
       sub="incl. provenance"
-      spark={[58, 60, 61, 63, 64, 65]}
-      sparkLabels={["07-14", "07-19"]}
+      spark={ANY_TRUST_TREND}
+      sparkLabels={["06-22", "07-01", "07-10", "07-19"]}
     />
     <Stat
       k="No trust signal"
       v="35% (21)"
       variant="risk"
-      spark={[48, 45, 43, 40, 37, 35]}
-      sparkLabels={["07-14", "07-19"]}
+      spark={NO_TRUST_TREND}
+      sparkLabels={["06-22", "07-01", "07-10", "07-19"]}
     />
   </div>
   <p class="preview__trend">Every package owned by acme, tracked daily.</p>

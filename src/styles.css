@@ -368,7 +368,7 @@ a:hover {
 }
 .sparkline__svg {
   flex: 1;
-  height: 34px;
+  height: 48px;
   border-left: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -381,7 +381,7 @@ a:hover {
 .sparkline__line {
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.5;
+  stroke-width: 1.75;
   stroke-linejoin: round;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
