@@ -86,6 +86,10 @@ and vitest ignore the import map and keep resolving the same bare specifiers fro
   (`tsconfig` enables `allowImportingTsExtensions`). Node-only files (e.g.
   `report-schedules.ts` and the serverless functions) keep `.js`; they never enter
   an edge bundle.
+- Do not colocate tests in `netlify/edge-functions/`. Netlify treats every
+  `.ts`/`.js` file there as an edge-function entrypoint, including `*.test.ts`,
+  so Vitest-transformed mocks will break `netlify dev` and deploy bundling. Put
+  edge-function tests under `netlify/tests/edge-functions/` instead.
 - This failure only surfaces at deploy-time edge bundling, NOT in local dev — the
   `@netlify/vite-plugin` bundles the edge functions differently and resolves npm
   deps and extensionless imports fine. Do not assume a green local run means the

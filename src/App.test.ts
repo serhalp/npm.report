@@ -216,6 +216,20 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Copy link" })).toBeDisabled();
   });
 
+  test("surfaces a streamed audit failure and leaves the form usable", async () => {
+    const user = userEvent.setup();
+    mockedStreamAudit.mockRejectedValue(new Error("registry unavailable"));
+
+    render(App);
+
+    await user.type(screen.getByPlaceholderText(/nuxt, vue/i), "netlify{Enter}");
+    await user.click(screen.getByRole("button", { name: "Run audit" }));
+
+    expect(await screen.findByText("registry unavailable")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Run audit" })).toBeEnabled();
+    expect(screen.queryByRole("heading", { name: "Audit results" })).not.toBeInTheDocument();
+  });
+
   test("reports clipboard failures when copying a saved report link", async () => {
     const user = userEvent.setup();
     const writeText = vi
@@ -295,5 +309,18 @@ describe("App", () => {
       expect.any(Function),
     );
     expect(await screen.findByText("alpha@1.0.0")).toBeInTheDocument();
+  });
+
+  test("surfaces a streamed user-publish failure and leaves lookup usable", async () => {
+    const user = userEvent.setup();
+    mockedStreamUserPublishes.mockRejectedValue(new Error("npm unavailable"));
+
+    render(App);
+
+    await user.type(screen.getByLabelText("npm username"), "alice");
+    await user.click(screen.getByRole("button", { name: "Look up" }));
+
+    expect(await screen.findByText("npm unavailable")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Look up" })).toBeEnabled();
   });
 });

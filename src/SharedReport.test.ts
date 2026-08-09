@@ -1,8 +1,10 @@
 import { render, screen } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import SharedReport from "./SharedReport.svelte";
 import { auditResult, trustReport } from "./test/fixtures";
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("SharedReport", () => {
   test("loads and renders a read-only shared report", async () => {
@@ -116,5 +118,36 @@ describe("SharedReport", () => {
 
     expect(await screen.findByText("This report could not be found.")).toBeInTheDocument();
     expect(screen.getByText(/Back to the audit tool/)).toBeInTheDocument();
+  });
+
+  test("rejects malformed stored report data at the client boundary", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: "report-id", payload: { failures: [] } }),
+      }),
+    );
+
+    render(SharedReport, { props: { id: "report-id" } });
+
+    expect(
+      await screen.findByText("This report is in an unexpected format and can't be displayed."),
+    ).toBeInTheDocument();
+  });
+
+  test("shows the upstream status when loading a report fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+      }),
+    );
+
+    render(SharedReport, { props: { id: "report-id" } });
+
+    expect(await screen.findByText("Failed to load report (503).")).toBeInTheDocument();
   });
 });
