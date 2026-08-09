@@ -7,7 +7,6 @@ NODE_VERSION = "26"
 
 [dev]
 command = "vite dev"
-targetPort = 5173
 
 [functions]
 deno_import_map = "./import_map.json"
