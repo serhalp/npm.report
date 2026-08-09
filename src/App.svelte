@@ -330,7 +330,7 @@
       </div>
     </div>
     <p class="tagline">
-      Supply-chain trust signals for npm orgs. Audit, visualize, share, auto-track over time.
+      Supply-chain trust signals for npm orgs. Audit, visualize, share, track over time.
     </p>
   </header>
 

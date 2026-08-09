@@ -20,7 +20,7 @@
       level: "stagedPublish",
       label: "staged publish",
       publisher: "ci",
-      downloads: "1.2M",
+      downloads: "1.2m",
       latest: "2026-07-12",
     },
     {
