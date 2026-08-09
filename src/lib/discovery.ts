@@ -9,11 +9,6 @@ import type { PkgMeta } from "./types.ts";
 
 /**
  * All packages across the given orgs, deduped & sorted.
- *
- * registry.npmjs.org/-/org/<org>/package hard-caps at 250 (alphabetical) and
- * ignores every pagination param — orgs larger than 250 lose the tail, and
- * those are private/unlisted/unreachable unauthenticated anyway. Documented
- * limitation, surfaced to the user in the UI.
  */
 export async function listOrgPackages(orgs: string[], failures: FailureLog): Promise<string[]> {
   const seen = new Set<string>();

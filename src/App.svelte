@@ -354,10 +354,7 @@
             onChange={(next) => (orgs = next)}
             placeholder="e.g. nuxt, vue"
           />
-          <p class="desc">
-            One or more npm org slugs (up to {MAX_ORGS}). The registry caps org listings at 250
-            packages (private/unlisted are not reachable unauthenticated).
-          </p>
+          <p class="desc">One or more npm org slugs (up to {MAX_ORGS}).</p>
           {#if orgIssue}
             <p class="inline-error">{orgIssue}</p>
           {/if}
@@ -471,8 +468,7 @@
     <section>
       <LogTerminal bind:this={terminal} activity={terminalActivity} />
       <p class="note">
-        <strong>Live log</strong> shows audit progress and warnings. Network and rate-limit failures are
-        counted so incomplete results stay visible.
+        <strong>Live log</strong> shows audit progress and warnings.
       </p>
       {#if hasReports && result && !running}
         <div class="report-ready">

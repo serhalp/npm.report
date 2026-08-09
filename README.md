@@ -50,7 +50,6 @@ More specifically, it offers four report types:
 
 ## Limitations
 
-- npm's public org package endpoint caps results at 250 packages per org.
 - `external` needs manually pasted membership output because org membership is private and can
   change.
 - "Manual" means the version's `_npmUser` was not in the configured bot list; npm does not
