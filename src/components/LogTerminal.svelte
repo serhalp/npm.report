@@ -86,10 +86,10 @@
     {#if activity}
       <div class="term-line term-line--activity">
         <span class="term-spinner" aria-hidden="true">
-          <span class="term-spinner__frame term-spinner__frame--one">|</span>
-          <span class="term-spinner__frame term-spinner__frame--two">/</span>
-          <span class="term-spinner__frame term-spinner__frame--three">-</span>
-          <span class="term-spinner__frame term-spinner__frame--four">&#92;</span>
+          <span class="term-spinner__dot">•</span>
+          <span class="term-spinner__arc term-spinner__arc--inner">)</span>
+          <span class="term-spinner__arc term-spinner__arc--middle">)</span>
+          <span class="term-spinner__arc term-spinner__arc--outer">)</span>
         </span>
         <span class="term-activity__label">{activity}</span>
       </div>

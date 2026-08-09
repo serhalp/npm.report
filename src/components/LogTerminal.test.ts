@@ -10,7 +10,12 @@ describe("LogTerminal", () => {
 
     const label = screen.getByText("audit running");
     expect(label.closest(".term-line")).toBe(container.querySelector(".term-line:last-child"));
-    expect(container.querySelector(".term-spinner")).toHaveAttribute("aria-hidden", "true");
+    const spinner = container.querySelector(".term-spinner");
+    expect(spinner).toHaveAttribute("aria-hidden", "true");
+    expect(spinner?.querySelector(".term-spinner__dot")).toHaveTextContent("•");
+    const arcs = spinner?.querySelectorAll(".term-spinner__arc");
+    expect(arcs).toHaveLength(3);
+    for (const arc of arcs ?? []) expect(arc).toHaveTextContent(")");
 
     await rerender({ activity: null });
 
