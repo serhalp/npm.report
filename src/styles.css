@@ -78,6 +78,10 @@
   --term-warn: #e0a458;
   --term-err: #e0675a;
   --term-done: #d8a657;
+  --term-trust: #5fb3b3;
+  --term-manual: #d8a657;
+  --term-external: #c9a0dc;
+  --term-user: #8fbf7f;
   --primary-hover: #e6b66a;
 }
 
@@ -916,6 +920,21 @@ textarea {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.term-prefix {
+  font-weight: 600;
+}
+.term-prefix--trust {
+  color: var(--term-trust);
+}
+.term-prefix--manual {
+  color: var(--term-manual);
+}
+.term-prefix--external {
+  color: var(--term-external);
+}
+.term-prefix--user {
+  color: var(--term-user);
+}
 .term-line--warn {
   color: var(--term-warn);
 }
@@ -925,6 +944,41 @@ textarea {
 .term-line--done {
   color: var(--term-done);
   font-weight: 600;
+}
+.term-line--activity {
+  display: flex;
+  gap: 1ch;
+  color: var(--term-fg);
+}
+.term-spinner {
+  display: inline-grid;
+  flex: 0 0 1ch;
+  width: 1ch;
+  color: var(--term-done);
+}
+.term-spinner__frame {
+  grid-area: 1 / 1;
+  opacity: 0;
+  animation: term-spinner-frame 0.8s linear infinite;
+}
+.term-spinner__frame--two {
+  animation-delay: -0.6s;
+}
+.term-spinner__frame--three {
+  animation-delay: -0.4s;
+}
+.term-spinner__frame--four {
+  animation-delay: -0.2s;
+}
+@keyframes term-spinner-frame {
+  0%,
+  24.999% {
+    opacity: 1;
+  }
+  25%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .report-ready {
@@ -1016,6 +1070,13 @@ textarea {
   .results,
   .toast {
     animation: none;
+  }
+  .term-spinner__frame {
+    animation: none;
+    opacity: 0;
+  }
+  .term-spinner__frame:first-child {
+    opacity: 1;
   }
 }
 

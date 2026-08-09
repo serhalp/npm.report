@@ -288,13 +288,13 @@ export async function runUserPublishes(
   const all = [...universe].toSorted();
 
   log(
-    `Scanning ${all.length} packages for versions published by '${username}' (last ${months} months)...`,
+    `[user] scanning ${all.length} packages for versions published by '${username}' (last ${months} months)...`,
   );
   let done = 0;
   const nested: UserPublishRow[][] = await mapLimit(all, jobs, async (pkg) => {
     const doc = await npmGetJson<Packument>(pkgUrl(pkg), failures);
     done++;
-    if (done % 25 === 0 || done === all.length) log(`  scanned ${done}/${all.length}`);
+    if (done % 25 === 0 || done === all.length) log(`[user]   scanned ${done}/${all.length}`);
     if (!doc || !doc.versions) return [];
     const rows: UserPublishRow[] = [];
     for (const [ver, vMeta] of Object.entries(doc.versions)) {
@@ -309,6 +309,6 @@ export async function runUserPublishes(
   });
 
   const rows = nested.flat().sort((a, b) => (a.when < b.when ? 1 : -1));
-  log(`Done. ${rows.length} publishes by '${username}'.`);
+  log(`[user] Done. ${rows.length} publishes by '${username}'.`);
   return { user: username, scanned: all.length, rows };
 }

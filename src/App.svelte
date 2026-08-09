@@ -137,6 +137,9 @@
   );
   // One audit or user lookup at a time — they share the live log.
   let busy = $derived(running || upRunning);
+  let terminalActivity = $derived(
+    running ? "audit running" : upRunning ? "user publish scan running" : null,
+  );
   // Mirrors the server guards (AuditRequestSchema cap + blocked-org check) so the
   // problem is shown before submit, not just rejected after.
   let orgIssue = $derived.by(() => {
@@ -466,7 +469,7 @@
     </section>
 
     <section>
-      <LogTerminal bind:this={terminal} />
+      <LogTerminal bind:this={terminal} activity={terminalActivity} />
       <p class="note">
         <strong>Live log</strong> shows audit progress and warnings. Network and rate-limit failures are
         counted so incomplete results stay visible.

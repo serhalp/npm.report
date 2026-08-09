@@ -237,6 +237,42 @@ describe("App", () => {
     );
   });
 
+  test("shows terminal activity for both streamed operations", async () => {
+    const user = userEvent.setup();
+    const audit = Promise.withResolvers<ReturnType<typeof savedOutcome>>();
+    mockedStreamAudit.mockReturnValue(audit.promise);
+
+    render(App);
+
+    await user.type(screen.getByPlaceholderText(/nuxt, vue/i), "netlify{Enter}");
+    await user.click(screen.getByRole("button", { name: "Run audit" }));
+
+    expect(await screen.findByText("audit running")).toBeInTheDocument();
+
+    audit.resolve(savedOutcome());
+    await screen.findByRole("heading", { name: "Audit results" });
+    expect(screen.queryByText("audit running")).not.toBeInTheDocument();
+
+    const lookup = Promise.withResolvers<{
+      user: string;
+      scanned: number;
+      rows: { when: string; ref: string }[];
+    }>();
+    mockedStreamUserPublishes.mockReturnValue(lookup.promise);
+    await user.type(screen.getByLabelText("npm username"), "alice");
+    await user.click(screen.getByRole("button", { name: "Look up" }));
+
+    expect(await screen.findByText("user publish scan running")).toBeInTheDocument();
+
+    lookup.resolve({
+      user: "alice",
+      scanned: 1,
+      rows: [{ when: "2026-06-01T00:00:00.000Z", ref: "alpha@1.0.0" }],
+    });
+    expect(await screen.findByText("alpha@1.0.0")).toBeInTheDocument();
+    expect(screen.queryByText("user publish scan running")).not.toBeInTheDocument();
+  });
+
   test("runs user publish lookup with packages from the streamed result", async () => {
     const user = userEvent.setup();
     mockedStreamAudit.mockResolvedValue(savedOutcome());

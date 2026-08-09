@@ -10,16 +10,34 @@
   const SCROLLBACK = 5000;
 
   type LineKind = "warn" | "err" | "done" | "info";
+  type ReportPrefix = "trust" | "manual" | "external" | "user";
+
+  interface Props {
+    activity?: string | null;
+  }
+
+  let { activity = null }: Props = $props();
 
   let lines = $state<string[]>([...INTRO]);
   let scroller: HTMLDivElement | null = $state(null);
 
+  function prefixOf(line: string): { kind: ReportPrefix; label: string; rest: string } | null {
+    const match = /^\[(trust|manual|external|user)\]/.exec(line);
+    if (!match) return null;
+    return {
+      kind: match[1] as ReportPrefix,
+      label: match[0],
+      rest: line.slice(match[0].length),
+    };
+  }
+
   // Emphasize the lines that matter (mirrors the old ANSI colorizer): the
   // incomplete-results warning, errors, and the terminal "Done." line.
   function kindOf(line: string): LineKind {
-    if (/^WARNING/.test(line)) return "warn";
-    if (/^Error/i.test(line)) return "err";
-    if (/^Done\./.test(line)) return "done";
+    const message = prefixOf(line)?.rest.trimStart() ?? line;
+    if (/^WARNING/.test(message)) return "warn";
+    if (/^Error/i.test(message)) return "err";
+    if (/^Done\./.test(message)) return "done";
     return "info";
   }
 
@@ -27,7 +45,8 @@
   // registers the reactive dependency, so this re-pins to the bottom per line.
   $effect(() => {
     const count = lines.length;
-    if (scroller && count) scroller.scrollTop = scroller.scrollHeight;
+    const active = activity !== null;
+    if (scroller && (count || active)) scroller.scrollTop = scroller.scrollHeight;
   });
 
   export function writeLine(line: string) {
@@ -54,8 +73,26 @@
     aria-live="polite"
     aria-label="Audit progress log"
   >
-    {#each lines as line}
-      <div class="term-line term-line--{kindOf(line)}">{line}</div>
+    {#each lines as line, index (index)}
+      {@const prefix = prefixOf(line)}
+      <div class="term-line term-line--{kindOf(line)}">
+        {#if prefix}
+          <span class="term-prefix term-prefix--{prefix.kind}">{prefix.label}</span>{prefix.rest}
+        {:else}
+          {line}
+        {/if}
+      </div>
     {/each}
+    {#if activity}
+      <div class="term-line term-line--activity">
+        <span class="term-spinner" aria-hidden="true">
+          <span class="term-spinner__frame term-spinner__frame--one">|</span>
+          <span class="term-spinner__frame term-spinner__frame--two">/</span>
+          <span class="term-spinner__frame term-spinner__frame--three">-</span>
+          <span class="term-spinner__frame term-spinner__frame--four">&#92;</span>
+        </span>
+        <span class="term-activity__label">{activity}</span>
+      </div>
+    {/if}
   </div>
 </div>

@@ -284,19 +284,18 @@ describe("report builders", () => {
       },
     });
 
-    const report = await runUserPublishes(
-      "alice",
-      6,
-      2,
-      ["extra", "mine"],
-      new FailureLog(),
-      vi.fn(),
-    );
+    const log = vi.fn();
+    const report = await runUserPublishes("alice", 6, 2, ["extra", "mine"], new FailureLog(), log);
 
     expect(report.scanned).toBe(2);
     expect(report.rows).toEqual([
       { when: "2026-06-01T00:00:00.000Z", ref: "mine@1.0.0" },
       { when: "2026-05-15T00:00:00.000Z", ref: "extra@2.0.0" },
+    ]);
+    expect(log.mock.calls.map(([line]) => line)).toEqual([
+      "[user] scanning 2 packages for versions published by 'alice' (last 6 months)...",
+      "[user]   scanned 2/2",
+      "[user] Done. 2 publishes by 'alice'.",
     ]);
   });
 });
