@@ -11,4 +11,6 @@
 /.env.*
 /.svelte-check/
 
+deno.lock
+
 .DS_Store
