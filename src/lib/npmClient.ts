@@ -4,9 +4,9 @@ import type { FetchFailure } from "./types.ts";
 // ---------------------------------------------------------------------------
 // npm_get — direct port of the bash helper shared by both scripts.
 //
-// The whole point of this helper is the "no silent failure" invariant from the
-// original scripts: a rate-limited package must NOT look "clean", because that
-// is the dangerous failure mode for a security audit. So:
+// This helper enforces the "no silent failure" invariant from the original
+// scripts: a rate-limited package must not read as "clean", the dangerous failure
+// mode for a security audit. So:
 //   - 2xx           -> body text
 //   - 404           -> null (legitimately empty, no retry)
 //   - 429/5xx/net   -> retry up to `tries` with 1,4,9,16s backoff, then record

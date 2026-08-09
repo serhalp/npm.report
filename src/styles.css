@@ -149,7 +149,7 @@ a:hover {
 .app {
   position: relative;
   z-index: 2;
-  max-width: 77.5rem;
+  max-width: 90rem;
   margin: 0 auto;
   padding: var(--space-4xl) var(--space-3xl) var(--space-6xl);
 }
@@ -166,13 +166,93 @@ a:hover {
   gap: var(--space-lg);
   margin-bottom: var(--space-md);
 }
-.masthead .eyebrow {
+.masthead__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.glossary__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--line);
+  border-radius: 100rem;
+  background: transparent;
+  color: var(--fg-dim);
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  line-height: 1;
+  cursor: pointer;
+}
+.glossary__btn:hover {
+  color: var(--fg);
+  border-color: var(--gold-dim);
+}
+/* The popover lives in the top layer. Override the UA centering and pin it near
+   the top-right as the Baseline-safe fallback (fixed positioning). */
+.glossary__panel {
+  position: fixed;
+  inset: auto;
+  top: 4.75rem;
+  right: 1rem;
+  margin: 0;
+  width: min(340px, calc(100vw - 2rem));
+  padding: var(--space-md);
+  background: var(--ink-800);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  text-align: left;
+}
+/* Where CSS anchor positioning exists (Chromium for now), drop it precisely
+   below-right of the "?" instead of the fixed fallback. */
+@supports (anchor-name: --a) {
+  .glossary__btn {
+    anchor-name: --trust-glossary-anchor;
+  }
+  .glossary__panel {
+    position-anchor: --trust-glossary-anchor;
+    top: calc(anchor(bottom) + 0.5rem);
+    right: anchor(right);
+    left: auto;
+  }
+}
+.glossary__lede {
+  margin: 0 0 var(--space-md);
+  color: var(--fg);
+}
+.glossary__list {
+  margin: 0;
+}
+.glossary__list dt {
+  margin-top: var(--space-sm);
   font-family: var(--mono);
   font-size: var(--text-xs);
-  letter-spacing: var(--track-eyebrow);
   text-transform: uppercase;
+  letter-spacing: var(--track-eyebrow);
   color: var(--gold-dim);
-  margin: 0;
+}
+.glossary__list dt.glossary__risk {
+  color: var(--t-none);
+}
+.glossary__list dd {
+  margin: 0.2rem 0 0;
+  color: var(--fg-dim);
+}
+.glossary__list a {
+  color: var(--gold);
+  white-space: nowrap;
+}
+.glossary__note {
+  margin: var(--space-md) 0 0;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--line-soft);
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
 }
 .masthead h1 {
   font-family: var(--mono);
@@ -183,14 +263,198 @@ a:hover {
   margin: 0;
   text-wrap: balance;
 }
-.masthead h1 .pkg {
-  color: var(--gold);
+.masthead .wordmark {
+  letter-spacing: -0.02em;
+}
+.masthead .wordmark a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  line-height: 1;
+  color: inherit;
+  text-decoration: none;
+}
+.masthead .wordmark a:hover {
+  opacity: 0.82;
+}
+.masthead .wordmark .logo {
+  width: 0.85em;
+  height: 0.85em;
+  flex: none;
+  /* Asymmetric: the heavy gold dot (lower-left) needs more air than the light
+     waves (upper-right), so equal gaps read as lopsided. margin-inline is
+     start(left, toward "npm") then end(right, toward "report"). */
+  margin-inline: 0.16em 0.07em;
+  transform: translateY(0.06em);
+}
+.masthead .tagline {
+  color: var(--fg);
+  font-size: 1.0625rem;
+  font-weight: 500;
+  margin: 0.75rem 0 0;
+  max-width: 60ch;
+  text-wrap: balance;
 }
 .masthead p {
   color: var(--fg-dim);
   max-width: 70ch;
   margin: 0.875rem 0 0;
   text-wrap: pretty;
+}
+.preview {
+  margin: 0 0 var(--space-2xl);
+}
+.preview__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-xs) var(--space-md);
+  margin-bottom: var(--space-md);
+}
+.preview__tag {
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  border: 1px solid var(--line);
+  border-radius: 100rem;
+  padding: 0.15rem 0.6rem;
+}
+.preview__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+.preview__stats .stat {
+  flex: 1 1 9rem;
+}
+.preview__trend {
+  margin: 0 0 var(--space-md);
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  color: var(--fg-faint);
+}
+.sparkline {
+  margin: 0.5rem 0 0;
+  color: var(--gold-dim);
+}
+.stat--accent .sparkline {
+  color: var(--gold);
+}
+.stat--risk .sparkline {
+  color: var(--t-none);
+}
+.sparkline__plot {
+  display: flex;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+.sparkline__yaxis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 1.4rem;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  line-height: 1;
+  color: var(--fg-faint);
+}
+.sparkline__svg {
+  flex: 1;
+  height: 34px;
+  border-left: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.sparkline__grid {
+  stroke: var(--line-soft);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+  vector-effect: non-scaling-stroke;
+}
+.sparkline__line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.sparkline__xaxis {
+  display: flex;
+  justify-content: space-between;
+  /* Clear the y-axis gutter (1.4rem width + 0.3rem gap) so dates sit under the plot. */
+  padding-left: 1.7rem;
+  margin-top: 0.2rem;
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  color: var(--fg-faint);
+}
+.preview__frame {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--ink-850);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent);
+}
+.preview__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.preview__table th,
+.preview__table td {
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--line-soft);
+  white-space: nowrap;
+}
+.preview__table th {
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-eyebrow);
+  color: var(--fg-faint);
+  font-weight: 500;
+}
+.preview__table .mono {
+  font-family: var(--mono);
+}
+.preview__table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.preview__flag {
+  margin-left: var(--space-xs);
+}
+.preview__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: var(--space-md);
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  color: var(--gold);
+  text-decoration: none;
+}
+.preview__cta:hover {
+  text-decoration: underline;
+}
+#config {
+  scroll-margin-top: 1.5rem;
+}
+@media (max-width: 640px) {
+  /* Keep the preview readable when the frame clips overflow for the fade: drop
+     Downloads and Latest, leave Package · Trust level · Publisher. */
+  .preview__table th:nth-child(4),
+  .preview__table td:nth-child(4),
+  .preview__table th:nth-child(5),
+  .preview__table td:nth-child(5) {
+    display: none;
+  }
 }
 
 .recent-reports {
@@ -777,11 +1041,6 @@ textarea {
   outline: 2px solid var(--gold);
   outline-offset: 4px;
 }
-.results__head .hint {
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--fg-faint);
-}
 
 .share-bar {
   display: flex;
@@ -955,7 +1214,7 @@ textarea {
   margin-top: 0;
 }
 .history-stats {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
   margin-bottom: var(--space-lg);
 }
 .trust-trend {
@@ -1089,9 +1348,6 @@ textarea {
   white-space: nowrap;
 }
 @media (max-width: 38.75rem) {
-  .history-stats {
-    grid-template-columns: 1fr;
-  }
   .history-list li {
     grid-template-columns: 1fr;
     gap: var(--space-xs);
@@ -1269,6 +1525,14 @@ table.data tbody tr:hover td {
   margin-top: 0;
   margin-bottom: 0.625rem;
 }
+.methodology-note {
+  margin: 2.25rem 0 0;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  color: var(--fg-faint);
+  line-height: 1.7;
+  max-width: 70ch;
+}
 .user-publish-panel {
   margin-top: 2.25rem;
 }
@@ -1299,6 +1563,9 @@ table.data tbody tr:hover td {
 }
 
 .footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
   margin-top: 3.75rem;
   padding-top: 1.375rem;
   border-top: 1px solid var(--line);
@@ -1306,4 +1573,13 @@ table.data tbody tr:hover td {
   font-size: var(--text-xs);
   color: var(--fg-faint);
   line-height: 1.7;
+}
+.footer p {
+  margin: 0;
+}
+.footer__mark {
+  color: var(--fg-dim);
+}
+.footer__mark .dot {
+  color: var(--gold);
 }

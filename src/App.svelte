@@ -3,10 +3,13 @@
   import LogTerminal from "./components/LogTerminal.svelte";
   import HistoryPanel from "./components/HistoryPanel.svelte";
   import RecentReports from "./components/RecentReports.svelte";
+  import SamplePreview from "./components/SamplePreview.svelte";
   import DailyTrackingButton from "./components/DailyTrackingButton.svelte";
   import ResultsView from "./components/ResultsView.svelte";
   import TagInput from "./components/TagInput.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
+  import TrustGlossary from "./components/TrustGlossary.svelte";
+  import Logo from "./components/Logo.svelte";
   import UserPublishView from "./components/UserPublishView.svelte";
   import {
     DEFAULT_BOT_EXCLUSIONS,
@@ -315,22 +318,27 @@
 <div class="app">
   <header class="masthead">
     <div class="masthead__top">
-      <p class="eyebrow">supply-chain audit</p>
-      <ThemeToggle />
+      <h1 class="wordmark">
+        <a href="/#" aria-label="npm.report"><span>npm</span><Logo /><span>report</span></a>
+      </h1>
+      <div class="masthead__controls">
+        <ThemeToggle />
+        <TrustGlossary />
+      </div>
     </div>
-    <h1><span class="pkg">npm</span> org trust &amp; access audit</h1>
-    <p>
-      Point this at any npm organizations to track trusted-publishing / provenance rollout, find
-      packages published manually rather than via CI, and surface maintainers who can publish but
-      aren&rsquo;t org members. Audits run on the server against public npm data and stream progress
-      here live; a read-only snapshot is saved automatically after each completed audit.
+    <p class="tagline">
+      Supply-chain trust signals for npm orgs. Audit, visualize, share, auto-track over time.
     </p>
   </header>
+
+  {#if !result}
+    <SamplePreview />
+  {/if}
 
   <RecentReports />
 
   <div class="layout">
-    <section class="panel">
+    <section class="panel" id="config">
       <div class="panel__head">
         <h2>Configuration</h2>
       </div>
@@ -341,7 +349,7 @@
             id="orgs"
             values={orgs}
             onChange={(next) => (orgs = next)}
-            placeholder="e.g. nuxt, vue — Enter to add"
+            placeholder="e.g. nuxt, vue"
           />
           <p class="desc">
             One or more npm org slugs (up to {MAX_ORGS}). The registry caps org listings at 250
@@ -401,7 +409,7 @@
             id="bots"
             values={bots}
             onChange={(next) => (bots = next)}
-            placeholder="e.g. ci-bot — Enter to add"
+            placeholder="e.g. ci-bot"
           />
           <p class="desc">
             Publishers to treat as automation. Note: npm cannot distinguish a human from that
@@ -486,7 +494,6 @@
     <section class="results" id="reports">
       <div class="results__head">
         <h2 id="audit-results-title" bind:this={resultsHeading} tabindex="-1">Audit results</h2>
-        <span class="hint">switch between reports with the tabs below</span>
       </div>
       <div class="share-bar">
         <div>
@@ -518,6 +525,12 @@
       <ResultsView {result} onToast={showToast} initialTab={firstTab} />
     </section>
   {/if}
+
+  <p class="methodology-note">
+    &ldquo;Recency&rdquo; is the latest dist-tag&rsquo;s publish time. &ldquo;Manual&rdquo; means
+    the publisher isn&rsquo;t in your bot-exclusion list &mdash; npm can&rsquo;t tell a human
+    session from that account&rsquo;s automation token.
+  </p>
 
   <section class="panel user-publish-panel">
     <div class="panel__head">
@@ -594,9 +607,13 @@
   </section>
 
   <footer class="footer">
-    &ldquo;Recency&rdquo; uses the latest dist-tag&rsquo;s publish time. &ldquo;Manual&rdquo; means
-    the publisher is not in your bot exclusion list; npm cannot tell a human session from that
-    account&rsquo;s automation token.
+    <p class="footer__brand">
+      <span class="footer__mark">npm<span class="dot">.</span>report</span> · No affiliation or
+      endorsement by npm, Inc. · Made by
+      <a href="https://philippeserhal.com/" target="_blank" rel="noopener noreferrer"
+        >Philippe Serhal</a
+      >.
+    </p>
   </footer>
 
   {#if toast}

@@ -4,6 +4,8 @@
   import DailyTrackingButton from "./components/DailyTrackingButton.svelte";
   import ResultsView from "./components/ResultsView.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
+  import TrustGlossary from "./components/TrustGlossary.svelte";
+  import Logo from "./components/Logo.svelte";
   import type { AuditResult } from "./lib/runAudit";
   import { parseOrNull, ReportRecordSchema } from "./lib/schemas";
 
@@ -102,10 +104,14 @@
 <div class="app">
   <header class="masthead">
     <div class="masthead__top">
-      <p class="eyebrow">supply-chain audit · shared report</p>
-      <ThemeToggle />
+      <h1 class="wordmark">
+        <a href="/#" aria-label="npm.report"><span>npm</span><Logo /><span>report</span></a>
+      </h1>
+      <div class="masthead__controls">
+        <ThemeToggle />
+        <TrustGlossary />
+      </div>
     </div>
-    <h1><span class="pkg">npm</span> org trust &amp; access audit</h1>
     {#if record}
       <p>
         Audit of <strong>{record.orgs || "npm packages"}</strong>

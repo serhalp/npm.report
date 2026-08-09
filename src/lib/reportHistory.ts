@@ -86,9 +86,9 @@ export function isAllScope(scope: SharedReportScope): boolean {
 
 // Trust-signal aggregates for the timeline. "Strong" is the two gold-accented
 // tiers (staged publish + trusted publisher); "any" is everything that isn't
-// "none". Provenance-only lands in `any` but not `strong` — matching how the
-// report itself ranks and accents the tiers, so the timeline stops treating a
-// provenance-only package as equal to a staged-published one.
+// "none". Provenance-only counts toward `any` but not `strong`, matching how the
+// report ranks and accents the tiers, so a provenance-only package doesn't read
+// as equal to a staged-published one.
 export function strongTrustCount(point: ReportTrustHistoryPoint): number {
   return point.byLevel.stagedPublish + point.byLevel.trustedPublisher;
 }

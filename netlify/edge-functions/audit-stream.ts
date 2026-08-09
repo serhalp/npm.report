@@ -192,7 +192,7 @@ async function runFresh(
   try {
     const result: AuditResult = await runAudit(config, kinds, members, log);
 
-    // Persist the authoritative report (server-owned; no browser write path).
+    // Persist the authoritative report; the server owns this write.
     const scope: SharedReportScope = config.all ? "all" : { months: config.months };
     let reportId: string | null = null;
     let saveError: string | null = null;

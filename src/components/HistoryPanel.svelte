@@ -42,11 +42,22 @@
     return `${value.toFixed(value % 1 === 0 ? 0 : 1)}%`;
   }
 
-  let latestStrong = $derived(
-    latest ? formatPercent(trustPercent(strongTrustCount(latest), latest.total)) : "—",
-  );
-  let latestAny = $derived(
-    latest ? formatPercent(trustPercent(anyTrustCount(latest), latest.total)) : "—",
+  function pctCount(count: number, total: number): string {
+    return `${formatPercent(trustPercent(count, total))} (${count})`;
+  }
+  let latestStrong = $derived(latest ? pctCount(strongTrustCount(latest), latest.total) : "—");
+  let latestAny = $derived(latest ? pctCount(anyTrustCount(latest), latest.total) : "—");
+  let latestNone = $derived(latest ? pctCount(latest.byLevel.none, latest.total) : "—");
+
+  // Per-tile trend series (percent over time) and shared x-axis endpoint dates.
+  // Stat only draws the sparkline when a series has >1 point.
+  let strongSeries = $derived(points.map((p) => trustPercent(strongTrustCount(p), p.total)));
+  let anySeries = $derived(points.map((p) => trustPercent(anyTrustCount(p), p.total)));
+  let noneSeries = $derived(points.map((p) => trustPercent(p.byLevel.none, p.total)));
+  let sparkLabels = $derived<[string, string] | undefined>(
+    points.length > 1
+      ? [formatDay(points[0].capturedAt).slice(5), formatDay(points.at(-1)!.capturedAt).slice(5)]
+      : undefined,
   );
 
   function segmentWidth(point: ReportTrustHistoryPoint, level: TrustLevel): string {
@@ -128,8 +139,28 @@
         </div>
       {:else}
         <div class="statgrid history-stats">
-          <Stat k="Strong trust" v={latestStrong} sub="staged + trusted" variant="accent" />
-          <Stat k="Any trust" v={latestAny} sub="incl. provenance" />
+          <Stat
+            k="Strong trust"
+            v={latestStrong}
+            sub="staged or trusted"
+            variant="accent"
+            spark={strongSeries}
+            {sparkLabels}
+          />
+          <Stat
+            k="Any trust"
+            v={latestAny}
+            sub="incl. provenance"
+            spark={anySeries}
+            {sparkLabels}
+          />
+          <Stat
+            k="No trust signal"
+            v={latestNone}
+            variant="risk"
+            spark={noneSeries}
+            {sparkLabels}
+          />
           <Stat k="Latest failures" v={latest?.failureCount ?? 0} />
         </div>
 

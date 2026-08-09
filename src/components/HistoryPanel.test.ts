@@ -94,8 +94,9 @@ describe("HistoryPanel", () => {
       props: { orgs: ["netlify"], currentReportId: "netlify-2026-06-27-bbbbbbbb" },
     });
 
-    expect(await screen.findByText("50%")).toBeInTheDocument(); // Strong trust: staged + trusted
-    expect(screen.getByText("75%")).toBeInTheDocument(); // Any trust: excludes none
+    expect(await screen.findByText("50% (2)")).toBeInTheDocument(); // Strong trust: staged + trusted
+    expect(screen.getByText("75% (3)")).toBeInTheDocument(); // Any trust: staged + trusted + provenance
+    expect(screen.getByText("25% (1)")).toBeInTheDocument(); // No trust signal
     expect(screen.getByText("2")).toBeInTheDocument(); // latest failures
     expect(screen.getByRole("img", { name: /across 2 snapshots/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "2026-06-27" })).toHaveAttribute(
@@ -123,7 +124,7 @@ describe("HistoryPanel", () => {
 
     render(HistoryPanel, { props: { orgs: ["netlify"] } });
 
-    expect(await screen.findByText("50%")).toBeInTheDocument();
+    expect(await screen.findByText("50% (2)")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: /snapshots/i })).not.toBeInTheDocument();
   });
 });

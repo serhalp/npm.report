@@ -91,8 +91,8 @@ export async function resolveMeta(
     }
     // fast-npm-meta answers a rate-limited or over-large batch with a 200 error
     // object (or all-error items). Resolving zero usable rows from a non-empty
-    // batch means discovery is INCOMPLETE — not that the org is empty — so
-    // record it rather than letting the audit silently show "0 in scope".
+    // batch means discovery failed for that batch; record it rather than let the
+    // audit silently show "0 in scope" as if the org were empty.
     if (resolved === 0 && grp.length > 0) {
       failures.add(url, "fast-npm-meta resolved no packages for batch");
     }

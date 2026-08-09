@@ -50,7 +50,7 @@ export async function fetchWeeklyDownloads(
         for (const [key, val] of Object.entries(json)) {
           const v = val as { downloads?: number } | null;
           // A present-but-null entry means npm has the package but zero weekly
-          // downloads — record 0, not a missing "?".
+          // downloads. Record it as 0; a missing entry stays "?".
           map.set(key, v && typeof v.downloads === "number" ? v.downloads : 0);
         }
       }

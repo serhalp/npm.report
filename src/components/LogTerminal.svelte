@@ -4,7 +4,7 @@
   // bundle just to print append-only log lines. Same public API (writeLine /
   // clear); the visible log is itself the screen-reader live region, so progress
   // and the "results may be INCOMPLETE" warning are announced.
-  const INTRO = ["npm supply-chain audit — ready.", "Configure orgs and reports, then Run audit."];
+  const INTRO = ["Add npm orgs, choose reports, and Run. Progress streams here."];
   // Cap retained lines so a very long audit can't grow the DOM without bound
   // (mirrors the old terminal's 5000-line scrollback).
   const SCROLLBACK = 5000;

@@ -162,6 +162,29 @@ Reads and schedule writes are small JSON, so `reports.ts` stays a serverless
 function. Only the audit stream needs an edge function: SSE streaming with no
 serverless timeout and no response-size cap on large packument-derived results.
 
+## Platform-first UI
+
+Prefer native web-platform features over hand-rolled equivalents — reinventing
+them is how avoidable accessibility and behavior bugs creep in. Reach for the
+platform first: `popover` / `<dialog>` for overlays (the trust glossary is
+`popover="auto"` + CSS anchor positioning), `navigator.clipboard` for copy,
+`crypto.subtle` / `crypto.randomUUID` for hashing and ids, `matchMedia` +
+`prefers-color-scheme` for theming, `scrollIntoView` / `:focus-visible` /
+`role="status"|"alert"` live regions for focus, scroll, and announcements, and
+the URL hash for view state. Target Baseline — _widely available_ by default,
+_newly available_ when it earns its keep (as `popover` does) — and enhance
+progressively: e.g. CSS anchor positioning behind `@supports` with a fixed
+fallback, never a JS polyfill.
+
+Two deliberate exceptions exist so they don't get "fixed":
+
+- The audit stream reads a `fetch` `ReadableStream`, not `EventSource` — the
+  request body (esp. `external` member lists) can exceed URL limits and
+  `EventSource` is GET-only. See the SSE Contract.
+- Timestamps render as stable ISO-ish strings (`toISOString().slice(…)`,
+  `fmtDate`) rather than `Intl.DateTimeFormat`, so a report reads the same for
+  every viewer regardless of locale.
+
 ## Layout
 
 ```text
