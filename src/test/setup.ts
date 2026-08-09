@@ -40,22 +40,24 @@ function installLocalStorage() {
   });
 }
 
-installLocalStorage();
+if (typeof window !== "undefined") {
+  installLocalStorage();
 
-beforeEach(() => {
-  Object.defineProperty(navigator, "clipboard", {
-    configurable: true,
-    value: {
-      writeText: vi.fn().mockResolvedValue(undefined),
-    },
+  beforeEach(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: vi.fn().mockResolvedValue(undefined),
+      },
+    });
   });
-});
 
-afterEach(() => {
-  cleanup();
-  resetThemeForTests();
-  window.localStorage.removeItem(THEME_STORAGE_KEY);
-  document.documentElement.removeAttribute("data-theme");
-  document.documentElement.removeAttribute("data-theme-mode");
-  document.documentElement.style.colorScheme = "";
-});
+  afterEach(() => {
+    cleanup();
+    resetThemeForTests();
+    window.localStorage.removeItem(THEME_STORAGE_KEY);
+    document.documentElement.removeAttribute("data-theme");
+    document.documentElement.removeAttribute("data-theme-mode");
+    document.documentElement.style.colorScheme = "";
+  });
+}

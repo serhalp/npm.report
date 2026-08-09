@@ -68,4 +68,5 @@ TypeScript validation.
 - Agent-facing architecture or invariants are reflected in `AGENTS.md`.
 - New report types update types, orchestration, dispatch, the request schema, views, tabs, exports,
   and shared report rendering as needed.
-- Schedule or persistence changes include Drizzle schema updates and a Netlify Database migration.
+- Schedule or persistence changes include a native SQL migration, matching Valibot row-contract
+  updates, and coverage using Netlify's local database test package.

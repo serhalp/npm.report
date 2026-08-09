@@ -1,182 +1,120 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+// @vitest-environment node
+import type { DatabaseConnection } from "@netlify/database";
+import type { NetlifyDB } from "@netlify/database-dev";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { serializeJson } from "../../../db/schema.js";
+import { resetTestDatabase, startTestDatabase, stopTestDatabase } from "../database.js";
 
-interface StoredReport {
-  id: string;
-  orgs: string;
-  scopeLabel: string;
-  payload: unknown;
-}
-
-interface StoredTrustHistory {
-  reportId: string;
-  orgKey: string;
-  orgs: string[];
-  capturedAt: Date | string;
-  total: number;
-  stagedPublish: number;
-  trustedPublisher: number;
-  provenance: number;
-  none: number;
-  deprecated: number;
-  failureCount: number;
-}
-
-interface StoredRerunSchedule {
-  orgKey: string;
-  orgs: string[];
-  enabled: boolean;
-  nextRunAt: Date;
-  lastRunAt: Date | null;
-  lastReportId: string | null;
-  lastError: string | null;
-  consecutiveFailures: number;
-}
-
-function tableName(table: unknown): string {
-  if (!table || typeof table !== "object") return "";
-  const nameSymbol = Object.getOwnPropertySymbols(table).find((symbol) =>
-    String(symbol).includes("drizzle:Name"),
-  );
-  return nameSymbol ? String((table as Record<symbol, unknown>)[nameSymbol]) : "";
-}
-
-function predicateValue(predicate: unknown): string | undefined {
-  return typeof predicate === "object" && predicate && "value" in predicate
-    ? String(predicate.value)
-    : undefined;
-}
-
-function makeDb(
-  reports: Map<string, StoredReport>,
-  history: Map<string, StoredTrustHistory>,
-  schedules: Map<string, StoredRerunSchedule>,
-) {
-  return {
-    select: vi.fn(() => ({
-      from: vi.fn((table: unknown) => {
-        if (tableName(table) === "report_rerun_schedules") {
-          return {
-            where: vi.fn(() => ({
-              orderBy: vi.fn(() => ({
-                limit: vi.fn(async (limit: number) =>
-                  [...schedules.values()]
-                    .filter((row) => row.enabled && row.nextRunAt <= new Date())
-                    .toSorted((a, b) => a.nextRunAt.getTime() - b.nextRunAt.getTime())
-                    .slice(0, limit),
-                ),
-              })),
-            })),
-          };
-        }
-
-        return { where: vi.fn(async () => []) };
-      }),
-    })),
-    insert: vi.fn((table: unknown) => ({
-      values: vi.fn((row: StoredReport | StoredTrustHistory) => ({
-        onConflictDoNothing: vi.fn(async () => {
-          if (tableName(table) === "report_trust_history") {
-            const item = row as StoredTrustHistory;
-            if (!history.has(item.reportId)) history.set(item.reportId, item);
-            return;
-          }
-          const item = row as StoredReport;
-          if (!reports.has(item.id)) reports.set(item.id, item);
-        }),
-      })),
-    })),
-    update: vi.fn((table: unknown) => ({
-      set: vi.fn((values: Partial<StoredRerunSchedule>) => ({
-        where: vi.fn(async (predicate: unknown) => {
-          if (tableName(table) !== "report_rerun_schedules") return;
-          const orgKey = predicateValue(predicate);
-          if (!orgKey) return;
-          const current = schedules.get(orgKey);
-          if (current) schedules.set(orgKey, { ...current, ...values });
-        }),
-      })),
-    })),
-  };
-}
-
-async function loadProcessor(
-  schedules: Map<string, StoredRerunSchedule>,
-  reports = new Map<string, StoredReport>(),
-  history = new Map<string, StoredTrustHistory>(),
-) {
-  vi.resetModules();
-  const db = makeDb(reports, history, schedules);
-  const runAudit = vi.fn(async () => ({
-    trust: {
-      rows: [],
-      summary: {
-        scopeLabel: "ALL org packages",
-        orgs: ["netlify"],
-        total: 2,
-        provenance: 1,
-        trustedPublisher: 1,
+const defaultAuditResult = {
+  trust: {
+    rows: [],
+    summary: {
+      scopeLabel: "ALL org packages",
+      orgs: ["netlify"],
+      total: 2,
+      provenance: 1,
+      trustedPublisher: 1,
+      stagedPublish: 0,
+      deprecated: 0,
+      byLevel: {
         stagedPublish: 0,
-        deprecated: 0,
-        byLevel: {
-          stagedPublish: 0,
-          trustedPublisher: 1,
-          provenance: 1,
-          none: 0,
-        },
+        trustedPublisher: 1,
+        provenance: 1,
+        none: 0,
       },
     },
-    failures: [],
-  }));
+  },
+  failures: [],
+};
 
-  vi.doMock("drizzle-orm", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("drizzle-orm")>();
-    return {
-      ...actual,
-      and: vi.fn((...predicates: unknown[]) => ({ predicates })),
-      asc: vi.fn((column: unknown) => ({ column })),
-      eq: vi.fn((_column: unknown, value: unknown) => ({ value })),
-      lte: vi.fn((_column: unknown, value: unknown) => ({ value })),
-    };
-  });
-  vi.doMock("../../../db/index.js", () => ({ db }));
-  vi.doMock("../../../src/lib/runAudit.js", () => ({ runAudit }));
+const runAudit = vi.fn(async () => defaultAuditResult);
 
-  const mod = await import("../../functions/_shared/report-schedules");
-  return { ...mod, db, runAudit, reports, history, schedules };
+let database: DatabaseConnection;
+let local: NetlifyDB;
+let schedules: typeof import("../../functions/_shared/report-schedules.js");
+
+async function seedSchedule(): Promise<void> {
+  await database.sql`
+    INSERT INTO reports (id, orgs, scope_label, payload)
+    VALUES (
+      ${"netlify-old"},
+      ${"netlify"},
+      ${"ALL org packages"},
+      ${serializeJson({ failures: [] })}::jsonb
+    )
+  `;
+  await database.sql`
+    INSERT INTO report_rerun_schedules (
+      org_key,
+      orgs_json,
+      enabled,
+      next_run_at,
+      last_report_id,
+      consecutive_failures
+    ) VALUES (
+      ${"netlify"},
+      ${serializeJson(["netlify"])}::jsonb,
+      ${true},
+      ${new Date("2026-06-28T11:00:00.000Z")},
+      ${"netlify-old"},
+      ${0}
+    )
+  `;
 }
 
-beforeEach(() => {
-  vi.useFakeTimers();
-  vi.setSystemTime(new Date("2026-06-28T12:00:00.000Z"));
+async function readSchedule() {
+  const [row] = await database.sql<{
+    enabled: boolean;
+    nextRunAt: Date;
+    lastRunAt: Date | null;
+    lastReportId: string | null;
+    lastError: string | null;
+    consecutiveFailures: number;
+  }>`
+    SELECT
+      enabled,
+      next_run_at AS "nextRunAt",
+      last_run_at AS "lastRunAt",
+      last_report_id AS "lastReportId",
+      last_error AS "lastError",
+      consecutive_failures AS "consecutiveFailures"
+    FROM report_rerun_schedules
+    WHERE org_key = ${"netlify"}
+  `;
+  return row;
+}
+
+beforeAll(async () => {
+  const started = await startTestDatabase();
+  local = started.local;
+  vi.stubEnv("NETLIFY_DB_URL", started.connectionString);
+  vi.stubEnv("NETLIFY_DB_DRIVER", "server");
+  vi.resetModules();
+  vi.doMock("../../../src/lib/runAudit.js", () => ({ runAudit }));
+  database = (await import("../../../db/index.js")).getDb();
+  schedules = await import("../../functions/_shared/report-schedules.js");
 });
 
-afterEach(() => {
-  vi.useRealTimers();
-  vi.doUnmock("drizzle-orm");
-  vi.doUnmock("../../../db/index.js");
+beforeEach(async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-06-28T12:00:00.000Z"));
+  runAudit.mockReset();
+  runAudit.mockResolvedValue(defaultAuditResult);
+  await resetTestDatabase(database);
+  await seedSchedule();
+});
+
+afterEach(() => vi.useRealTimers());
+
+afterAll(async () => {
+  await stopTestDatabase(local, database);
   vi.doUnmock("../../../src/lib/runAudit.js");
+  vi.unstubAllEnvs();
 });
 
 describe("trust rerun schedules", () => {
   it("runs due package trust schedules through the shared audit and save path", async () => {
-    const schedules = new Map<string, StoredRerunSchedule>([
-      [
-        "netlify",
-        {
-          orgKey: "netlify",
-          orgs: ["netlify"],
-          enabled: true,
-          nextRunAt: new Date("2026-06-28T11:00:00.000Z"),
-          lastRunAt: null,
-          lastReportId: "netlify-old",
-          lastError: null,
-          consecutiveFailures: 0,
-        },
-      ],
-    ]);
-    const { processDueTrustReruns, runAudit, reports, history } = await loadProcessor(schedules);
-
-    await expect(processDueTrustReruns()).resolves.toEqual({
+    await expect(schedules.processDueTrustReruns()).resolves.toEqual({
       checked: 1,
       succeeded: 1,
       failed: 0,
@@ -194,49 +132,37 @@ describe("trust rerun schedules", () => {
       [],
       expect.any(Function),
     );
-    const savedId = schedules.get("netlify")?.lastReportId;
-    expect(savedId).toMatch(/^netlify-2026-06-28-[a-f0-9]{16}$/);
-    expect(schedules.get("netlify")).toMatchObject({
+    const schedule = await readSchedule();
+    expect(schedule?.lastReportId).toMatch(/^netlify-2026-06-28-[a-f0-9]{16}$/);
+    expect(schedule).toMatchObject({
       lastRunAt: new Date("2026-06-28T12:00:00.000Z"),
       nextRunAt: new Date("2026-06-29T12:00:00.000Z"),
       lastError: null,
       consecutiveFailures: 0,
     });
-    expect(reports.has(savedId!)).toBe(true);
-    expect(history.get(savedId!)).toMatchObject({
-      reportId: savedId,
-      orgKey: "netlify",
-      orgs: ["netlify"],
-      total: 2,
-      trustedPublisher: 1,
-      provenance: 1,
-    });
+
+    const [{ reportCount, historyCount }] = await database.sql<{
+      reportCount: number;
+      historyCount: number;
+    }>`
+      SELECT
+        (SELECT count(*)::int FROM reports) AS "reportCount",
+        (SELECT count(*)::int FROM report_trust_history) AS "historyCount"
+    `;
+    expect(reportCount).toBe(2);
+    expect(historyCount).toBe(1);
   });
 
   it("records a failure and keeps the schedule enabled when the rerun throws", async () => {
-    const schedules = new Map<string, StoredRerunSchedule>([
-      [
-        "netlify",
-        {
-          orgKey: "netlify",
-          orgs: ["netlify"],
-          enabled: true,
-          nextRunAt: new Date("2026-06-28T11:00:00.000Z"),
-          lastRunAt: null,
-          lastReportId: "netlify-old",
-          lastError: null,
-          consecutiveFailures: 0,
-        },
-      ],
-    ]);
-    const { processDueTrustReruns, runAudit } = await loadProcessor(schedules);
     runAudit.mockRejectedValueOnce(new Error("registry down"));
 
-    await expect(processDueTrustReruns()).resolves.toEqual({ checked: 1, succeeded: 0, failed: 1 });
+    await expect(schedules.processDueTrustReruns()).resolves.toEqual({
+      checked: 1,
+      succeeded: 0,
+      failed: 1,
+    });
 
-    // The failure is recorded but the schedule stays enabled and just retries in
-    // an hour — it is NOT auto-disabled (documents the open "retries forever" gap).
-    expect(schedules.get("netlify")).toMatchObject({
+    expect(await readSchedule()).toMatchObject({
       enabled: true,
       consecutiveFailures: 1,
       lastError: "registry down",
@@ -244,40 +170,30 @@ describe("trust rerun schedules", () => {
     });
   });
 
-  it("succeeds without storing history when the rerun yields no extractable summary", async () => {
-    const schedules = new Map<string, StoredRerunSchedule>([
-      [
-        "netlify",
-        {
-          orgKey: "netlify",
-          orgs: ["netlify"],
-          enabled: true,
-          nextRunAt: new Date("2026-06-28T11:00:00.000Z"),
-          lastRunAt: null,
-          lastReportId: "netlify-old",
-          lastError: null,
-          consecutiveFailures: 0,
-        },
-      ],
-    ]);
-    const { processDueTrustReruns, runAudit, reports, history } = await loadProcessor(schedules);
-    // A rerun that returns no `trust` summary yields nothing to extract.
+  it("succeeds without storing history when no trust summary can be extracted", async () => {
     runAudit.mockResolvedValueOnce({ failures: [] } as never);
 
-    await expect(processDueTrustReruns()).resolves.toEqual({ checked: 1, succeeded: 1, failed: 0 });
+    await expect(schedules.processDueTrustReruns()).resolves.toEqual({
+      checked: 1,
+      succeeded: 1,
+      failed: 0,
+    });
 
-    expect(history.size).toBe(0); // no trust-history row written
-    expect(reports.size).toBe(1); // but the report snapshot was still saved
-    expect(schedules.get("netlify")).toMatchObject({ consecutiveFailures: 0, lastError: null });
+    const [{ reportCount, historyCount }] = await database.sql<{
+      reportCount: number;
+      historyCount: number;
+    }>`
+      SELECT
+        (SELECT count(*)::int FROM reports) AS "reportCount",
+        (SELECT count(*)::int FROM report_trust_history) AS "historyCount"
+    `;
+    expect(reportCount).toBe(2);
+    expect(historyCount).toBe(0);
+    expect(await readSchedule()).toMatchObject({ consecutiveFailures: 0, lastError: null });
   });
 
   it("declares an hourly background schedule", async () => {
-    await loadProcessor(new Map());
-    const mod = await import("../../functions/trust-reruns-background");
-
-    expect(mod.config).toEqual({
-      schedule: "@hourly",
-      background: true,
-    });
+    const background = await import("../../functions/trust-reruns-background.js");
+    expect(background.config).toEqual({ schedule: "@hourly", background: true });
   });
 });

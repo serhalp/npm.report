@@ -1,5 +1,5 @@
-import { db } from "../../../db/index.ts";
-import { reportTrustHistory, reports } from "../../../db/schema.ts";
+import { getDb } from "../../../db/index.ts";
+import { type ReportTrustHistoryRow, serializeJson } from "../../../db/schema.ts";
 import {
   extractTrustHistory,
   scopeLabelFor,
@@ -57,9 +57,7 @@ export function historyUrl(id: string): string {
   return `/report/${encodeURIComponent(id)}`;
 }
 
-export function historyPointFromRow(
-  row: typeof reportTrustHistory.$inferSelect,
-): ReportTrustHistoryPoint {
+export function historyPointFromRow(row: ReportTrustHistoryRow): ReportTrustHistoryPoint {
   return {
     id: row.reportId,
     url: historyUrl(row.reportId),
@@ -76,9 +74,7 @@ export function historyPointFromRow(
   };
 }
 
-export function recentReportLinkFromRow(
-  row: typeof reportTrustHistory.$inferSelect,
-): RecentTrustReportLink {
+export function recentReportLinkFromRow(row: ReportTrustHistoryRow): RecentTrustReportLink {
   return {
     id: row.reportId,
     url: historyUrl(row.reportId),
@@ -88,22 +84,35 @@ export function recentReportLinkFromRow(
 }
 
 export async function storeTrustHistory(reportId: string, history: TrustHistorySnapshot) {
-  await db
-    .insert(reportTrustHistory)
-    .values({
-      reportId,
-      orgKey: history.orgKey,
-      orgs: history.orgs,
-      capturedAt: new Date(history.capturedAt),
-      total: history.total,
-      stagedPublish: history.byLevel.stagedPublish,
-      trustedPublisher: history.byLevel.trustedPublisher,
-      provenance: history.byLevel.provenance,
-      none: history.byLevel.none,
-      deprecated: history.deprecated,
-      failureCount: history.failureCount,
-    })
-    .onConflictDoNothing();
+  const db = getDb();
+  await db.sql`
+    INSERT INTO report_trust_history (
+      report_id,
+      org_key,
+      orgs_json,
+      captured_at,
+      total,
+      staged_publish,
+      trusted_publisher,
+      provenance,
+      none,
+      deprecated,
+      failure_count
+    ) VALUES (
+      ${reportId},
+      ${history.orgKey},
+      ${serializeJson(history.orgs)}::jsonb,
+      ${new Date(history.capturedAt)},
+      ${history.total},
+      ${history.byLevel.stagedPublish},
+      ${history.byLevel.trustedPublisher},
+      ${history.byLevel.provenance},
+      ${history.byLevel.none},
+      ${history.deprecated},
+      ${history.failureCount}
+    )
+    ON CONFLICT (report_id) DO NOTHING
+  `;
 }
 
 export async function saveReportSnapshot(
@@ -111,15 +120,17 @@ export async function saveReportSnapshot(
 ): Promise<SavedReportSnapshot> {
   const id = await buildReportId(input.orgs, input.payload);
   const scopeLabel = input.scopeLabel ?? scopeLabelFor(input.scope);
-  await db
-    .insert(reports)
-    .values({
-      id,
-      orgs: input.orgs.join(", "),
-      scopeLabel,
-      payload: input.payload,
-    })
-    .onConflictDoNothing();
+  const db = getDb();
+  await db.sql`
+    INSERT INTO reports (id, orgs, scope_label, payload)
+    VALUES (
+      ${id},
+      ${input.orgs.join(", ")},
+      ${scopeLabel},
+      ${serializeJson(input.payload)}::jsonb
+    )
+    ON CONFLICT (id) DO NOTHING
+  `;
 
   const history = extractTrustHistory(input);
   if (history) {

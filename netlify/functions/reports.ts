@@ -1,7 +1,6 @@
 import type { Config } from "@netlify/functions";
-import { asc, desc, eq } from "drizzle-orm";
-import { db } from "../../db/index.js";
-import { reportTrustHistory, reports } from "../../db/schema.js";
+import { getDb } from "../../db/index.js";
+import { parseRows, ReportRowSchema, ReportTrustHistoryRowSchema } from "../../db/schema.js";
 import {
   normalizeOrgs,
   orgKeyFor,
@@ -18,12 +17,28 @@ async function getHistory(url: URL): Promise<Response> {
     return new Response("Missing org", { status: 400 });
   }
 
-  const rows = await db
-    .select()
-    .from(reportTrustHistory)
-    .where(eq(reportTrustHistory.orgKey, orgKeyFor(orgs)))
-    .orderBy(asc(reportTrustHistory.capturedAt))
-    .limit(100);
+  const db = getDb();
+  const rows = parseRows(
+    ReportTrustHistoryRowSchema,
+    await db.sql<unknown>`
+      SELECT
+        report_id AS "reportId",
+        org_key AS "orgKey",
+        orgs_json AS orgs,
+        captured_at AS "capturedAt",
+        total,
+        staged_publish AS "stagedPublish",
+        trusted_publisher AS "trustedPublisher",
+        provenance,
+        none,
+        deprecated,
+        failure_count AS "failureCount"
+      FROM report_trust_history
+      WHERE org_key = ${orgKeyFor(orgs)}
+      ORDER BY captured_at ASC
+      LIMIT 100
+    `,
+  );
 
   return Response.json({
     orgs,
@@ -32,11 +47,27 @@ async function getHistory(url: URL): Promise<Response> {
 }
 
 async function getRecentReports(): Promise<Response> {
-  const rows = await db
-    .select()
-    .from(reportTrustHistory)
-    .orderBy(desc(reportTrustHistory.capturedAt))
-    .limit(100);
+  const db = getDb();
+  const rows = parseRows(
+    ReportTrustHistoryRowSchema,
+    await db.sql<unknown>`
+      SELECT
+        report_id AS "reportId",
+        org_key AS "orgKey",
+        orgs_json AS orgs,
+        captured_at AS "capturedAt",
+        total,
+        staged_publish AS "stagedPublish",
+        trusted_publisher AS "trustedPublisher",
+        provenance,
+        none,
+        deprecated,
+        failure_count AS "failureCount"
+      FROM report_trust_history
+      ORDER BY captured_at DESC
+      LIMIT 100
+    `,
+  );
 
   const seen = new Set<string>();
   const recentReports: RecentTrustReportLink[] = [];
@@ -61,7 +92,20 @@ export default async (req: Request) => {
     if (id === "history") return getHistory(url);
     if (id === "recent") return getRecentReports();
     if (!id) return new Response("Not found", { status: 404 });
-    const [row] = await db.select().from(reports).where(eq(reports.id, id));
+    const db = getDb();
+    const [row] = parseRows(
+      ReportRowSchema,
+      await db.sql<unknown>`
+        SELECT
+          id,
+          orgs,
+          scope_label AS "scopeLabel",
+          payload,
+          created_at AS "createdAt"
+        FROM reports
+        WHERE id = ${id}
+      `,
+    );
     if (!row) return new Response("Not found", { status: 404 });
     return Response.json(row);
   }

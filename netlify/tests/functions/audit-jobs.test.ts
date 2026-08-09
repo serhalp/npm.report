@@ -1,42 +1,76 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+// @vitest-environment node
+import type { DatabaseConnection } from "@netlify/database";
+import type { NetlifyDB } from "@netlify/database-dev";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { resetTestDatabase, startTestDatabase, stopTestDatabase } from "../database.js";
 
-// createJobIfAbsent is the fresh-vs-resume gate: the request that INSERTs the row
-// runs the audit, a request that hits an existing row tails it. Mock the db's
-// insert().values().onConflictDoNothing().returning() chain over a Map so a
-// conflict returns no rows.
-function makeDb(rows: Map<string, unknown>) {
-  return {
-    insert: vi.fn(() => ({
-      values: vi.fn((row: { id: string }) => ({
-        onConflictDoNothing: vi.fn(() => ({
-          returning: vi.fn(async () => {
-            if (rows.has(row.id)) return [];
-            rows.set(row.id, row);
-            return [{ id: row.id }];
-          }),
-        })),
-      })),
-    })),
-  };
-}
+let database: DatabaseConnection;
+let local: NetlifyDB;
+let jobs: typeof import("../../functions/_shared/audit-jobs.js");
 
-async function load(rows = new Map<string, unknown>()) {
+beforeAll(async () => {
+  const started = await startTestDatabase();
+  local = started.local;
+  vi.stubEnv("NETLIFY_DB_URL", started.connectionString);
+  vi.stubEnv("NETLIFY_DB_DRIVER", "server");
   vi.resetModules();
-  vi.doMock("../../../db/index.js", () => ({ db: makeDb(rows) }));
-  return import("../../functions/_shared/audit-jobs");
-}
+  database = (await import("../../../db/index.js")).getDb();
+  jobs = await import("../../functions/_shared/audit-jobs.js");
+});
 
-afterEach(() => vi.resetModules());
+beforeEach(async () => {
+  await resetTestDatabase(database);
+});
 
-describe("createJobIfAbsent", () => {
-  it("returns true when it creates the row (fresh run)", async () => {
-    const { createJobIfAbsent } = await load();
-    expect(await createJobIfAbsent("job-1", { orgs: ["vue"] })).toBe(true);
+afterAll(async () => {
+  await stopTestDatabase(local, database);
+  vi.unstubAllEnvs();
+});
+
+describe("resumable audit jobs", () => {
+  it("atomically distinguishes a fresh run from a reconnect", async () => {
+    await expect(jobs.createJobIfAbsent("job-1", { orgs: ["vue"] })).resolves.toBe(true);
+    await expect(jobs.createJobIfAbsent("job-1", { orgs: ["vue"] })).resolves.toBe(false);
   });
 
-  it("returns false when the row already exists (reconnect tails instead)", async () => {
-    const { createJobIfAbsent } = await load();
-    expect(await createJobIfAbsent("job-1", { orgs: ["vue"] })).toBe(true);
-    expect(await createJobIfAbsent("job-1", { orgs: ["vue"] })).toBe(false);
+  it("round-trips progress and terminal state through JSONB", async () => {
+    await jobs.createJobIfAbsent("job-1", { orgs: ["vue"], all: true });
+    await jobs.updateJobLog("job-1", [
+      { seq: 0, line: "Discovering packages" },
+      { seq: 1, line: "Checking manifests" },
+    ]);
+    await jobs.finishJob("job-1", {
+      status: "done",
+      log: [{ seq: 0, line: "Done." }],
+      result: { trust: { rows: [] }, failures: [] },
+      reportId: "vue-2026-08-09-deadbeef",
+    });
+
+    await expect(jobs.getJob("job-1")).resolves.toMatchObject({
+      id: "job-1",
+      request: { orgs: ["vue"], all: true },
+      log: [{ seq: 0, line: "Done." }],
+      status: "done",
+      result: { trust: { rows: [] }, failures: [] },
+      reportId: "vue-2026-08-09-deadbeef",
+      error: null,
+      createdAt: expect.any(Date),
+      updatedAt: expect.any(Date),
+    });
+  });
+
+  it("prunes only jobs older than the requested interval", async () => {
+    await jobs.createJobIfAbsent("old", {});
+    await jobs.createJobIfAbsent("recent", {});
+    await database.sql`
+      UPDATE audit_jobs
+      SET created_at = now() - interval '3 hours'
+      WHERE id = ${"old"}
+    `;
+
+    await jobs.deleteExpiredJobs("2 hours");
+
+    await expect(jobs.getJob("old")).resolves.toBeNull();
+    await expect(jobs.getJob("recent")).resolves.not.toBeNull();
   });
 });

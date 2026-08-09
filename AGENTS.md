@@ -95,9 +95,9 @@ and vitest ignore the import map and keep resolving the same bare specifiers fro
   `runUserPublishes` (i.e. bundled into an edge function) may need an
   `import_map.json` entry. Keep the pinned esm.sh versions in sync with
   `package.json`.
-- The `drizzle-orm` / `@netlify/database` stack is deliberately NOT mapped: they
-  are Netlify-first-party (resolved natively) and drizzle is pinned to a
-  git-snapshot version esm.sh can't build.
+- `@netlify/database` is deliberately NOT mapped: it is Netlify-first-party and
+  resolves natively in functions and edge functions. Database access uses its
+  native tagged-SQL client; `db/schema.ts` validates returned rows with Valibot.
 
 ## SSE Contract
 
@@ -192,7 +192,7 @@ index.html              Vite entry; loads IBM Plex fonts
 netlify.toml            Netlify static publish of dist/, SPA redirect, security headers, edge import map
 import_map.json         Deno import map: edge-only npm deps (valibot, packumeta) -> esm.sh
 scripts/                Original shell scripts; behavior reference, not executed
-db/                     Drizzle schema and Netlify Database connection
+db/                     Native Netlify Database connection and Valibot row contracts
 netlify/
   edge-functions/
     audit-stream.ts             POST /api/audit-stream: run resumable audit, stream SSE, save report
@@ -306,8 +306,10 @@ src/
   The platform validates the build. Use focused checks that match the change and
   report what was not run.
 - Prefer `pnpm run format:check`, `pnpm run lint`, `pnpm run test:unit`,
-  `pnpm run knip`, and targeted file inspection when they are relevant.
-- `pnpm run test` runs unit tests, typecheck, format check, and lint.
+  `pnpm run test:database`, `pnpm run knip`, and targeted file inspection when
+  they are relevant. Database integration tests use `@netlify/database-dev` and
+  run in one worker because each suite starts a local Postgres-compatible server.
+- `pnpm run test` runs unit and database tests, typecheck, format check, and lint.
 
 ## Progress Log
 
@@ -356,9 +358,12 @@ Changing the audit request or SSE contract:
 
 Changing persistence:
 
-1. Update `db/schema.ts`.
-2. Add a migration under `netlify/database/migrations/`.
+1. Add a native SQL migration under `netlify/database/migrations/`; Netlify
+   tracks and applies this directory in deploys.
+2. Update the matching Valibot row contract in `db/schema.ts` and keep query
+   aliases aligned with its camel-case fields.
 3. Update shared persistence/schedule helpers under `netlify/functions/_shared/`
    and any public API in `netlify/functions/reports.ts`.
-4. Verify `/report/:id` still renders older stored payloads or document the
-   migration boundary.
+4. Exercise the change against the real local Postgres-compatible database with
+   `@netlify/database-dev`, then verify `/report/:id` still renders older stored
+   payloads or document the migration boundary.
