@@ -6,7 +6,7 @@ import { auditResult } from "./test/fixtures";
 import { streamAudit } from "./lib/auditStream";
 import { streamUserPublishes } from "./lib/userPublishStream";
 
-// Both the audit and user-publishes now run server-side; the client streams them.
+// Both server-side workflows stream through these client adapters.
 vi.mock("./lib/auditStream", () => ({ streamAudit: vi.fn() }));
 vi.mock("./lib/userPublishStream", () => ({ streamUserPublishes: vi.fn() }));
 

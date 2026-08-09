@@ -118,9 +118,8 @@ export const ReportRerunScheduleStatusSchema = v.looseObject({
 
 // --- server side ---------------------------------------------------------
 
-// POST /api/audit-stream — the interactive audit request. The server runs the
-// audit from this (the browser no longer computes it), so this is the trust
-// boundary: whatever the server produces from a validated request is authoritative.
+// POST /api/audit-stream — the interactive audit request. This is the trust
+// boundary: the server produces the authoritative result from the validated request.
 export const AuditRequestSchema = v.object({
   // Client-generated id for this run. It keys the durable job that lets the SSE
   // stream resume across the platform's ~60s connection recycles; `from` is the

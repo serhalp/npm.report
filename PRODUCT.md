@@ -8,9 +8,8 @@ publishes, and publish access held by non-members.
 
 ## Product Purpose
 
-Audit npm organizations against public npm data, preserving the documented behavior of the original
-shell scripts while making the results easier to run, inspect, export, and share as read-only
-snapshots.
+Audit npm organizations against public npm data, with results that are easy to run, inspect, export,
+and share as read-only snapshots.
 
 ## Brand Personality
 

@@ -9,8 +9,7 @@
 //
 // To be forgiving we also accept:
 //   - several such JSON objects pasted back-to-back (one per org)
-//   - a plain newline-separated username list (the original -M members.txt
-//     format, with # comments)
+//   - newline-separated usernames with # comments
 // Matching is case-insensitive, so members are lowercased + deduped.
 // ---------------------------------------------------------------------------
 

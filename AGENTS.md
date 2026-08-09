@@ -4,10 +4,8 @@ Architecture and rules for agents editing this project.
 
 ## Project Shape
 
-This is a web app for npm supply-chain audits. It is a TypeScript port of two
-shell scripts in `scripts/`; those scripts are the reference specification for
-audit behavior. When changing audit semantics, diff against the scripts and
-preserve their documented behavior unless the user explicitly asks otherwise.
+This is a web app for npm supply-chain audits. Preserve the documented audit
+behavior and invariants unless the user explicitly asks otherwise.
 
 Audits run server-side and stream to the browser. When the user runs an audit
 the browser POSTs a validated request to a Netlify **edge function**, which runs
@@ -53,10 +51,9 @@ The server-side entry points are:
 ## npm Access
 
 npm is fetched directly from the server. Because audits run in edge/background
-functions, not the browser, there is no cross-origin restriction to work around,
-so the CORS proxies (and their shared proxy core) were removed. There is no
-host-generic proxy and no request-controlled upstream host — i.e. no SSRF
-surface to defend.
+functions, not the browser, there is no cross-origin restriction and no need for
+a proxy. There is no host-generic proxy and no request-controlled upstream host
+— i.e. no SSRF surface to defend.
 
 `src/lib/npmClient.ts` (`npmGet`/`npmGetJson`) fetches the upstream hosts
 directly, with the retry/backoff/`FailureLog` semantics under Invariants:
@@ -66,7 +63,7 @@ directly, with the retry/backoff/`FailureLog` semantics under Invariants:
 - `npm.antfu.dev` (fast-npm-meta) — batched discovery metadata.
 
 When adding a new npm upstream, add the URL helper in `npmClient.ts` and fetch
-it directly; do not reintroduce a proxy layer.
+it directly; do not add a proxy layer.
 
 ## Edge Bundling (Deno)
 
@@ -195,7 +192,6 @@ Two deliberate exceptions exist so they don't get "fixed":
 index.html              Vite entry; loads IBM Plex fonts
 netlify.toml            Netlify static publish of dist/, SPA redirect, security headers, edge import map
 import_map.json         Deno import map: edge-only npm deps (valibot, packumeta) -> esm.sh
-scripts/                Original shell scripts; behavior reference, not executed
 db/                     Native Netlify Database connection and Valibot row contracts
 netlify/
   edge-functions/
@@ -267,9 +263,9 @@ src/
   with a 500 ms delay. Do not parallelize scoped downloads. A present-but-null
   entry is a real 0; only a failed/absent fetch stays unknown ("?").
 - `trust` and `manual` share one discovery pass. `manual` scans the package set
-  from that cache: all packages under `-A`, otherwise only recency-filtered
-  packages. `external` ignores that cache and enumerates the full org list
-  because dormant packages can still have live maintainers.
+  from that cache: every package for an all-package audit, otherwise only
+  recency-filtered packages. `external` ignores that cache and enumerates the
+  full org list because dormant packages can still have live maintainers.
 - Do not hardcode a real org, user, or package. This is a generic tool and those
   values are user input. Generic automation-account defaults are allowed only
   when they are broadly applicable, such as the current `GitHub Actions` manual
@@ -290,8 +286,8 @@ src/
   resume — the first request runs the audit (and finishes it even if the client
   disconnects, so the report still saves); a reconnect only tails. Rows are
   throwaway (the durable report is in `reports`) and pruned hourly by
-  `audit-jobs-cleanup-background.ts`. Do not reintroduce a keepalive: it cannot
-  beat a total connection cut — reconnect + resume is the fix.
+  `audit-jobs-cleanup-background.ts`. Do not use a keepalive: it cannot beat a
+  total connection cut; reconnect + resume handles the connection lifecycle.
 - The report-creation endpoints are rate-limited per IP at the Netlify edge (the
   `rateLimit` field in each function's `config`): `audit-stream` and
   `user-publishes-stream` at 30/min, `reports.ts` at 120/min. This is the abuse
@@ -323,10 +319,9 @@ src/
 - No runtime dependency, no shell. The visible log is itself the screen-reader
   live region (`role="log"`, `aria-live="polite"`), so progress and the "results
   may be INCOMPLETE" warning are announced.
-- It replaced a `ghostty-web` WASM terminal that inlined ~413 KB of base64 WASM
-  into the browser bundle (~85% of it) to render append-only text. Do not
-  reintroduce a WASM terminal for a display-only log; removing it also let the CSP
-  drop `'wasm-unsafe-eval'`.
+- Keep the display-only log dependency-free. Append-only text does not warrant a
+  terminal emulator or WASM runtime, and the CSP must not require
+  `'wasm-unsafe-eval'`.
 
 ## Change Recipes
 
@@ -345,11 +340,10 @@ Adding a report:
 
 Changing audit behavior:
 
-1. Compare the relevant shell-script behavior in `scripts/`.
-2. Preserve failure logging and partial-result warnings.
-3. Keep data-source choices intentional: fast-npm-meta for discovery,
+1. Preserve failure logging and partial-result warnings.
+2. Keep data-source choices intentional: fast-npm-meta for discovery,
    per-version manifests for trust, full packuments only where needed.
-4. Update README and CONTRIBUTING if user-visible behavior or required workflow
+3. Update README and CONTRIBUTING if user-visible behavior or required workflow
    changes.
 
 Changing the audit request or SSE contract:

@@ -20,8 +20,8 @@ package-trust tracking API, hooking up Netlify Database, etc.
 - Keep the app broadly usable for most developers. Do not hardcode a specific org, user, or package.
   Bot defaults should be broadly applicable automation accounts, not project-specific policy.
 - Keep audits server-side. The browser submits a request and renders the stream; it must not compute
-  the audit or POST a report. npm is fetched directly (no CORS proxy); do not reintroduce one. Moving
-  the report generation client-side precludes secure, trustable persisted reports.
+  the audit or POST a report. Fetch npm directly without a CORS proxy. Client-side report generation
+  would preclude secure, trustable persisted reports.
 - Keep scheduled reruns narrow: all-package package trust only, with direct npm fetches from the
   Netlify function runtime.
 

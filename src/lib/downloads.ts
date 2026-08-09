@@ -3,7 +3,7 @@ import { chunk } from "./concurrency.ts";
 import { FailureLog, npmGetJson, sleep } from "./npmClient.ts";
 
 // ---------------------------------------------------------------------------
-// Weekly downloads — ported from npm-audit.sh `add_downloads`.
+// Weekly download retrieval and pacing contract.
 //
 // api.npmjs.org downloads is a strict token bucket: ~5 requests then 429,
 // regardless of concurrency; it refills fine paced at ~2 req/s. The bulk

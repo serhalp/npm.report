@@ -1,17 +1,15 @@
 // Shared types for the npm supply-chain audit.
-// Ported from npm-audit.sh / npm-user-publishes.sh — the field names mirror the
-// TSV columns those scripts produced so the semantics carry over 1:1.
 
 export type ReportKind = "trust" | "manual" | "external";
 
 export interface AuditConfig {
   /** npm org slugs, e.g. ["netlify", "gatsbyjs"]. Not hardcoded — user supplied. */
   orgs: string[];
-  /** Recency window in months (the `-m` flag). */
+  /** Recency window in calendar months. */
   months: number;
-  /** Analyze ALL org packages, ignoring the recency window (the `-A` flag). */
+  /** Analyze all org packages, ignoring the recency window. */
   all: boolean;
-  /** CI/bot accounts to exclude from the `manual` report (the `-b` flag). */
+  /** CI/bot accounts to exclude from the `manual` report. */
   bots: string[];
   /** Parallel fetch jobs. The UI uses a fixed code constant for this value. */
   jobs: number;

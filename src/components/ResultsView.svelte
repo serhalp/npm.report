@@ -11,9 +11,7 @@
     { kind: "external", title: "external" },
   ];
 
-  // Namespaced URL-hash key so it can't collide with an element id — the tab
-  // buttons use `tab-<kind>` and the panels `panel-<kind>` (writing `#external`
-  // straight to the hash used to match the tab button's own id).
+  // Namespacing avoids collisions with the tab and panel element ids.
   const HASH_PREFIX = "report=";
 
   interface Props {

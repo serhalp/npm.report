@@ -2,7 +2,7 @@
 // Client side of the server-run audit: POST the request to /api/audit-stream and
 // consume its SSE stream. `log` events feed the live terminal; `result` carries
 // the authoritative AuditResult the server computed; `done` carries the saved
-// report id/url (or a save error). The browser no longer runs the audit itself.
+// report id/url (or a save error).
 //
 // The platform recycles the SSE connection (~60s) mid-audit, so this reconnects
 // transparently: each run has a client-generated `jobId`, we track the last log

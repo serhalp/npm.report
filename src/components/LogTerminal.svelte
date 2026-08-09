@@ -1,12 +1,9 @@
 <script lang="ts">
-  // Display-only progress log for streamed audit output. This replaced a
-  // ghostty-web WASM terminal that inlined ~413 KB of base64 WASM into the
-  // bundle just to print append-only log lines. Same public API (writeLine /
-  // clear); the visible log is itself the screen-reader live region, so progress
-  // and the "results may be INCOMPLETE" warning are announced.
-  const INTRO = ["Add npm orgs, choose reports, and Run. Progress streams here."];
-  // Cap retained lines so a very long audit can't grow the DOM without bound
-  // (mirrors the old terminal's 5000-line scrollback).
+  // Display-only progress log for streamed audit output. The visible log is
+  // itself the screen-reader live region, so progress and the "results may be
+  // INCOMPLETE" warning are announced.
+  const INTRO = ["Enter npm orgs, choose report(s), and hit Run Audit."];
+  // Cap retained lines so a very long audit can't grow the DOM without bound.
   const SCROLLBACK = 5000;
 
   type LineKind = "warn" | "err" | "done" | "info";
@@ -31,8 +28,7 @@
     };
   }
 
-  // Emphasize the lines that matter (mirrors the old ANSI colorizer): the
-  // incomplete-results warning, errors, and the terminal "Done." line.
+  // Emphasize the incomplete-results warning, errors, and terminal "Done." line.
   function kindOf(line: string): LineKind {
     const message = prefixOf(line)?.rest.trimStart() ?? line;
     if (/^WARNING/.test(message)) return "warn";

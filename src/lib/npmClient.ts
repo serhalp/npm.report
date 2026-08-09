@@ -2,20 +2,18 @@
 import type { FetchFailure } from "./types.ts";
 
 // ---------------------------------------------------------------------------
-// npm_get — direct port of the bash helper shared by both scripts.
+// Retry and failure contract for direct npm reads.
 //
-// This helper enforces the "no silent failure" invariant from the original
-// scripts: a rate-limited package must not read as "clean", the dangerous failure
-// mode for a security audit. So:
+// A rate-limited package must not read as "clean", the dangerous failure mode
+// for a security audit. So:
 //   - 2xx           -> body text
 //   - 404           -> null (legitimately empty, no retry)
 //   - 429/5xx/net   -> retry up to `tries` with 1,4,9,16s backoff, then record
 //                      the URL in the failure log and return null
 //   - other codes   -> record failure, return null
 //
-// Downstream code treats null as "empty" (same as the jq pipelines did), but
-// the failure log lets the UI surface "WARNING: N fetch(es) failed — results
-// may be INCOMPLETE."
+// Downstream code treats null as empty, while the failure log lets the UI
+// surface "WARNING: N fetch(es) failed — results may be INCOMPLETE."
 // ---------------------------------------------------------------------------
 
 export class FailureLog {
@@ -43,8 +41,8 @@ const MAX_RETRY_AFTER_MS = 60_000;
  * telling us exactly when its rate-limit bucket refills, so it beats guessing.
  * RFC 7231 allows two forms and we accept both: a delta-seconds integer
  * (`Retry-After: 5`) or an HTTP-date (`Retry-After: Wed, 21 Oct 2026 ...`).
- * When the header is absent or unparseable we fall back to the original
- * 1,4,9,16s quadratic backoff. The honored value is clamped to
+ * When the header is absent or unparseable we use 1,4,9,16s quadratic backoff.
+ * The honored value is clamped to
  * MAX_RETRY_AFTER_MS so a wildly large delay can't stall the run.
  */
 export function retryDelayMs(retryAfter: string | null, attempt: number): number {
@@ -63,8 +61,7 @@ export function retryDelayMs(retryAfter: string | null, attempt: number): number
   return backoff;
 }
 
-// Audits run server-side (edge functions), so npm is fetched directly — the
-// browser CORS proxies are gone.
+// Audits run server-side, so npm is fetched directly.
 export async function npmGet(url: string, failures: FailureLog, tries = 5): Promise<string | null> {
   let i = 0;
   for (;;) {

@@ -4,8 +4,7 @@ import { FailureLog, npmGet, npmGetJson } from "./npmClient.ts";
 import type { PkgMeta } from "./types.ts";
 
 // ---------------------------------------------------------------------------
-// Discovery — ported from npm-audit.sh `list_org_packages` and the fast-npm-meta
-// batch resolution in `build_recent`.
+// Org package discovery and fast-npm-meta batch metadata resolution.
 // ---------------------------------------------------------------------------
 
 /**
@@ -44,8 +43,8 @@ interface FastMetaItem {
 /**
  * Resolve latest version + publishedAt + deprecated for each package via
  * fast-npm-meta (npm.antfu.dev), batched. Names are joined with '+'; scoped
- * names keep their literal slash. Per the original design there is deliberately
- * no registry fallback for this discovery step.
+ * names keep their literal slash. The audit contract deliberately has no
+ * registry fallback for this discovery step.
  *
  * Chunked at 100 (the upstream swallowed ~400 names in one URL, but 100 is the
  * documented safety margin).

@@ -262,8 +262,8 @@ export async function runExternal(
 
 // ---------------------------------------------------------------------------
 // user-publishes: versions a specific npm user personally published in the
-// window (port of npm-user-publishes.sh). Universe = the user's own maintained
-// packages plus an optional extra package set (e.g. an org's recent cache).
+// window. Universe = the user's own maintained packages plus an optional extra
+// package set (e.g. an org's recent cache).
 // ---------------------------------------------------------------------------
 
 export async function runUserPublishes(

@@ -40,8 +40,7 @@ export async function buildReportId(
   payload: unknown,
   now = new Date(),
 ): Promise<string> {
-  // Web Crypto (not node:crypto) so this runs unchanged in edge/Deno as well as
-  // Node — the audit + save now runs in an edge function.
+  // Web Crypto keeps this module compatible with edge/Deno and Node runtimes.
   const bytes = new TextEncoder().encode(JSON.stringify(payload));
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   const hash = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0"))

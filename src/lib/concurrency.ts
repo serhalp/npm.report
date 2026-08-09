@@ -1,7 +1,6 @@
-// A tiny p-limit: run at most `concurrency` thunks at once. Replaces the
-// `xargs -P JOBS` parallelism from the shell scripts. Used for registry fetches
-// (default 12). NOTE: scoped-download pacing deliberately does NOT use this —
-// the api.npmjs.org token bucket needs sequential + delay, not concurrency.
+// Run at most `concurrency` registry-fetch thunks at once (default 12).
+// Scoped-download pacing deliberately does not use this: the api.npmjs.org
+// token bucket needs sequential requests with a delay.
 
 export function pLimit(concurrency: number) {
   const limit = Math.max(1, Math.floor(concurrency));

@@ -17,14 +17,13 @@ export interface AuditResult {
 }
 
 /**
- * Top-level orchestration mirroring npm-audit.sh's dispatch.
+ * Top-level audit orchestration.
  *
- * `trust` and `manual` share one discovery pass (the recent-packages "cache":
- * org list -> latest version/recency -> in-scope subset). `manual` reads col1
- * of that cache — so under `-A` it scans every org package, otherwise only the
- * recency-filtered ones. `external` ignores the cache entirely and enumerates
- * the full org package list directly (a dormant package's maintainer still has
- * live publish rights).
+ * `trust` and `manual` share one discovery pass: org list -> latest
+ * version/recency -> in-scope subset. `manual` scans every org package for an
+ * all-package audit, otherwise only the recency-filtered packages. `external`
+ * ignores that cache and enumerates the full org package list directly because
+ * dormant package maintainers still have live publish rights.
  */
 export async function runAudit(
   config: AuditConfig,

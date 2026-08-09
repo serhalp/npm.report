@@ -224,7 +224,7 @@
     reportSaveError = null;
     terminal?.clear();
     log(`→ audit ${orgs.join(", ")} | reports: ${selectedKinds.join(",")}`);
-    log(all ? "→ scope: ALL org packages (-A)" : `→ scope: last ${months} months`);
+    log(all ? "→ scope: ALL org packages" : `→ scope: last ${months} months`);
 
     try {
       // The audit runs server-side; we stream its progress into the terminal and
