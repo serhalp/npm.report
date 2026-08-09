@@ -10,14 +10,6 @@ command = "vite dev"
 targetPort = 5173
 
 [functions]
-# Edge functions run on Deno, and Netlify's npm-in-edge bundling is still beta —
-# it fails to load some clean-ESM third-party deps the audit graph pulls in
-# (valibot, packumeta). This import map points the edge bundler at esm.sh so it
-# resolves Deno-compatible builds at deploy time. The Vite browser build and
-# vitest ignore this file and keep resolving the same bare specifiers from
-# node_modules. Keep the pinned versions in import_map.json in sync with
-# package.json. @netlify/database is deliberately NOT mapped: it is
-# Netlify-first-party and resolves natively in the edge runtime.
 deno_import_map = "./import_map.json"
 
 # SPA: serve index.html for client-side routes.
