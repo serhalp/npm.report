@@ -5,39 +5,112 @@
     trustPercent,
     type ReportTrustHistoryPoint,
   } from "../lib/reportHistory";
+  import { spacedTrendDateIndices, trendDateCandidates } from "../lib/trustTrend";
 
   interface Props {
     points: ReportTrustHistoryPoint[];
+    currentReportId?: string | null;
+    linkReports?: boolean;
   }
 
-  let { points }: Props = $props();
+  let { points, currentReportId = null, linkReports = false }: Props = $props();
+  let activeIndex = $state<number | null>(null);
 
-  // A plain inline SVG line chart — no dependency, no canvas, CSP-safe, theme
-  // tokens for color. Fixed 0–100 y-scale (honest: a flat high line reads as
-  // "consistently high", not exaggerated), x by snapshot index. The viewBox
-  // scales with the container; strokes stay crisp via vector-effect (CSS).
-  const W = 640;
-  const H = 150;
-  const PAD_X = 8;
-  const PAD_Y = 10;
+  // Fixed 0–100 y-scale keeps histories comparable. X positions follow actual
+  // capture times, so missing days do not look adjacent.
+  const W = 720;
+  const H = 230;
+  const PAD_LEFT = 42;
+  const PAD_RIGHT = 10;
+  const PAD_TOP = 48;
+  const PAD_BOTTOM = 42;
+  const PLOT_BOTTOM = H - PAD_BOTTOM;
 
-  const xAt = (i: number, n: number): number =>
-    n <= 1 ? PAD_X : PAD_X + (i / (n - 1)) * (W - 2 * PAD_X);
-  const yAt = (pct: number): number => PAD_Y + (1 - pct / 100) * (H - 2 * PAD_Y);
+  function timestampAt(index: number): number {
+    const parsed = Date.parse(points[index]?.capturedAt ?? "");
+    return Number.isFinite(parsed) ? parsed : index;
+  }
+
+  function xAt(index: number): number {
+    if (points.length <= 1) return PAD_LEFT;
+    const first = timestampAt(0);
+    const last = timestampAt(points.length - 1);
+    if (last <= first) {
+      return PAD_LEFT + (index / (points.length - 1)) * (W - PAD_LEFT - PAD_RIGHT);
+    }
+    return PAD_LEFT + ((timestampAt(index) - first) / (last - first)) * (W - PAD_LEFT - PAD_RIGHT);
+  }
+
+  const yAt = (pct: number): number => PAD_TOP + (1 - pct / 100) * (PLOT_BOTTOM - PAD_TOP);
 
   const seriesOf = (count: (p: ReportTrustHistoryPoint) => number): number[] =>
     points.map((p) => trustPercent(count(p), p.total));
   const linePoints = (values: number[]): string =>
-    values.map((v, i) => `${xAt(i, values.length).toFixed(1)},${yAt(v).toFixed(1)}`).join(" ");
+    values.map((value, index) => `${xAt(index).toFixed(1)},${yAt(value).toFixed(1)}`).join(" ");
+
+  function shortDay(index: number): string {
+    return new Date(points[index].capturedAt).toISOString().slice(5, 10);
+  }
+
+  function fullDay(index: number): string {
+    return new Date(points[index].capturedAt).toISOString().slice(0, 10);
+  }
+
+  function formatPercent(value: number): string {
+    return `${value.toFixed(value % 1 === 0 ? 0 : 1)}%`;
+  }
+
+  function targetStyle(index: number): string {
+    const x = xAt(index);
+    const left = index === 0 ? PAD_LEFT : (xAt(index - 1) + x) / 2;
+    const right = index === points.length - 1 ? W - PAD_RIGHT : (x + xAt(index + 1)) / 2;
+    return [
+      `left: ${(left / W) * 100}%`,
+      `width: ${((right - left) / W) * 100}%`,
+      `top: ${(PAD_TOP / H) * 100}%`,
+      `height: ${((PLOT_BOTTOM - PAD_TOP) / H) * 100}%`,
+    ].join("; ");
+  }
+
+  function tooltipPosition(index: number): string {
+    return `--trend-tooltip-x: ${(xAt(index) / W) * 100}%`;
+  }
+
+  function tooltipAlignment(index: number): "start" | "middle" | "end" {
+    const ratio = xAt(index) / W;
+    if (ratio < 0.25) return "start";
+    if (ratio > 0.75) return "end";
+    return "middle";
+  }
+
+  function reportLabel(index: number): string {
+    const point = points[index];
+    return [
+      `${fullDay(index)} report`,
+      `${strongTrustCount(point)} of ${point.total} strong trust`,
+      `${anyTrustCount(point)} of ${point.total} any trust`,
+      `${point.byLevel.none} of ${point.total} no trust signal`,
+      point.id === currentReportId ? "currently viewing" : null,
+    ]
+      .filter(Boolean)
+      .join(", ");
+  }
 
   let strong = $derived(seriesOf(strongTrustCount));
   let any = $derived(seriesOf(anyTrustCount));
+  let none = $derived(seriesOf((point) => point.byLevel.none));
   let latestStrong = $derived(strong.at(-1) ?? 0);
   let latestAny = $derived(any.at(-1) ?? 0);
+  let latestNone = $derived(none.at(-1) ?? 0);
+  let dateCandidates = $derived(trendDateCandidates(points));
+  let dateLabelIndices = $derived(spacedTrendDateIndices(dateCandidates, xAt, 52));
+  let currentIndex = $derived(points.findIndex((point) => point.id === currentReportId));
 
   let label = $derived(
-    `Strong trust and any-trust-signal across ${points.length} snapshots — latest ` +
-      `${latestStrong.toFixed(0)}% strong, ${latestAny.toFixed(0)}% any trust.`,
+    `Trust coverage across ${points.length} snapshots. Latest: ` +
+      `${latestStrong.toFixed(0)}% strong trust, ${latestAny.toFixed(0)}% any trust, ` +
+      `${latestNone.toFixed(0)}% no trust signal.` +
+      (currentIndex >= 0 ? ` Viewing ${fullDay(currentIndex)}.` : ""),
   );
 </script>
 
@@ -46,29 +119,142 @@
     {#each [0, 50, 100] as gridline (gridline)}
       <line
         class="trust-trend__grid"
-        x1={PAD_X}
-        x2={W - PAD_X}
+        x1={PAD_LEFT}
+        x2={W - PAD_RIGHT}
         y1={yAt(gridline)}
         y2={yAt(gridline)}
       />
+      <text
+        class="trust-trend__axis-label trust-trend__axis-label--y"
+        x={PAD_LEFT - 8}
+        y={yAt(gridline) + 3}
+        text-anchor="end">{gridline}%</text
+      >
     {/each}
+
+    {#each dateLabelIndices as index (index)}
+      <line
+        class="trust-trend__tick"
+        x1={xAt(index)}
+        x2={xAt(index)}
+        y1={PLOT_BOTTOM}
+        y2={PLOT_BOTTOM + 5}
+      />
+    {/each}
+
+    {#each dateLabelIndices as index (index)}
+      <text
+        class="trust-trend__axis-label trust-trend__axis-label--x"
+        x={xAt(index)}
+        y={PLOT_BOTTOM + 19}
+        text-anchor={index === 0 ? "start" : index === points.length - 1 ? "end" : "middle"}
+        >{shortDay(index)}</text
+      >
+    {/each}
+
+    <polyline class="trust-trend__line trust-trend__line--none" points={linePoints(none)} />
     <polyline class="trust-trend__line trust-trend__line--any" points={linePoints(any)} />
     <polyline class="trust-trend__line trust-trend__line--strong" points={linePoints(strong)} />
-    <circle
-      class="trust-trend__dot trust-trend__dot--any"
-      cx={xAt(any.length - 1, any.length)}
-      cy={yAt(latestAny)}
-      r="3"
-    />
-    <circle
-      class="trust-trend__dot trust-trend__dot--strong"
-      cx={xAt(strong.length - 1, strong.length)}
-      cy={yAt(latestStrong)}
-      r="3"
-    />
+
+    {#if currentIndex >= 0}
+      <line
+        class="trust-trend__current-line"
+        x1={xAt(currentIndex)}
+        x2={xAt(currentIndex)}
+        y1={PAD_TOP}
+        y2={PLOT_BOTTOM}
+      />
+      <circle class="trust-trend__current-marker" cx={xAt(currentIndex)} cy={PAD_TOP} r="3" />
+      <text
+        class="trust-trend__current-label"
+        x={xAt(currentIndex)}
+        y={PAD_TOP - 9}
+        text-anchor={currentIndex === 0
+          ? "start"
+          : currentIndex === points.length - 1
+            ? "end"
+            : "middle"}>[viewing]</text
+      >
+    {/if}
+
+    {#if activeIndex !== null}
+      <line
+        class="trust-trend__hover-line"
+        x1={xAt(activeIndex)}
+        x2={xAt(activeIndex)}
+        y1={PAD_TOP}
+        y2={PLOT_BOTTOM}
+      />
+      <circle
+        class="trust-trend__dot trust-trend__dot--none"
+        cx={xAt(activeIndex)}
+        cy={yAt(none[activeIndex])}
+        r="3.5"
+      />
+      <circle
+        class="trust-trend__dot trust-trend__dot--any"
+        cx={xAt(activeIndex)}
+        cy={yAt(any[activeIndex])}
+        r="3.5"
+      />
+      <circle
+        class="trust-trend__dot trust-trend__dot--strong"
+        cx={xAt(activeIndex)}
+        cy={yAt(strong[activeIndex])}
+        r="3.5"
+      />
+    {/if}
   </svg>
+
+  {#if linkReports}
+    <div class="trust-trend__targets" role="group" aria-label="Report snapshots">
+      {#each points as point, index (point.id)}
+        <a
+          class="trust-trend__target"
+          href={point.url}
+          style={targetStyle(index)}
+          aria-label={reportLabel(index)}
+          aria-current={point.id === currentReportId ? "page" : undefined}
+          onpointerenter={() => (activeIndex = index)}
+          onpointerleave={() => (activeIndex = null)}
+          onfocus={() => (activeIndex = index)}
+          onblur={() => (activeIndex = null)}
+        ></a>
+      {/each}
+    </div>
+  {/if}
+
+  {#if activeIndex !== null}
+    {@const point = points[activeIndex]}
+    <div
+      class={`trust-trend__tooltip trust-trend__tooltip--${tooltipAlignment(activeIndex)}`}
+      role="tooltip"
+      style={tooltipPosition(activeIndex)}
+    >
+      <div class="trust-trend__tooltip-head">
+        <strong>{fullDay(activeIndex)}</strong>
+        {#if point.id === currentReportId}<span>[viewing]</span>{/if}
+      </div>
+      <dl>
+        <div>
+          <dt class="trust-trend__key trust-trend__key--strong">Strong trust</dt>
+          <dd>{strongTrustCount(point)}/{point.total} · {formatPercent(strong[activeIndex])}</dd>
+        </div>
+        <div>
+          <dt class="trust-trend__key trust-trend__key--any">Any trust</dt>
+          <dd>{anyTrustCount(point)}/{point.total} · {formatPercent(any[activeIndex])}</dd>
+        </div>
+        <div>
+          <dt class="trust-trend__key trust-trend__key--none">No trust signal</dt>
+          <dd>{point.byLevel.none}/{point.total} · {formatPercent(none[activeIndex])}</dd>
+        </div>
+      </dl>
+    </div>
+  {/if}
+
   <figcaption class="trust-trend__legend">
     <span class="trust-trend__key trust-trend__key--strong">Strong trust</span>
     <span class="trust-trend__key trust-trend__key--any">Any trust</span>
+    <span class="trust-trend__key trust-trend__key--none">No trust signal</span>
   </figcaption>
 </figure>

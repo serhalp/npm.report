@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { TriangleAlert } from "@lucide/svelte";
   import HistoryStack from "./HistoryStack.svelte";
   import Stat from "./Stat.svelte";
   import TrustTrend from "./TrustTrend.svelte";
@@ -11,7 +12,6 @@
     type ReportTrustHistoryPoint,
   } from "../lib/reportHistory";
   import { parseOrNull, ReportHistoryResponseSchema } from "../lib/schemas";
-  import type { TrustLevel } from "../lib/types";
 
   interface Props {
     orgs: string[];
@@ -20,13 +20,6 @@
     refreshKey?: number;
     preloadedHistory?: ReportHistoryResponse;
   }
-
-  const LEVELS: { key: TrustLevel; label: string; className: string }[] = [
-    { key: "stagedPublish", label: "Staged", className: "history-segment--staged" },
-    { key: "trustedPublisher", label: "Trusted publisher", className: "history-segment--trusted" },
-    { key: "provenance", label: "Provenance", className: "history-segment--provenance" },
-    { key: "none", label: "No trust signal", className: "history-segment--none" },
-  ];
 
   let {
     orgs,
@@ -59,17 +52,6 @@
   let latestStrong = $derived(latest ? pctCount(strongTrustCount(latest), latest.total) : "—");
   let latestAny = $derived(latest ? pctCount(anyTrustCount(latest), latest.total) : "—");
   let latestNone = $derived(latest ? pctCount(latest.byLevel.none, latest.total) : "—");
-
-  // Per-tile trend series (percent over time) and shared x-axis endpoint dates.
-  // Stat only draws the sparkline when a series has >1 point.
-  let strongSeries = $derived(points.map((p) => trustPercent(strongTrustCount(p), p.total)));
-  let anySeries = $derived(points.map((p) => trustPercent(anyTrustCount(p), p.total)));
-  let noneSeries = $derived(points.map((p) => trustPercent(p.byLevel.none, p.total)));
-  let sparkLabels = $derived<[string, string] | undefined>(
-    points.length > 1
-      ? [formatDay(points[0].capturedAt).slice(5), formatDay(points.at(-1)!.capturedAt).slice(5)]
-      : undefined,
-  );
 
   function containsCurrentReport(pointsInGroup: ReportTrustHistoryPoint[]): boolean {
     return pointsInGroup.some((point) => point.id === currentReportId);
@@ -143,41 +125,28 @@
           Run an all-packages trust report for this org set to start the timeline.
         </div>
       {:else}
-        <div class="statgrid history-stats">
-          <Stat
-            k="Strong trust"
-            v={latestStrong}
-            sub="staged or trusted"
-            variant="accent"
-            spark={strongSeries}
-            {sparkLabels}
-          />
-          <Stat
-            k="Any trust"
-            v={latestAny}
-            sub="incl. provenance"
-            spark={anySeries}
-            {sparkLabels}
-          />
+        {#if latest && latest.failureCount > 0}
+          <p class="history-alert" role="alert">
+            <TriangleAlert aria-hidden="true" size={17} strokeWidth={2} />
+            Latest report had {latest.failureCount} fetch
+            {latest.failureCount === 1 ? "failure" : "failures"}; results may be incomplete.
+          </p>
+        {/if}
+
+        <div class="statgrid trust-summary history-stats">
+          <Stat k="Strong trust" v={latestStrong} sub="staged or trusted" variant="strong" />
+          <Stat k="Any trust" v={latestAny} sub="incl. provenance" variant="any" />
           <Stat
             k="No trust signal"
             v={latestNone}
+            sub="no trust metadata detected"
             variant="risk"
-            spark={noneSeries}
-            {sparkLabels}
           />
-          <Stat k="Latest failures" v={latest?.failureCount ?? 0} />
         </div>
 
         {#if points.length > 1}
-          <TrustTrend {points} />
+          <TrustTrend {points} {currentReportId} linkReports />
         {/if}
-
-        <div class="history-legend" aria-label="Trust level legend">
-          {#each LEVELS as level (level.key)}
-            <span><span class={`history-swatch ${level.className}`}></span>{level.label}</span>
-          {/each}
-        </div>
 
         <ol class="history-list">
           {#each pointGroups as group (group.start.id)}

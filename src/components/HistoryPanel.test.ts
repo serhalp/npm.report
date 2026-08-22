@@ -132,17 +132,22 @@ describe("HistoryPanel", () => {
     expect(await screen.findByText("50% (2)")).toBeInTheDocument(); // Strong trust: staged + trusted
     expect(screen.getByText("75% (3)")).toBeInTheDocument(); // Any trust: staged + trusted + provenance
     expect(screen.getByText("25% (1)")).toBeInTheDocument(); // No trust signal
-    expect(screen.getByText("2")).toBeInTheDocument(); // latest failures
-    expect(screen.getByRole("img", { name: /across 2 snapshots/i })).toBeInTheDocument();
+    expect(container.querySelectorAll(".trust-summary .stat")).toHaveLength(3);
+    expect(container.querySelector(".sparkline")).not.toBeInTheDocument();
+    expect(screen.queryByText("Latest failures")).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Latest report had 2 fetch failures; results may be incomplete.",
+    );
+    expect(
+      screen.getByRole("img", { name: /trust coverage across 2 snapshots/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "2026-06-27" })).toHaveAttribute(
       "href",
       "/report/netlify-2026-06-27-bbbbbbbb",
     );
     expect(screen.getByLabelText(/2026-06-27 trust summary/i)).toBeInTheDocument();
 
-    await fireEvent.pointerEnter(
-      container.querySelector(".history-stack .history-segment--provenance")!,
-    );
+    await fireEvent.pointerEnter(container.querySelector(".history-segment--provenance")!);
     expect(screen.getByRole("tooltip")).toHaveTextContent("Provenance only 1 (25%)");
   });
 
@@ -166,6 +171,19 @@ describe("HistoryPanel", () => {
 
     expect(await screen.findByText("50% (2)")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: /snapshots/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  test("only alerts when the latest report has failures", async () => {
+    mockHistory({
+      orgs: ["netlify"],
+      points: [historyPoint(26, { failureCount: 1 }), historyPoint(27)],
+    });
+
+    render(HistoryPanel, { props: { orgs: ["netlify"] } });
+
+    expect(await screen.findByText("75% (3)")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   test("collapses consecutive unchanged reports into an expandable date range", async () => {
