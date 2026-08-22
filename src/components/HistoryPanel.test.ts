@@ -39,6 +39,20 @@ describe("HistoryPanel", () => {
     expect(fetch).toHaveBeenCalledWith("/api/reports/history?org=netlify");
   });
 
+  test("renders preloaded history without starting another request", () => {
+    mockHistory({ orgs: [], points: [] });
+
+    render(HistoryPanel, {
+      props: {
+        orgs: ["netlify"],
+        preloadedHistory: { orgs: ["netlify"], points: [] },
+      },
+    });
+
+    expect(screen.getByText("No history yet")).toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   test("falls back to the empty state when history cannot load", async () => {
     vi.stubGlobal(
       "fetch",

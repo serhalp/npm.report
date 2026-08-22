@@ -16,6 +16,7 @@
     enabled?: boolean;
     currentReportId?: string | null;
     refreshKey?: number;
+    preloadedHistory?: ReportHistoryResponse;
   }
 
   const LEVELS: { key: TrustLevel; label: string; className: string }[] = [
@@ -25,12 +26,19 @@
     { key: "none", label: "No trust signal", className: "history-segment--none" },
   ];
 
-  let { orgs, enabled = true, currentReportId = null, refreshKey = 0 }: Props = $props();
+  let {
+    orgs,
+    enabled = true,
+    currentReportId = null,
+    refreshKey = 0,
+    preloadedHistory,
+  }: Props = $props();
 
-  let response = $state<ReportHistoryResponse | null>(null);
+  let fetchedHistory = $state<ReportHistoryResponse | null>(null);
   let loading = $state(false);
 
   let cleanOrgs = $derived(orgs.map((org) => org.trim()).filter(Boolean));
+  let response = $derived(preloadedHistory ?? fetchedHistory);
   let points = $derived(response?.points ?? []);
   let latest = $derived(points.at(-1) ?? null);
 
@@ -78,7 +86,12 @@
   $effect(() => {
     const token = refreshKey;
     if (!enabled || cleanOrgs.length === 0) {
-      response = null;
+      fetchedHistory = null;
+      loading = false;
+      return;
+    }
+    if (preloadedHistory !== undefined) {
+      fetchedHistory = null;
       loading = false;
       return;
     }
@@ -99,14 +112,14 @@
       })
       .then((body) => {
         if (cancelled || token !== refreshKey) return;
-        response = {
+        fetchedHistory = {
           orgs: Array.isArray(body.orgs) ? body.orgs : [],
           points: Array.isArray(body.points) ? body.points : [],
         };
       })
       .catch(() => {
         if (!cancelled) {
-          response = { orgs: cleanOrgs, points: [] };
+          fetchedHistory = { orgs: cleanOrgs, points: [] };
         }
       })
       .finally(() => {

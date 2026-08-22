@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/svelte";
+import { render, screen, waitFor } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import SharedReport from "./SharedReport.svelte";
@@ -103,6 +103,77 @@ describe("SharedReport", () => {
     );
     await user.click(screen.getByRole("button", { name: "Track daily" }));
     expect(await screen.findByRole("button", { name: "Tracking daily" })).toBeDisabled();
+  });
+
+  test("waits for trust history before rendering an all-scope report", async () => {
+    let resolveHistory!: (value: {
+      ok: boolean;
+      status: number;
+      json: () => Promise<unknown>;
+    }) => void;
+    const pendingHistory = new Promise<{
+      ok: boolean;
+      status: number;
+      json: () => Promise<unknown>;
+    }>((resolve) => {
+      resolveHistory = resolve;
+    });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input) === "/api/reports/report-id") {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            id: "report-id",
+            orgs: "netlify",
+            scopeLabel: "ALL org packages",
+            payload: {
+              ...auditResult,
+              trust: {
+                ...trustReport,
+                summary: { ...trustReport.summary, scopeLabel: "ALL org packages" },
+              },
+            },
+            createdAt: "2026-06-27T12:34:56.000Z",
+          }),
+        };
+      }
+      return pendingHistory;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(SharedReport, { props: { id: "report-id" } });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/reports/history?org=netlify");
+    });
+    expect(screen.getByText("Loading report…")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Progress over time" })).not.toBeInTheDocument();
+
+    resolveHistory({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        orgs: ["netlify"],
+        points: [
+          {
+            id: "report-id",
+            url: "/report/report-id",
+            capturedAt: "2026-06-27T12:34:56.000Z",
+            total: 2,
+            byLevel: trustReport.summary.byLevel,
+            deprecated: 1,
+            failureCount: 1,
+          },
+        ],
+      }),
+    });
+
+    expect(await screen.findByRole("heading", { name: "Progress over time" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "2026-06-27" })).toHaveAttribute(
+      "href",
+      "/report/report-id",
+    );
   });
 
   test("shows the specific not-found error for 404s", async () => {

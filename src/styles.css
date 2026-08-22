@@ -1292,6 +1292,9 @@ textarea {
   border-color: var(--risk-line);
 }
 .stat--risk .v {
+.package-filters__reset--hidden {
+  visibility: hidden;
+}
   color: var(--t-none);
 }
 

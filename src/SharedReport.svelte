@@ -6,8 +6,9 @@
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import TrustGlossary from "./components/TrustGlossary.svelte";
   import Logo from "./components/Logo.svelte";
+  import type { ReportHistoryResponse } from "./lib/reportHistory";
   import type { AuditResult } from "./lib/runAudit";
-  import { parseOrNull, ReportRecordSchema } from "./lib/schemas";
+  import { parseOrNull, ReportHistoryResponseSchema, ReportRecordSchema } from "./lib/schemas";
 
   interface ReportRecord {
     id: string;
@@ -24,6 +25,7 @@
   let { id }: Props = $props();
 
   let record = $state<ReportRecord | null>(null);
+  let reportHistory = $state<ReportHistoryResponse | null>(null);
   let error = $state<string | null>(null);
   let toast = $state<string | null>(null);
 
@@ -36,6 +38,32 @@
   let historyEnabled = $derived(
     record?.scopeLabel === "ALL org packages" && !!record.payload.trust,
   );
+
+  function historyConfig(value: ReportRecord): { enabled: boolean; orgs: string[] } {
+    return {
+      enabled: value.scopeLabel === "ALL org packages" && !!value.payload.trust,
+      orgs: value.payload.trust?.summary.orgs ?? [],
+    };
+  }
+
+  async function loadHistory(value: ReportRecord): Promise<ReportHistoryResponse | null> {
+    const config = historyConfig(value);
+    if (!config.enabled || config.orgs.length === 0) return null;
+
+    const params = new URLSearchParams();
+    for (const org of config.orgs) params.append("org", org);
+
+    try {
+      const response = await fetch(`/api/reports/history?${params}`);
+      if (!response.ok) return { orgs: config.orgs, points: [] };
+      const data: unknown = await response.json();
+      return parseOrNull(ReportHistoryResponseSchema, data)
+        ? (data as ReportHistoryResponse)
+        : { orgs: config.orgs, points: [] };
+    } catch {
+      return { orgs: config.orgs, points: [] };
+    }
+  }
 
   const REPORT_KINDS = ["trust", "manual", "external"] as const;
 
@@ -77,6 +105,7 @@
     let cancelled = false;
     record = null;
     error = null;
+    reportHistory = null;
 
     fetch(`/api/reports/${encodeURIComponent(id)}`)
       .then(async (response) => {
@@ -88,8 +117,12 @@
         }
         return data as ReportRecord;
       })
-      .then((next) => {
-        if (!cancelled) record = next;
+      .then(async (next) => ({ next, history: await loadHistory(next) }))
+      .then(({ next, history }) => {
+        if (!cancelled) {
+          reportHistory = history;
+          record = next;
+        }
       })
       .catch((reason: unknown) => {
         if (!cancelled) error = reason instanceof Error ? reason.message : "Failed to load report.";
@@ -153,7 +186,12 @@
       </button>
       <DailyTrackingButton reportId={record.id} enabled={historyEnabled} onToast={showToast} />
     </div>
-    <HistoryPanel orgs={historyOrgs} enabled={historyEnabled} currentReportId={record.id} />
+    <HistoryPanel
+      orgs={historyOrgs}
+      enabled={historyEnabled}
+      currentReportId={record.id}
+      preloadedHistory={reportHistory ?? undefined}
+    />
     <section class="results">
       <ResultsView result={record.payload} onToast={showToast} />
     </section>
