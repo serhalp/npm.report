@@ -27,7 +27,8 @@ More specifically, it offers four report types:
    starts with `GitHub Actions`. (Please feel free to submit a PR to add more known bot identifiers.)
 5. For `external`, run `npm org ls <org> --json` locally while authenticated and paste the output.
    npm package maintainers are public, but org membership is private, so the app needs your
-   authenticated member list to compare them. This data is not stored.
+   authenticated member list to compare them. The list is used only for that audit and is not
+   persisted; derived external findings are included in the saved report.
 6. Run the audit. Results render as sortable tables with JSON copy and CSV download actions.
 7. The server saves each completed run automatically; copy its report link to share it.
 8. For all-package package trust reports, select "Track daily" to generate one automatic trust
@@ -47,6 +48,9 @@ More specifically, it offers four report types:
 - Report links and daily tracking are the only stateful features. The audit stream saves the
   completed `AuditResult` plus display metadata to Netlify Database as part of the run; `/report/:id`
   renders that snapshot read-only.
+- Resumable audit jobs retain non-sensitive request metadata, progress, and results temporarily;
+  hourly cleanup removes job records after they are two hours old. Private org membership input is
+  not written to the job or report records.
 
 ## Limitations
 

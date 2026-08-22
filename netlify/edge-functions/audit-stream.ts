@@ -104,13 +104,13 @@ export default async (req: Request): Promise<Response> => {
         // Atomic fresh-vs-resume: only the request that INSERTs the row runs the
         // audit; a reconnect (row already exists) tails it instead of starting a
         // second run.
+        // The private org member list is invocation-only and must not enter job storage.
         const request = {
           orgs: config.orgs,
           kinds,
           months: config.months,
           all: config.all,
           bots: config.bots,
-          members,
         };
         const isFresh = await createJobIfAbsent(jobId, request);
         if (isFresh) {

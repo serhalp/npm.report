@@ -443,8 +443,8 @@
               placeholder={membersPlaceholder}></textarea>
             <p class="desc">
               Parsed {members.length} member{members.length === 1 ? "" : "s"}. Matching is
-              case-insensitive. The pasted member list is not stored; external findings are included
-              in the saved report.
+              case-insensitive. The member list is used only for this audit and is not persisted.
+              Derived external findings are included in the saved report.
             </p>
           </div>
         {/if}

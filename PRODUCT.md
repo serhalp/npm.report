@@ -29,7 +29,8 @@ tables, logs, and audit configuration.
 - Surface uncertainty and failed fetches where users make decisions.
 - Keep controls familiar, compact, and keyboard-accessible.
 - Prefer readable tables, logs, and export affordances over decorative UI.
-- Treat sharing as an explicit persistence action, never a default.
+- Treat completed reports as durable, shareable records. Do not persist private audit inputs, and
+  keep transient audit state bounded and documented.
 
 ## Accessibility & Inclusion
 

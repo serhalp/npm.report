@@ -120,6 +120,20 @@ describe("App", () => {
     );
   });
 
+  test("explains the privacy boundary for external membership input", async () => {
+    const user = userEvent.setup();
+    render(App);
+
+    await user.click(screen.getByRole("checkbox", { name: /^external\b/i }));
+
+    expect(
+      screen.getByText(/member list is used only for this audit and is not persisted/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/derived external findings are included in the saved report/i),
+    ).toBeInTheDocument();
+  });
+
   test("streams an audit, renders results, shows the saved link, and copies it on request", async () => {
     const user = userEvent.setup();
     const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);

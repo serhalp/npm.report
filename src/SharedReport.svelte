@@ -44,8 +44,8 @@
     return match ? Number(match[1]) : 12;
   }
 
-  // Build the auditor URL that re-runs this report's config. External needs a
-  // member list (never stored), so App.svelte pre-fills but doesn't auto-run it.
+  // Saved external reports omit the private member list, so reruns can only
+  // prefill their public configuration.
   function rerunHref(rec: ReportRecord): string {
     const orgs = (rec.payload.trust?.summary.orgs ?? rec.orgs.split(/,\s*/)).filter(Boolean);
     const kinds = REPORT_KINDS.filter((kind) => rec.payload[kind]);

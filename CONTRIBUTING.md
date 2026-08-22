@@ -25,6 +25,18 @@ package-trust tracking API, hooking up Netlify Database, etc.
 - Keep scheduled reruns narrow: all-package package trust only, with direct npm fetches from the
   Netlify function runtime.
 
+## Data privacy and retention
+
+The private org membership list is input to the `external` report, not the `manual` report. The
+edge function uses it to identify public package maintainers who are not members, but must not write
+the raw list to logs, `audit_jobs.request`, or the saved report payload. Saved reports do include the
+derived external findings.
+
+Resumable `audit_jobs` rows contain non-sensitive request metadata, progress logs, and the completed
+result. `audit-jobs-cleanup-background.ts` runs hourly and deletes rows once their `created_at` is
+more than two hours old. Completed reports are the durable records. If either persistence path
+changes, update the user-facing privacy copy and its tests with it.
+
 ## Checks
 
 ```bash

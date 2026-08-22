@@ -149,7 +149,6 @@ describe("audit stream edge function", () => {
       months: 12,
       all: true,
       bots: ["GitHub Actions"],
-      members: [],
     });
     expect(mocked.runAudit).toHaveBeenCalledWith(
       expect.objectContaining({ orgs: ["vue"], jobs: 12 }),
@@ -170,6 +169,32 @@ describe("audit stream edge function", () => {
         error: null,
       }),
     );
+  });
+
+  it("uses external members without persisting them in the resumable job", async () => {
+    const members = ["sensitive-owner", "private-developer"];
+    mocked.runAudit.mockResolvedValueOnce({
+      external: { rows: [], distinctUsers: 0, byUser: [] },
+      failures: [],
+    });
+
+    const response = await handler(post({ ...VALID_REQUEST, kinds: ["external"], members }));
+    await readFrames(response);
+
+    expect(mocked.runAudit).toHaveBeenCalledWith(
+      expect.objectContaining({ orgs: ["vue"] }),
+      ["external"],
+      members,
+      expect.any(Function),
+    );
+    expect(mocked.createJobIfAbsent).toHaveBeenCalledWith("job-1", {
+      orgs: ["vue"],
+      kinds: ["external"],
+      months: 12,
+      all: true,
+      bots: ["GitHub Actions"],
+    });
+    expect(mocked.saveReportSnapshot.mock.calls.at(-1)?.[0].payload).not.toHaveProperty("members");
   });
 
   it("streams the result and records a non-terminal report save failure", async () => {
