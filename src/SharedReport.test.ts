@@ -64,7 +64,10 @@ describe("SharedReport", () => {
               ...auditResult,
               trust: {
                 ...trustReport,
-                summary: { ...trustReport.summary, scopeLabel: "ALL org packages" },
+                summary: {
+                  ...trustReport.summary,
+                  scopeLabel: "ALL org packages",
+                },
               },
             },
             createdAt: "2026-06-27T12:34:56.000Z",
@@ -83,7 +86,7 @@ describe("SharedReport", () => {
       expect(fetchMock).toHaveBeenCalledWith("/api/reports/history?org=netlify");
     });
     expect(screen.getByText("Loading report…").closest('[role="status"]')).not.toBeNull();
-    expect(screen.queryByRole("heading", { name: "Progress over time" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /package trust level/i })).not.toBeInTheDocument();
 
     resolveHistory({
       ok: true,
@@ -105,7 +108,8 @@ describe("SharedReport", () => {
     });
 
     expect(await screen.findByRole("heading", { name: "Progress over time" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "2026-06-27" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: /package trust level/i })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "2026-06-27" })).toHaveAttribute(
       "href",
       "/report/report-id",
     );
@@ -117,6 +121,43 @@ describe("SharedReport", () => {
       "/api/reports/report-id/schedule-daily",
       expect.anything(),
     );
+  });
+
+  test("still renders the report when its history request fails", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input) === "/api/reports/report-id") {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            id: "report-id",
+            orgs: "netlify",
+            scopeLabel: "ALL org packages",
+            payload: {
+              ...auditResult,
+              trust: {
+                ...trustReport,
+                summary: { ...trustReport.summary, scopeLabel: "ALL org packages" },
+              },
+            },
+            createdAt: "2026-06-27T12:34:56.000Z",
+            dailyTrackingEnabled: false,
+            dailyTrackingNextRunAt: null,
+          }),
+        };
+      }
+      return {
+        ok: false,
+        status: 503,
+        json: async () => ({}),
+      };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(SharedReport, { props: { id: "report-id" } });
+
+    expect(await screen.findByRole("tab", { name: /package trust level/i })).toBeInTheDocument();
+    expect(screen.getByText("No history yet")).toBeInTheDocument();
   });
 
   test("shows the specific not-found error for 404s", async () => {

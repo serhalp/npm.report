@@ -106,8 +106,8 @@
   $effect(() => {
     let cancelled = false;
     record = null;
-    error = null;
     reportHistory = null;
+    error = null;
 
     fetch(`/api/reports/${encodeURIComponent(id)}`)
       .then(async (response) => {
@@ -154,6 +154,7 @@
           ? ` — ${record.scopeLabel}`
           : ""}
         {when ? `, generated ${when}` : ""}. This is a read-only snapshot.
+        <br />
         <a href="/">Run your own audit →</a>
       </p>
     {/if}
