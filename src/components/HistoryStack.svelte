@@ -41,6 +41,42 @@
     return `${level.label}: ${point.byLevel[level.key]} (${formatPercentage(percentage(level.key))}%)`;
   }
 
+  function firstVisibleLevel(): TrustLevel {
+    return LEVELS.find((level) => point.byLevel[level.key] > 0)?.key ?? LEVELS[0].key;
+  }
+
+  function moveActiveLevel(direction: -1 | 1): void {
+    const visibleLevels = LEVELS.filter((level) => point.byLevel[level.key] > 0);
+    if (visibleLevels.length === 0) return;
+
+    const currentIndex = visibleLevels.findIndex((level) => level.key === activeLevel);
+    const nextIndex =
+      currentIndex < 0
+        ? direction > 0
+          ? 0
+          : visibleLevels.length - 1
+        : (currentIndex + direction + visibleLevels.length) % visibleLevels.length;
+    activeLevel = visibleLevels[nextIndex].key;
+  }
+
+  function handleKeydown(event: KeyboardEvent): void {
+    if (event.key === "Escape") {
+      activeLevel = null;
+      return;
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      moveActiveLevel(1);
+    } else if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      moveActiveLevel(-1);
+    }
+  }
+
+  function handleWindowKeydown(event: KeyboardEvent): void {
+    if (event.key === "Escape") activeLevel = null;
+  }
+
   let active = $derived(LEVELS.find((level) => level.key === activeLevel) ?? null);
   let stackLabel = $derived(
     [
@@ -50,12 +86,21 @@
   );
 </script>
 
-<div class="history-stack-wrap">
-  <div
+<svelte:window onkeydown={handleWindowKeydown} />
+
+<div
+  class="history-stack-wrap"
+  role="group"
+  aria-label="Trust breakdown"
+  onpointerleave={() => (activeLevel = null)}
+>
+  <button
+    type="button"
     class="history-stack"
-    role="group"
     aria-label={stackLabel}
-    onpointerleave={() => (activeLevel = null)}
+    onfocus={() => (activeLevel = activeLevel ?? firstVisibleLevel())}
+    onblur={() => (activeLevel = null)}
+    onkeydown={handleKeydown}
   >
     {#each LEVELS as level (level.key)}
       <span
@@ -66,7 +111,7 @@
         onpointerenter={() => (activeLevel = level.key)}
       ></span>
     {/each}
-  </div>
+  </button>
   {#if active}
     <span
       class="history-stack-tooltip"

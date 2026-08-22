@@ -5,11 +5,22 @@
     placeholder?: string;
     lowercase?: boolean;
     id?: string;
+    ariaInvalid?: boolean;
+    ariaDescribedby?: string;
   }
 
-  let { values, onChange, placeholder = "", lowercase = false, id }: Props = $props();
+  let {
+    values,
+    onChange,
+    placeholder = "",
+    lowercase = false,
+    id,
+    ariaInvalid = false,
+    ariaDescribedby,
+  }: Props = $props();
 
   let draft = $state("");
+  let announcement = $state("");
 
   function commit(raw: string) {
     const parts = raw
@@ -20,15 +31,21 @@
     if (parts.length === 0) return;
 
     const next = [...values];
+    const added: string[] = [];
     for (const part of parts) {
-      if (!next.includes(part)) next.push(part);
+      if (!next.includes(part)) {
+        next.push(part);
+        added.push(part);
+      }
     }
     onChange(next);
     draft = "";
+    if (added.length > 0) announcement = `Added ${added.join(", ")}.`;
   }
 
   function remove(value: string) {
     onChange(values.filter((item) => item !== value));
+    announcement = `Removed ${value}.`;
   }
 </script>
 
@@ -52,6 +69,8 @@
     type="text"
     {id}
     value={draft}
+    aria-invalid={ariaInvalid}
+    aria-describedby={ariaDescribedby}
     placeholder={values.length === 0 ? placeholder : ""}
     oninput={(event) => {
       const value = event.currentTarget.value;
@@ -70,4 +89,7 @@
       if (draft.trim()) commit(draft);
     }}
   />
+  <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+    {announcement}
+  </span>
 </div>

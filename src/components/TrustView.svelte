@@ -93,14 +93,17 @@
     <Stat k="Deprecated latest" v={summary.deprecated} />
   </div>
   <div class="table-tools">
-    <span class="table-meta">{rows.length} packages · click a column to sort</span>
+    <span class="table-meta" role="status" aria-live="polite" aria-atomic="true">
+      {rows.length} packages · click a column to sort
+    </span>
     <ExportButtons
       json={report}
       {csvRows}
       {csvColumns}
       filenameBase="package-trust-level"
+      label="Package trust level report exports"
       {onToast}
     />
   </div>
-  <DataTable {columns} {rows} />
+  <DataTable {columns} {rows} caption="Package trust level report" />
 </div>

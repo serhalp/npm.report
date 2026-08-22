@@ -26,8 +26,12 @@ describe("SharedReport", () => {
 
     render(SharedReport, { props: { id: "report/id" } });
 
-    expect(screen.getByText("Loading report…")).toBeInTheDocument();
-    expect(await screen.findByText(/Audit of/)).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("Loading report…").closest('[role="status"]')).not.toBeNull();
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Audit of netlify" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "false");
     expect(screen.getByText("netlify")).toBeInTheDocument();
     expect(screen.getByText(/generated 2026-06-27/)).toBeInTheDocument();
     expect(screen.getAllByText("last 12 months").length).toBeGreaterThan(0);
@@ -78,7 +82,7 @@ describe("SharedReport", () => {
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith("/api/reports/history?org=netlify");
     });
-    expect(screen.getByText("Loading report…")).toBeInTheDocument();
+    expect(screen.getByText("Loading report…").closest('[role="status"]')).not.toBeNull();
     expect(screen.queryByRole("heading", { name: "Progress over time" })).not.toBeInTheDocument();
 
     resolveHistory({
@@ -126,7 +130,7 @@ describe("SharedReport", () => {
 
     render(SharedReport, { props: { id: "missing" } });
 
-    expect(await screen.findByText("This report could not be found.")).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("This report could not be found.");
     expect(screen.getByText(/Back to the audit tool/)).toBeInTheDocument();
   });
 
@@ -142,9 +146,9 @@ describe("SharedReport", () => {
 
     render(SharedReport, { props: { id: "report-id" } });
 
-    expect(
-      await screen.findByText("This report is in an unexpected format and can't be displayed."),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This report is in an unexpected format and can't be displayed.",
+    );
   });
 
   test("shows the upstream status when loading a report fails", async () => {
@@ -158,6 +162,6 @@ describe("SharedReport", () => {
 
     render(SharedReport, { props: { id: "report-id" } });
 
-    expect(await screen.findByText("Failed to load report (503).")).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Failed to load report (503).");
   });
 });

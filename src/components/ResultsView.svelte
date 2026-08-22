@@ -104,7 +104,7 @@
           role="tab"
           type="button"
           aria-selected={activeTab === tab.kind}
-          aria-controls={activeTab === tab.kind ? `panel-${tab.kind}` : undefined}
+          aria-controls={`panel-${tab.kind}`}
           tabindex={activeTab === tab.kind ? 0 : -1}
           class={`tab${activeTab === tab.kind ? " active" : ""}`}
           onclick={() => selectTab(tab.kind)}
@@ -117,18 +117,36 @@
     </div>
 
     <div class="report-frame">
-      {#if activeTab === "trust" && result.trust}
-        <div id="panel-trust" role="tabpanel" aria-labelledby="tab-trust" tabindex="0">
+      {#if result.trust}
+        <div
+          id="panel-trust"
+          role="tabpanel"
+          aria-labelledby="tab-trust"
+          tabindex="0"
+          hidden={activeTab !== "trust"}
+        >
           <TrustView report={result.trust} {onToast} />
         </div>
       {/if}
-      {#if activeTab === "manual" && result.manual}
-        <div id="panel-manual" role="tabpanel" aria-labelledby="tab-manual" tabindex="0">
+      {#if result.manual}
+        <div
+          id="panel-manual"
+          role="tabpanel"
+          aria-labelledby="tab-manual"
+          tabindex="0"
+          hidden={activeTab !== "manual"}
+        >
           <ManualView report={result.manual} {onToast} />
         </div>
       {/if}
-      {#if activeTab === "external" && result.external}
-        <div id="panel-external" role="tabpanel" aria-labelledby="tab-external" tabindex="0">
+      {#if result.external}
+        <div
+          id="panel-external"
+          role="tabpanel"
+          aria-labelledby="tab-external"
+          tabindex="0"
+          hidden={activeTab !== "external"}
+        >
           <ExternalView report={result.external} {onToast} />
         </div>
       {/if}

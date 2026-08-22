@@ -58,6 +58,35 @@ describe("DailyTrackingButton", () => {
     expect(screen.queryByRole("button", { name: "Track daily" })).not.toBeInTheDocument();
   });
 
+  test("announces scheduling progress", async () => {
+    const user = userEvent.setup();
+    const request = Promise.withResolvers<{
+      ok: boolean;
+      json: () => Promise<unknown>;
+    }>();
+    vi.stubGlobal("fetch", vi.fn().mockReturnValue(request.promise));
+
+    render(DailyTrackingButton, { props: { reportId: "report-id" } });
+    await user.click(screen.getByRole("button", { name: "Track daily" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Enabling daily tracking…");
+    expect(screen.getByRole("button", { name: "Track daily" })).toBeDisabled();
+
+    request.resolve({
+      ok: true,
+      json: async () => ({
+        orgs: ["netlify"],
+        enabled: true,
+        nextRunAt: "2026-06-28T12:00:00.000Z",
+        lastRunAt: null,
+        lastReportId: "report-id",
+        consecutiveFailures: 0,
+      }),
+    });
+
+    expect(await screen.findByText("Tracking daily")).toBeInTheDocument();
+  });
+
   test.each([
     [
       "an HTTP failure",
@@ -79,7 +108,8 @@ describe("DailyTrackingButton", () => {
     });
     await user.click(screen.getByRole("button", { name: "Track daily" }));
 
-    expect(await screen.findByText(message)).toHaveClass("error");
+    expect(await screen.findByRole("alert")).toHaveTextContent(message);
+    expect(screen.getByRole("alert")).toHaveClass("error");
     expect(screen.getByRole("button", { name: "Track daily" })).toBeEnabled();
     expect(fetch).toHaveBeenCalledWith("/api/reports/report%2Fid/schedule-daily", {
       method: "POST",

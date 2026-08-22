@@ -46,13 +46,16 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Run audit" }));
 
-    expect(screen.getByText("Add at least one npm organization.")).toBeInTheDocument();
+    expect(screen.getByRole("main")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Add at least one npm organization.");
     expect(mockedStreamAudit).not.toHaveBeenCalled();
   });
 
   test("defaults to all scope and shows history only for all-scope org sets", async () => {
     const user = userEvent.setup();
     render(App);
+
+    expect(screen.getByRole("group", { name: "Reports" })).toBeInTheDocument();
 
     const limitScope = screen.getByRole("checkbox", { name: "Limit to recent packages" });
     expect(limitScope).not.toBeChecked();
@@ -104,9 +107,12 @@ describe("App", () => {
 
     await user.type(screen.getByPlaceholderText(/nuxt, vue/i), "netlify{Enter}");
     await user.click(screen.getByRole("checkbox", { name: /^external\b/i }));
-    await fireEvent.input(screen.getByLabelText(/org membership/i), {
-      target: { value: '{"Alice": "owner", "bob": "developer"}' },
-    });
+    await fireEvent.input(
+      screen.getByRole("textbox", { name: "Org membership (for external report)" }),
+      {
+        target: { value: '{"Alice": "owner", "bob": "developer"}' },
+      },
+    );
     await user.click(screen.getByRole("button", { name: "Run audit" }));
 
     await screen.findByRole("heading", { name: "Audit results" });
@@ -125,6 +131,10 @@ describe("App", () => {
     render(App);
 
     await user.click(screen.getByRole("checkbox", { name: /^external\b/i }));
+
+    expect(
+      screen.getByRole("button", { name: "Copy npm org membership command for <org>" }),
+    ).toBeInTheDocument();
 
     expect(
       screen.getByText(/member list is used only for this audit and is not persisted/i),
@@ -209,7 +219,7 @@ describe("App", () => {
     expect(writeText).toHaveBeenCalledWith(
       "http://localhost:3000/report/netlify-2026-06-27-abc12345",
     );
-    expect(await screen.findByText("Link copied")).toBeInTheDocument();
+    expect((await screen.findByText("Link copied")).closest('[role="status"]')).not.toBeNull();
   });
 
   test("surfaces a server-side save failure inline", async () => {
@@ -243,7 +253,7 @@ describe("App", () => {
     await user.type(screen.getByPlaceholderText(/nuxt, vue/i), "netlify{Enter}");
     await user.click(screen.getByRole("button", { name: "Run audit" }));
 
-    expect(await screen.findByText("registry unavailable")).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("registry unavailable");
     expect(screen.getByRole("button", { name: "Run audit" })).toBeEnabled();
     expect(screen.queryByRole("heading", { name: "Audit results" })).not.toBeInTheDocument();
   });
@@ -263,7 +273,9 @@ describe("App", () => {
     expect(await screen.findByText(/netlify-2026-06-27-abc12345/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Copy link" }));
 
-    expect(await screen.findByText("Clipboard unavailable")).toBeInTheDocument();
+    expect(
+      (await screen.findByText("Clipboard unavailable")).closest('[role="status"]'),
+    ).not.toBeNull();
     expect(writeText).toHaveBeenCalledWith(
       "http://localhost:3000/report/netlify-2026-06-27-abc12345",
     );
@@ -329,16 +341,31 @@ describe("App", () => {
     expect(await screen.findByText("alpha@1.0.0")).toBeInTheDocument();
   });
 
+  test("associates the required-username error with the username input", async () => {
+    const user = userEvent.setup();
+    render(App);
+
+    const input = screen.getByLabelText("npm username");
+    await user.click(screen.getByRole("button", { name: "Look up" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter an npm username.");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input).toHaveAttribute("aria-describedby", "user-publish-error");
+  });
+
   test("surfaces a streamed user-publish failure and leaves lookup usable", async () => {
     const user = userEvent.setup();
     mockedStreamUserPublishes.mockRejectedValue(new Error("npm unavailable"));
 
     render(App);
 
-    await user.type(screen.getByLabelText("npm username"), "alice");
+    const input = screen.getByLabelText("npm username");
+    await user.type(input, "alice");
     await user.click(screen.getByRole("button", { name: "Look up" }));
 
-    expect(await screen.findByText("npm unavailable")).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("npm unavailable");
+    expect(input).toHaveAttribute("aria-invalid", "false");
+    expect(input).not.toHaveAttribute("aria-describedby");
     expect(screen.getByRole("button", { name: "Look up" })).toBeEnabled();
   });
 });

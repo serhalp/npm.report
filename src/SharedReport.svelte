@@ -159,55 +159,64 @@
     {/if}
   </header>
 
-  {#if error}
-    <section class="panel">
-      <div class="panel__body">
-        <p class="inline-error shared-error">{error}</p>
-        <p class="desc"><a href="/">Back to the audit tool →</a></p>
-      </div>
-    </section>
-  {/if}
+  <main aria-busy={!record && !error}>
+    {#if error}
+      <section class="panel">
+        <div class="panel__body">
+          <p class="inline-error shared-error" role="alert">{error}</p>
+          <p class="desc"><a href="/">Back to the audit tool →</a></p>
+        </div>
+      </section>
+    {/if}
 
-  {#if !record && !error}
-    <section class="panel">
-      <div class="panel__body">
-        <p class="desc shared-loading">Loading report…</p>
-      </div>
-    </section>
-  {/if}
+    {#if !record && !error}
+      <section class="panel">
+        <div class="panel__body">
+          <p class="desc shared-loading" role="status">Loading report…</p>
+        </div>
+      </section>
+    {/if}
 
-  {#if record}
-    <div class="shared-actions">
-      <button
-        class="btn btn--primary"
-        type="button"
-        onclick={() => {
-          if (record) window.location.href = rerunHref(record);
-        }}
-      >
-        <RefreshCw aria-hidden="true" size={15} strokeWidth={2} />
-        Re-run this audit
-      </button>
-      <DailyTrackingButton
-        reportId={record.id}
+    {#if record}
+      <h2 class="sr-only">Audit of {record.orgs || "npm packages"}</h2>
+      <div class="shared-actions">
+        <button
+          class="btn btn--primary"
+          type="button"
+          onclick={() => {
+            if (record) window.location.href = rerunHref(record);
+          }}
+        >
+          <RefreshCw aria-hidden="true" size={15} strokeWidth={2} />
+          Re-run this audit
+        </button>
+        <DailyTrackingButton
+          reportId={record.id}
+          enabled={historyEnabled}
+          alreadyTracked={record.dailyTrackingEnabled}
+          nextRunAt={record.dailyTrackingNextRunAt}
+          onToast={showToast}
+        />
+      </div>
+      <HistoryPanel
+        orgs={historyOrgs}
         enabled={historyEnabled}
-        alreadyTracked={record.dailyTrackingEnabled}
-        nextRunAt={record.dailyTrackingNextRunAt}
-        onToast={showToast}
+        currentReportId={record.id}
+        preloadedHistory={reportHistory ?? undefined}
       />
-    </div>
-    <HistoryPanel
-      orgs={historyOrgs}
-      enabled={historyEnabled}
-      currentReportId={record.id}
-      preloadedHistory={reportHistory ?? undefined}
-    />
-    <section class="results">
-      <ResultsView result={record.payload} onToast={showToast} />
-    </section>
-  {/if}
+      <section class="results">
+        <ResultsView result={record.payload} onToast={showToast} />
+      </section>
+    {/if}
+  </main>
 
-  {#if toast}
-    <div class="toast">{toast}</div>
-  {/if}
+  <div
+    class:toast={!!toast}
+    class:sr-only={!toast}
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+  >
+    {toast ?? ""}
+  </div>
 </div>

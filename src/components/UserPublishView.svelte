@@ -37,6 +37,7 @@
     <div class="table-tools">
       <span class="table-meta">{report.rows.length} versions</span>
       <ExportButtons
+        label={`Versions published by ${report.user} exports`}
         json={report.rows}
         {csvRows}
         csvColumns={[
@@ -47,6 +48,6 @@
         {onToast}
       />
     </div>
-    <DataTable {columns} rows={report.rows} />
+    <DataTable caption={`Versions published by ${report.user}`} {columns} rows={report.rows} />
   {/if}
 </div>

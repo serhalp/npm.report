@@ -41,6 +41,7 @@
     <div class="table-tools">
       <span class="table-meta">By user — non-members with live publish rights</span>
       <ExportButtons
+        label="External maintainers by npm user exports"
         json={report.byUser}
         csvRows={byUserCsvRows}
         csvColumns={[
@@ -51,11 +52,12 @@
         {onToast}
       />
     </div>
-    <DataTable columns={byCols} rows={report.byUser} />
+    <DataTable caption="External maintainers by npm user" columns={byCols} rows={report.byUser} />
 
     <div class="table-tools table-tools--spaced">
       <span class="table-meta">Detail — {report.rows.length} access grants</span>
       <ExportButtons
+        label="External maintainer package access exports"
         json={report.rows}
         csvRows={rowsCsvRows}
         csvColumns={[
@@ -66,6 +68,10 @@
         {onToast}
       />
     </div>
-    <DataTable columns={detailCols} rows={report.rows} />
+    <DataTable
+      caption="External maintainer package access"
+      columns={detailCols}
+      rows={report.rows}
+    />
   {/if}
 </div>

@@ -3,7 +3,7 @@
 
   type Dir = "asc" | "desc";
 
-  let { columns, rows }: { columns: Column<T>[]; rows: T[] } = $props();
+  let { caption, columns, rows }: { caption: string; columns: Column<T>[]; rows: T[] } = $props();
 
   let sortKey: string | null = $state(null);
   let dir: Dir = $state("desc");
@@ -64,6 +64,7 @@
 
 <div class="table-scroll">
   <table class="data">
+    <caption class="sr-only">{caption}</caption>
     <thead>
       <tr>
         {#each columns as column (column.key)}
@@ -78,7 +79,7 @@
             <button type="button" class="sort-button" title="Sort" onclick={() => sort(column)}>
               {column.header}
               {#if sortKey === column.key}
-                <span class="arrow">{dir === "asc" ? "↑" : "↓"}</span>
+                <span class="arrow" aria-hidden="true">{dir === "asc" ? "↑" : "↓"}</span>
               {/if}
             </button>
           </th>

@@ -79,8 +79,12 @@ describe("ResultsView", () => {
     expect(panel).toHaveAttribute("id", "panel-trust");
     expect(panel).toHaveAttribute("aria-labelledby", "tab-trust");
     expect(trustTab).toHaveAttribute("aria-controls", "panel-trust");
+    expect(manualTab).toHaveAttribute("aria-controls", "panel-manual");
     expect(trustTab).toHaveAttribute("tabindex", "0");
     expect(manualTab).toHaveAttribute("tabindex", "-1");
+    expect(document.getElementById("panel-trust")).not.toHaveAttribute("hidden");
+    expect(document.getElementById("panel-manual")).toHaveAttribute("hidden");
+    expect(screen.getAllByRole("tabpanel", { hidden: true })).toHaveLength(2);
 
     // ArrowRight moves focus + selection to the next tab.
     trustTab.focus();
@@ -88,5 +92,7 @@ describe("ResultsView", () => {
     expect(manualTab).toHaveAttribute("aria-selected", "true");
     expect(manualTab).toHaveFocus();
     expect(location.hash).toBe("#report=manual");
+    expect(document.getElementById("panel-trust")).toHaveAttribute("hidden");
+    expect(document.getElementById("panel-manual")).not.toHaveAttribute("hidden");
   });
 });

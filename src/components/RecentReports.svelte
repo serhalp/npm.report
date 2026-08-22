@@ -48,14 +48,18 @@
   </div>
 
   {#if loading}
-    <p class="desc">Loading recent reports…</p>
+    <p class="desc" role="status">Loading recent reports…</p>
   {:else if reports.length === 0}
     <p class="desc">No saved reports yet.</p>
   {:else}
     <ol class="recent-reports__list">
       {#each reports as report (report.id)}
         <li>
-          <a href={report.url}>{orgLabel(report.orgs)}</a>
+          <a
+            href={report.url}
+            aria-label={`${orgLabel(report.orgs)} report from ${formatDay(report.capturedAt)}`}
+            >{orgLabel(report.orgs)}</a
+          >
           <span>{formatDay(report.capturedAt)}</span>
         </li>
       {/each}

@@ -35,5 +35,17 @@ describe("ExternalView", () => {
     expect(screen.getAllByText("mallory")).toHaveLength(3);
     expect(screen.getByText("alpha")).toBeInTheDocument();
     expect(screen.getByText("beta")).toBeInTheDocument();
+    expect(
+      screen.getByRole("table", { name: "External maintainers by npm user" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("table", { name: "External maintainer package access" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "External maintainers by npm user exports" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "External maintainer package access exports" }),
+    ).toBeInTheDocument();
   });
 });

@@ -18,6 +18,14 @@ describe("RecentReports", () => {
     vi.unstubAllGlobals();
   });
 
+  test("exposes its loading state", () => {
+    vi.stubGlobal("fetch", vi.fn().mockReturnValue(new Promise(() => {})));
+
+    render(RecentReports);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Loading recent reports…");
+  });
+
   test("renders recent report links labeled by org set", async () => {
     mockRecentReports({
       reports: [
@@ -39,11 +47,10 @@ describe("RecentReports", () => {
     render(RecentReports);
 
     expect(screen.getByText("Latest saved audits")).toBeInTheDocument();
-    expect(await screen.findByRole("link", { name: "gatsbyjs, netlify" })).toHaveAttribute(
-      "href",
-      "/report/netlify-gatsby-2026-06-27-abc12345",
-    );
-    expect(screen.getByRole("link", { name: "svelte" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: "gatsbyjs, netlify report from 2026-06-27" }),
+    ).toHaveAttribute("href", "/report/netlify-gatsby-2026-06-27-abc12345");
+    expect(screen.getByRole("link", { name: "svelte report from 2026-06-26" })).toBeInTheDocument();
     expect(screen.getByText("2026-06-27")).toBeInTheDocument();
   });
 

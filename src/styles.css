@@ -16,9 +16,8 @@
 
   /* Signal accent — desaturated amber/gold. */
   --gold: #d8a657;
-  --gold-dim: #9c7c45;
+  --gold-dim: #a08049;
   --gold-soft: rgba(216, 166, 87, 0.06);
-  --focus-ring: rgba(216, 166, 87, 0.12);
   --accent-ink: #1b1305;
   --accent-ink-muted: rgba(13, 17, 23, 0.62);
 
@@ -106,7 +105,6 @@
   --gold: #9a671b;
   --gold-dim: #705126;
   --gold-soft: rgba(154, 103, 27, 0.1);
-  --focus-ring: rgba(154, 103, 27, 0.18);
   --accent-ink: #fff8ec;
   --accent-ink-muted: rgba(255, 248, 236, 0.72);
 
@@ -118,9 +116,9 @@
   --danger: #b63c2f;
   --danger-soft: rgba(182, 60, 47, 0.11);
   --risk-line: rgba(185, 71, 46, 0.38);
-  --status-ok: #3f7d3b;
-  --status-ok-soft: rgba(63, 125, 59, 0.09);
-  --status-ok-line: rgba(63, 125, 59, 0.42);
+  --status-ok: #397337;
+  --status-ok-soft: rgba(57, 115, 55, 0.09);
+  --status-ok-line: rgba(57, 115, 55, 0.42);
 
   --shadow: 0 14px 34px -28px rgba(23, 32, 42, 0.45);
   --row-hover: rgba(23, 32, 42, 0.035);
@@ -559,11 +557,11 @@ textarea {
     border-color 0.15s ease,
     box-shadow 0.15s ease;
 }
-input:focus,
-textarea:focus {
-  outline: none;
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--gold-dim);
+  outline-offset: 2px;
   border-color: var(--gold-dim);
-  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 ::placeholder {
   color: var(--fg-faint);
@@ -594,8 +592,9 @@ textarea {
   padding: var(--space-xs) var(--space-sm);
 }
 .taginput:focus-within {
+  outline: 2px solid var(--gold-dim);
+  outline-offset: 2px;
   border-color: var(--gold-dim);
-  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 .taginput input {
   flex: 1;
@@ -605,7 +604,8 @@ textarea {
   padding: 0.1875rem var(--space-3xs);
   box-shadow: none;
 }
-.taginput input:focus {
+.taginput input:focus-visible {
+  outline: none;
   box-shadow: none;
 }
 .chip {
@@ -788,8 +788,8 @@ textarea {
   background: var(--ink-700);
 }
 .theme-toggle__button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus-ring);
+  outline: 2px solid var(--gold-dim);
+  outline-offset: 2px;
 }
 .theme-toggle__button[aria-pressed="true"] {
   color: var(--accent-ink);
@@ -1078,7 +1078,7 @@ textarea {
   color: var(--fg);
 }
 .results__head h2:focus-visible {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--gold-dim);
   outline-offset: 4px;
 }
 
@@ -1214,11 +1214,11 @@ textarea {
   font-weight: 600;
 }
 .tab:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus-ring);
+  outline: 2px solid var(--gold-dim);
+  outline-offset: 2px;
 }
 .tab.active:focus-visible {
-  box-shadow: 0 0 0 3px var(--focus-ring);
+  outline: 2px solid var(--gold-dim);
 }
 .tab .count {
   color: var(--fg-faint);
@@ -1241,7 +1241,7 @@ textarea {
   outline: none;
 }
 .report-frame > [role="tabpanel"]:focus-visible {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--gold-dim);
   outline-offset: var(--space-sm);
 }
 @media (max-width: 47.5rem) {
@@ -1370,6 +1370,18 @@ textarea {
   isolation: isolate;
   margin: var(--space-md) 0 var(--space-lg);
 }
+.trust-trend__viewport {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+.trust-trend__plot {
+  position: relative;
+  width: 100%;
+  min-width: 52rem;
+}
 .trust-trend__svg {
   display: block;
   width: 100%;
@@ -1387,7 +1399,7 @@ textarea {
 .trust-trend__axis-label {
   fill: var(--fg-faint);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
 }
 .trust-trend__line {
   fill: none;
@@ -1421,7 +1433,7 @@ textarea {
 .trust-trend__current-label {
   fill: var(--gold);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 .trust-trend__hover-line {
   stroke: var(--fg-dim);
@@ -1455,8 +1467,8 @@ textarea {
   cursor: pointer;
 }
 .trust-trend__target:focus-visible {
-  outline: 1px solid var(--gold);
-  outline-offset: -1px;
+  outline: 2px solid var(--gold-dim);
+  outline-offset: -2px;
   background: var(--gold-soft);
 }
 .trust-trend__legend {
@@ -1471,7 +1483,7 @@ textarea {
   max-width: calc(100% - 3rem);
   margin: 0;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--fg-dim);
 }
 .trust-trend__key {
@@ -1597,12 +1609,18 @@ textarea {
 }
 .history-stack {
   display: flex;
+  width: 100%;
   min-width: 0;
   height: var(--space-md);
+  padding: 0;
   overflow: hidden;
   background: var(--ink-900);
   border: 1px solid var(--line);
   border-radius: 999rem;
+}
+.history-stack:focus-visible {
+  outline: 2px solid var(--gold-dim);
+  outline-offset: 2px;
 }
 .history-stack > span {
   min-width: 0;
@@ -1610,15 +1628,35 @@ textarea {
 }
 .history-segment--staged {
   background: var(--t-staged);
+  background-image: radial-gradient(
+    circle at center,
+    rgba(13, 17, 23, 0.62) 0 1px,
+    transparent 1.5px
+  );
+  background-size: 6px 6px;
 }
 .history-segment--trusted {
   background: var(--t-trusted);
 }
 .history-segment--provenance {
   background: var(--t-provenance);
+  background-image: conic-gradient(
+    from 45deg,
+    rgba(13, 17, 23, 0.52) 0 25%,
+    transparent 0 75%,
+    rgba(13, 17, 23, 0.52) 0
+  );
+  background-size: 7px 7px;
 }
 .history-segment--none {
   background: var(--t-none);
+  background-image: radial-gradient(
+    circle at center,
+    transparent 0 2px,
+    rgba(13, 17, 23, 0.58) 2.5px 3px,
+    transparent 3.5px
+  );
+  background-size: 8px 8px;
 }
 .history-stack-tooltip {
   position: absolute;
@@ -1637,9 +1675,17 @@ textarea {
   color: var(--fg);
   font-family: var(--mono);
   font-size: var(--text-xs);
-  pointer-events: none;
+  pointer-events: auto;
   transform: translateX(-50%);
   white-space: nowrap;
+}
+.history-stack-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  height: var(--space-xs);
 }
 .history-stack-tooltip__swatch {
   width: 0.625rem;
@@ -1797,7 +1843,7 @@ table.data th .sort-button {
 }
 /* `all: unset` strips the default focus ring, so restore a visible one. */
 table.data th .sort-button:focus-visible {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--gold-dim);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -1958,9 +2004,34 @@ table.data tbody tr:hover td {
 .footer p {
   margin: 0;
 }
+.footer a {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
 .footer__mark {
   color: var(--fg-dim);
 }
 .footer__mark .dot {
   color: var(--gold);
+}
+
+@media (forced-colors: active) {
+  input:focus-visible,
+  textarea:focus-visible,
+  .taginput:focus-within,
+  .theme-toggle__button:focus-visible,
+  .tab:focus-visible,
+  .package-filter--date input:focus-visible,
+  .report-frame > [role="tabpanel"]:focus-visible,
+  .history-stack:focus-visible,
+  .trust-trend__target:focus-visible,
+  table.data th .sort-button:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  .history-stack {
+    forced-color-adjust: none;
+  }
 }

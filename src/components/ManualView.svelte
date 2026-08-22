@@ -49,6 +49,7 @@
     <div class="table-tools">
       <span class="table-meta">By publisher</span>
       <ExportButtons
+        label="Manual publishes by publisher exports"
         json={report.byPublisher}
         csvRows={byPublisherCsvRows}
         csvColumns={[
@@ -59,11 +60,12 @@
         {onToast}
       />
     </div>
-    <DataTable columns={byCols} rows={report.byPublisher} />
+    <DataTable caption="Manual publishes by publisher" columns={byCols} rows={report.byPublisher} />
 
     <div class="table-tools table-tools--spaced">
       <span class="table-meta">Detail — {report.rows.length} publishes</span>
       <ExportButtons
+        label="Manual publish detail exports"
         json={report.rows}
         csvRows={rowsCsvRows}
         csvColumns={[
@@ -75,6 +77,6 @@
         {onToast}
       />
     </div>
-    <DataTable columns={detailCols} rows={report.rows} />
+    <DataTable caption="Manual publish detail" columns={detailCols} rows={report.rows} />
   {/if}
 </div>

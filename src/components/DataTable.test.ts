@@ -14,7 +14,11 @@ const columns: Column<Row>[] = [
   { key: "name", header: "Package" },
   { key: "downloads", header: "Downloads/wk", numeric: true },
 ];
-const TypedDataTable = DataTable as Component<{ columns: Column<Row>[]; rows: Row[] }>;
+const TypedDataTable = DataTable as Component<{
+  caption: string;
+  columns: Column<Row>[];
+  rows: Row[];
+}>;
 
 function dataRows() {
   return [
@@ -34,12 +38,17 @@ function renderedPackageOrder() {
 describe("DataTable", () => {
   test("sorts numeric columns descending first, toggles ascending, and sinks nulls", async () => {
     const user = userEvent.setup();
-    render(TypedDataTable, { props: { columns, rows: dataRows() } });
+    render(TypedDataTable, {
+      props: { caption: "Package downloads", columns, rows: dataRows() },
+    });
+
+    expect(screen.getByRole("table", { name: "Package downloads" })).toBeInTheDocument();
 
     expect(renderedPackageOrder()).toEqual(["alpha", "beta", "gamma"]);
 
     await user.click(screen.getByRole("button", { name: /downloads\/wk/i }));
     expect(renderedPackageOrder()).toEqual(["alpha", "gamma", "beta"]);
+    expect(screen.getByRole("button", { name: "Downloads/wk" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /downloads\/wk/i }));
     expect(renderedPackageOrder()).toEqual(["gamma", "alpha", "beta"]);

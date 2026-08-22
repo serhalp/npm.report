@@ -84,4 +84,30 @@ describe("TrustTrend", () => {
     await fireEvent.pointerLeave(first);
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
+
+  test("uses one roving tab stop and supports arrow, Home, End, and Escape keys", async () => {
+    render(TrustTrend, {
+      props: { points, currentReportId: "two", linkReports: true },
+    });
+    const links = screen.getAllByRole("link");
+
+    expect(links.map((link) => link.tabIndex)).toEqual([-1, 0, -1]);
+
+    await fireEvent.focus(links[1]);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("2026-07-03");
+
+    await fireEvent.keyDown(links[1], { key: "ArrowRight" });
+    expect(links[2]).toHaveFocus();
+    expect(links.map((link) => link.tabIndex)).toEqual([-1, -1, 0]);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("2026-07-09");
+
+    await fireEvent.keyDown(links[2], { key: "Home" });
+    expect(links[0]).toHaveFocus();
+
+    await fireEvent.keyDown(links[0], { key: "End" });
+    expect(links[2]).toHaveFocus();
+
+    await fireEvent.keyDown(links[2], { key: "Escape" });
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
 });

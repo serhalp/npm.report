@@ -117,7 +117,7 @@
       </p>
 
       {#if loading}
-        <p class="desc history-loading">Loading history…</p>
+        <p class="desc history-loading" role="status">Loading history…</p>
       {:else if points.length === 0}
         <div class="empty history-empty">
           <div class="big">No history yet</div>

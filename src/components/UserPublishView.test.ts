@@ -31,5 +31,9 @@ describe("UserPublishView", () => {
     expect(screen.getByText("1 versions")).toBeInTheDocument();
     expect(screen.getByText("2026-06-01 02:03:04Z")).toBeInTheDocument();
     expect(screen.getByText("pkg@1.0.0")).toBeInTheDocument();
+    expect(screen.getByRole("table", { name: "Versions published by alice" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "Versions published by alice exports" }),
+    ).toBeInTheDocument();
   });
 });

@@ -74,7 +74,7 @@
       {/if}
     </div>
   {:else}
-    <div class="schedule-cta">
+    <div class="schedule-cta" aria-busy={status === "saving"}>
       <button
         class="btn btn--ghost"
         type="button"
@@ -84,7 +84,12 @@
         <CalendarClock aria-hidden="true" size={15} strokeWidth={2} />
         Track daily
       </button>
-      <span class:error={status === "error"}>{message}</span>
+      <span
+        class:error={status === "error"}
+        role={status === "error" ? "alert" : "status"}
+        aria-live={status === "error" ? "assertive" : "polite"}
+        aria-atomic="true">{message}</span
+      >
     </div>
   {/if}
 {/if}

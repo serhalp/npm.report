@@ -14,6 +14,7 @@ describe("ExportButtons", () => {
     const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
     render(ExportButtons, {
       props: {
+        label: "Recent package exports",
         json: { pkg: "alpha" },
         csvRows: [],
         csvColumns: [],
@@ -21,6 +22,8 @@ describe("ExportButtons", () => {
         onToast,
       },
     });
+
+    expect(screen.getByRole("group", { name: "Recent package exports" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Copy JSON" }));
 
@@ -42,6 +45,7 @@ describe("ExportButtons", () => {
 
     render(ExportButtons, {
       props: {
+        label: "Recent package exports",
         json: {},
         csvRows: [{ pkg: "alpha", downloads: 10 }],
         csvColumns: [

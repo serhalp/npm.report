@@ -130,6 +130,7 @@
   let upRunning = $state(false);
   let upResult = $state<UserPublishReport | null>(null);
   let upError = $state<string | null>(null);
+  let upUserInvalid = $derived(upError === "Enter an npm username.");
 
   let members = $derived(parseMembers(membersRaw));
   let selectedKinds = $derived(
@@ -202,7 +203,6 @@
       return;
     }
     if (orgIssue) {
-      error = orgIssue;
       return;
     }
     if (selectedKinds.length === 0) {
@@ -334,276 +334,289 @@
     </p>
   </header>
 
-  {#if !result}
-    <SamplePreview />
-  {/if}
+  <main>
+    {#if !result}
+      <SamplePreview />
+    {/if}
 
-  <RecentReports />
+    <RecentReports />
 
-  <div class="layout">
-    <section class="panel" id="config">
-      <div class="panel__head">
-        <h2>Configuration</h2>
-      </div>
-      <div class="panel__body">
-        <div class="field">
-          <label for="orgs">Organizations</label>
-          <TagInput
-            id="orgs"
-            values={orgs}
-            onChange={(next) => (orgs = next)}
-            placeholder="e.g. nuxt, vue"
-          />
-          <p class="desc">One or more npm org slugs (up to {MAX_ORGS}).</p>
-          {#if orgIssue}
-            <p class="inline-error">{orgIssue}</p>
+    <div class="layout">
+      <section class="panel" id="config">
+        <div class="panel__head">
+          <h2>Configuration</h2>
+        </div>
+        <div class="panel__body">
+          <div class="field">
+            <label for="orgs">Organizations</label>
+            <TagInput
+              id="orgs"
+              values={orgs}
+              onChange={(next) => (orgs = next)}
+              placeholder="e.g. nuxt, vue"
+              ariaInvalid={!!orgIssue}
+              ariaDescribedby={orgIssue ? "orgs-help orgs-issue" : "orgs-help"}
+            />
+            <p class="desc" id="orgs-help">One or more npm org slugs (up to {MAX_ORGS}).</p>
+            {#if orgIssue}
+              <p class="inline-error" id="orgs-issue" role="alert">{orgIssue}</p>
+            {/if}
+          </div>
+
+          <div class="field scope-field">
+            <label class="toggle">
+              <input
+                type="checkbox"
+                checked={!all}
+                onchange={(event) => (all = !event.currentTarget.checked)}
+              />
+              Limit to recent packages
+            </label>
+            {#if !all}
+              <div class="scope-window">
+                <label for="months">Window (months)</label>
+                <input
+                  id="months"
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={months}
+                  oninput={(event) => (months = Number(event.currentTarget.value) || 1)}
+                />
+              </div>
+            {/if}
+          </div>
+
+          <div class="field" role="group" aria-labelledby="reports-label">
+            <span class="field-label" id="reports-label">Reports</span>
+            <div class="checks">
+              {#each REPORT_META as report (report.kind)}
+                <label class={`check${selected[report.kind] ? " active" : ""}`}>
+                  <input
+                    type="checkbox"
+                    checked={selected[report.kind]}
+                    onchange={(event) => (selected[report.kind] = event.currentTarget.checked)}
+                  />
+                  <span>
+                    <span class="ctitle">{report.title}</span>
+                    <span class="cdesc">{report.desc}</span>
+                  </span>
+                </label>
+              {/each}
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="bots">Exclude bot / CI accounts (manual report)</label>
+            <TagInput
+              id="bots"
+              values={bots}
+              onChange={(next) => (bots = next)}
+              placeholder="e.g. ci-bot"
+            />
+            <p class="desc">
+              Publishers to treat as automation. Note: npm cannot distinguish a human from that
+              human&rsquo;s CI token, so &ldquo;manual&rdquo; is a proxy, not proof.
+            </p>
+          </div>
+
+          {#if selected.external}
+            <div class="field">
+              <label for="members">Org membership (for external report)</label>
+              <p class="desc members-copy" id="members-help">
+                npm exposes package maintainers publicly, but not org membership. Paste
+                authenticated membership output so the app can compare the two lists:
+              </p>
+              {#each orgs.length ? orgs : ["<org>"] as org (org)}
+                <div class="cmd-row">
+                  <code class="cmd">npm org ls {org} --json</code>
+                  <button
+                    class="btn btn--sm btn--ghost"
+                    type="button"
+                    aria-label={`Copy npm org membership command for ${org}`}
+                    onclick={() => copyCommand(org)}
+                  >
+                    Copy
+                  </button>
+                </div>
+              {/each}
+              <textarea
+                id="members"
+                value={membersRaw}
+                aria-describedby="members-help members-count"
+                oninput={(event) => (membersRaw = event.currentTarget.value)}
+                placeholder={membersPlaceholder}></textarea>
+              <p class="desc" id="members-count">
+                Parsed {members.length} member{members.length === 1 ? "" : "s"}. Matching is
+                case-insensitive. The member list is used only for this audit and is not persisted.
+                Derived external findings are included in the saved report.
+              </p>
+            </div>
+          {/if}
+
+          <div class="run-bar">
+            <button class="btn btn--primary" type="button" onclick={handleRun} disabled={busy}>
+              {running ? "Running…" : "Run audit"}
+            </button>
+            {#if running}
+              <span class="status" role="status">streaming to terminal →</span>
+            {:else if upRunning}
+              <span class="status" role="status">paused — user lookup running</span>
+            {/if}
+          </div>
+          {#if error}
+            <p class="inline-error" role="alert">{error}</p>
           {/if}
         </div>
+      </section>
 
-        <div class="field scope-field">
+      <section>
+        <LogTerminal bind:this={terminal} activity={terminalActivity} />
+        <p class="note">
+          <strong>Live log</strong> shows audit progress and warnings.
+        </p>
+        {#if hasReports && result && !running}
+          <div class="report-ready">
+            <div class="report-ready__main">
+              <CircleCheck aria-hidden="true" size={18} strokeWidth={2} />
+              <div class="report-ready__text" role="status" aria-live="polite">
+                <strong>Report ready</strong>
+                <span>{reportReadySummary}</span>
+              </div>
+            </div>
+            <button class="btn btn--sm btn--ready" type="button" onclick={viewReport}>
+              <ArrowDown aria-hidden="true" size={15} strokeWidth={2} />
+              View report
+            </button>
+          </div>
+        {/if}
+        <HistoryPanel {orgs} enabled={all && orgs.length > 0} refreshKey={historyRefreshKey} />
+      </section>
+    </div>
+
+    {#if hasReports && result}
+      <section class="results" id="reports">
+        <div class="results__head">
+          <h2 id="audit-results-title" bind:this={resultsHeading} tabindex="-1">Audit results</h2>
+        </div>
+        <div class="share-bar">
+          <div>
+            <strong class="share-bar__title">Report link</strong>
+            {#if shareUrl}
+              <span class="share-bar__hint">Saved automatically after this run.</span>
+            {:else if reportSaveError}
+              <span class="share-bar__hint">Report link unavailable: {reportSaveError}</span>
+            {:else}
+              <span class="share-bar__hint">Link appears after the report is saved.</span>
+            {/if}
+          </div>
+          <div class="share-bar__actions">
+            <DailyTrackingButton
+              reportId={savedReportId}
+              enabled={savedReportCanTrackDaily}
+              onToast={showToast}
+            />
+            <button
+              class="btn btn--ghost"
+              type="button"
+              onclick={copyShareLink}
+              disabled={!shareUrl}
+            >
+              Copy link
+            </button>
+          </div>
+        </div>
+        {#if shareUrl}
+          <div class="share-link">
+            <a href={shareUrl}>{shareUrl}</a>
+          </div>
+        {/if}
+        <ResultsView {result} onToast={showToast} initialTab={firstTab} />
+      </section>
+    {/if}
+
+    <p class="methodology-note">
+      &ldquo;Recency&rdquo; is the latest dist-tag&rsquo;s publish time. &ldquo;Manual&rdquo; means
+      the publisher isn&rsquo;t in your bot-exclusion list &mdash; npm can&rsquo;t tell a human
+      session from that account&rsquo;s automation token.
+    </p>
+
+    <section class="panel user-publish-panel">
+      <div class="panel__head">
+        <h2>User publish history</h2>
+        <span class="hint">standalone — by npm account</span>
+      </div>
+      <div class="panel__body">
+        <p class="desc user-publish-copy">
+          Versions attributed to a specific npm publisher within the window. This scans that
+          account&rsquo;s maintained packages, optionally combined with packages from the last audit
+          run.
+        </p>
+        <div class="row">
+          <div class="field">
+            <label for="up-user">npm username</label>
+            <input
+              id="up-user"
+              type="text"
+              value={upUser}
+              aria-invalid={upUserInvalid}
+              aria-describedby={upUserInvalid ? "user-publish-error" : undefined}
+              oninput={(event) => (upUser = event.currentTarget.value)}
+              placeholder="e.g. some-maintainer"
+            />
+          </div>
+          <div class="field">
+            <label for="up-months">User window (months)</label>
+            <input
+              id="up-months"
+              type="number"
+              min="1"
+              max="120"
+              value={upMonths}
+              oninput={(event) => (upMonths = Number(event.currentTarget.value) || 1)}
+            />
+          </div>
+        </div>
+        <div class="field">
           <label class="toggle">
             <input
               type="checkbox"
-              checked={!all}
-              onchange={(event) => (all = !event.currentTarget.checked)}
+              checked={upUseCache}
+              disabled={!result?.trust}
+              onchange={(event) => (upUseCache = event.currentTarget.checked)}
             />
-            Limit to recent packages
+            Also scan packages from the last audit run
+            {#if !result?.trust}
+              (run an audit first)
+            {/if}
           </label>
-          {#if !all}
-            <div class="scope-window">
-              <label for="months">Window (months)</label>
-              <input
-                id="months"
-                type="number"
-                min="1"
-                max="120"
-                value={months}
-                oninput={(event) => (months = Number(event.currentTarget.value) || 1)}
-              />
-            </div>
-          {/if}
         </div>
-
-        <div class="field">
-          <span class="field-label">Reports</span>
-          <div class="checks">
-            {#each REPORT_META as report (report.kind)}
-              <label class={`check${selected[report.kind] ? " active" : ""}`}>
-                <input
-                  type="checkbox"
-                  checked={selected[report.kind]}
-                  onchange={(event) => (selected[report.kind] = event.currentTarget.checked)}
-                />
-                <span>
-                  <span class="ctitle">{report.title}</span>
-                  <span class="cdesc">{report.desc}</span>
-                </span>
-              </label>
-            {/each}
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="bots">Exclude bot / CI accounts (manual report)</label>
-          <TagInput
-            id="bots"
-            values={bots}
-            onChange={(next) => (bots = next)}
-            placeholder="e.g. ci-bot"
-          />
-          <p class="desc">
-            Publishers to treat as automation. Note: npm cannot distinguish a human from that
-            human&rsquo;s CI token, so &ldquo;manual&rdquo; is a proxy, not proof.
-          </p>
-        </div>
-
-        {#if selected.external}
-          <div class="field">
-            <label for="members">Org membership (for external report)</label>
-            <p class="desc members-copy">
-              npm exposes package maintainers publicly, but not org membership. Paste authenticated
-              membership output so the app can compare the two lists:
-            </p>
-            {#each orgs.length ? orgs : ["<org>"] as org (org)}
-              <div class="cmd-row">
-                <code class="cmd">npm org ls {org} --json</code>
-                <button
-                  class="btn btn--sm btn--ghost"
-                  type="button"
-                  onclick={() => copyCommand(org)}
-                >
-                  Copy
-                </button>
-              </div>
-            {/each}
-            <textarea
-              id="members"
-              value={membersRaw}
-              oninput={(event) => (membersRaw = event.currentTarget.value)}
-              placeholder={membersPlaceholder}></textarea>
-            <p class="desc">
-              Parsed {members.length} member{members.length === 1 ? "" : "s"}. Matching is
-              case-insensitive. The member list is used only for this audit and is not persisted.
-              Derived external findings are included in the saved report.
-            </p>
-          </div>
-        {/if}
-
         <div class="run-bar">
-          <button class="btn btn--primary" type="button" onclick={handleRun} disabled={busy}>
-            {running ? "Running…" : "Run audit"}
+          <button
+            class="btn btn--primary"
+            type="button"
+            onclick={handleRunUserPublishes}
+            disabled={busy}
+          >
+            {upRunning ? "Scanning…" : "Look up"}
           </button>
-          {#if running}
-            <span class="status">streaming to terminal →</span>
-          {:else if upRunning}
-            <span class="status">paused — user lookup running</span>
+          {#if upRunning}
+            <span class="status" role="status">streaming to terminal →</span>
+          {:else if running}
+            <span class="status" role="status">paused — audit running</span>
           {/if}
         </div>
-        {#if error}
-          <p class="inline-error">{error}</p>
+        {#if upError}
+          <p class="inline-error" id="user-publish-error" role="alert">{upError}</p>
         {/if}
-      </div>
-    </section>
-
-    <section>
-      <LogTerminal bind:this={terminal} activity={terminalActivity} />
-      <p class="note">
-        <strong>Live log</strong> shows audit progress and warnings.
-      </p>
-      {#if hasReports && result && !running}
-        <div class="report-ready">
-          <div class="report-ready__main">
-            <CircleCheck aria-hidden="true" size={18} strokeWidth={2} />
-            <div class="report-ready__text" role="status" aria-live="polite">
-              <strong>Report ready</strong>
-              <span>{reportReadySummary}</span>
-            </div>
+        {#if upResult}
+          <div class="user-publish-result">
+            <UserPublishView report={upResult} onToast={showToast} />
           </div>
-          <button class="btn btn--sm btn--ready" type="button" onclick={viewReport}>
-            <ArrowDown aria-hidden="true" size={15} strokeWidth={2} />
-            View report
-          </button>
-        </div>
-      {/if}
-      <HistoryPanel {orgs} enabled={all && orgs.length > 0} refreshKey={historyRefreshKey} />
-    </section>
-  </div>
-
-  {#if hasReports && result}
-    <section class="results" id="reports">
-      <div class="results__head">
-        <h2 id="audit-results-title" bind:this={resultsHeading} tabindex="-1">Audit results</h2>
-      </div>
-      <div class="share-bar">
-        <div>
-          <strong class="share-bar__title">Report link</strong>
-          {#if shareUrl}
-            <span class="share-bar__hint">Saved automatically after this run.</span>
-          {:else if reportSaveError}
-            <span class="share-bar__hint">Report link unavailable: {reportSaveError}</span>
-          {:else}
-            <span class="share-bar__hint">Link appears after the report is saved.</span>
-          {/if}
-        </div>
-        <div class="share-bar__actions">
-          <DailyTrackingButton
-            reportId={savedReportId}
-            enabled={savedReportCanTrackDaily}
-            onToast={showToast}
-          />
-          <button class="btn btn--ghost" type="button" onclick={copyShareLink} disabled={!shareUrl}>
-            Copy link
-          </button>
-        </div>
-      </div>
-      {#if shareUrl}
-        <div class="share-link">
-          <a href={shareUrl}>{shareUrl}</a>
-        </div>
-      {/if}
-      <ResultsView {result} onToast={showToast} initialTab={firstTab} />
-    </section>
-  {/if}
-
-  <p class="methodology-note">
-    &ldquo;Recency&rdquo; is the latest dist-tag&rsquo;s publish time. &ldquo;Manual&rdquo; means
-    the publisher isn&rsquo;t in your bot-exclusion list &mdash; npm can&rsquo;t tell a human
-    session from that account&rsquo;s automation token.
-  </p>
-
-  <section class="panel user-publish-panel">
-    <div class="panel__head">
-      <h2>User publish history</h2>
-      <span class="hint">standalone — by npm account</span>
-    </div>
-    <div class="panel__body">
-      <p class="desc user-publish-copy">
-        Versions attributed to a specific npm publisher within the window. This scans that
-        account&rsquo;s maintained packages, optionally combined with packages from the last audit
-        run.
-      </p>
-      <div class="row">
-        <div class="field">
-          <label for="up-user">npm username</label>
-          <input
-            id="up-user"
-            type="text"
-            value={upUser}
-            oninput={(event) => (upUser = event.currentTarget.value)}
-            placeholder="e.g. some-maintainer"
-          />
-        </div>
-        <div class="field">
-          <label for="up-months">User window (months)</label>
-          <input
-            id="up-months"
-            type="number"
-            min="1"
-            max="120"
-            value={upMonths}
-            oninput={(event) => (upMonths = Number(event.currentTarget.value) || 1)}
-          />
-        </div>
-      </div>
-      <div class="field">
-        <label class="toggle">
-          <input
-            type="checkbox"
-            checked={upUseCache}
-            disabled={!result?.trust}
-            onchange={(event) => (upUseCache = event.currentTarget.checked)}
-          />
-          Also scan packages from the last audit run
-          {#if !result?.trust}
-            (run an audit first)
-          {/if}
-        </label>
-      </div>
-      <div class="run-bar">
-        <button
-          class="btn btn--primary"
-          type="button"
-          onclick={handleRunUserPublishes}
-          disabled={busy}
-        >
-          {upRunning ? "Scanning…" : "Look up"}
-        </button>
-        {#if upRunning}
-          <span class="status">streaming to terminal →</span>
-        {:else if running}
-          <span class="status">paused — audit running</span>
         {/if}
       </div>
-      {#if upError}
-        <p class="inline-error">{upError}</p>
-      {/if}
-      {#if upResult}
-        <div class="user-publish-result">
-          <UserPublishView report={upResult} onToast={showToast} />
-        </div>
-      {/if}
-    </div>
-  </section>
+    </section>
+  </main>
 
   <footer class="footer">
     <p class="footer__brand">
@@ -615,7 +628,13 @@
     </p>
   </footer>
 
-  {#if toast}
-    <div class="toast">{toast}</div>
-  {/if}
+  <div
+    class:toast={!!toast}
+    class:sr-only={!toast}
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+  >
+    {toast ?? ""}
+  </div>
 </div>

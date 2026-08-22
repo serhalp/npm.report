@@ -39,6 +39,14 @@ describe("HistoryPanel", () => {
     vi.unstubAllGlobals();
   });
 
+  test("exposes its loading state", () => {
+    vi.stubGlobal("fetch", vi.fn().mockReturnValue(new Promise(() => {})));
+
+    render(HistoryPanel, { props: { orgs: ["netlify"] } });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Loading history…");
+  });
+
   test("stays hidden when disabled", () => {
     mockHistory({ orgs: [], points: [] });
 
