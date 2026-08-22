@@ -47,7 +47,7 @@
     },
   ];
 
-  // A shared report's "Re-run this audit" button links here with the run config
+  // A shared report's "Re-run this audit" link points here with the run config
   // in the query string; pre-fill the form from it (and, when the run won't be
   // blocked on a missing member list, run immediately).
   interface Prefill {
@@ -335,7 +335,7 @@
     </p>
   </header>
 
-  <main>
+  <main tabindex="-1">
     {#if !result}
       <SamplePreview />
     {/if}

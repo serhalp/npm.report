@@ -32,9 +32,13 @@ describe("SharedReport", () => {
       await screen.findByRole("heading", { level: 2, name: "Audit of netlify" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "false");
-    expect(screen.getByText("netlify")).toBeInTheDocument();
-    expect(screen.getByText(/generated 2026-06-27/)).toBeInTheDocument();
+    expect(screen.getByText("netlify").closest("p")).toHaveTextContent(
+      /Audit of netlify — last 12 months, generated 2026-06-27/,
+    );
     expect(screen.getAllByText("last 12 months").length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: "Re-run this audit" }).getAttribute("href")).toContain(
+      "run=1",
+    );
     expect(screen.getByRole("link", { name: "npm.report on GitHub" })).toHaveAttribute(
       "href",
       "https://github.com/serhalp/npm.report",
@@ -112,6 +116,9 @@ describe("SharedReport", () => {
     });
 
     expect(await screen.findByRole("heading", { name: "Progress over time" })).toBeInTheDocument();
+    expect(document.querySelector(".masthead > p")).toHaveTextContent(
+      /Audit of netlify, generated 2026-06-27/,
+    );
     expect(screen.getByRole("tab", { name: /package trust level/i })).toBeInTheDocument();
     expect(await screen.findByRole("link", { name: "2026-06-27" })).toHaveAttribute(
       "href",

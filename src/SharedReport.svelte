@@ -30,6 +30,7 @@
   let record = $state<ReportRecord | null>(null);
   let reportHistory = $state<ReportHistoryResponse | null>(null);
   let error = $state<string | null>(null);
+  let loading = $state(true);
   let toast = $state<string | null>(null);
 
   function generatedDay(value: ReportRecord | null): string | null {
@@ -37,6 +38,9 @@
   }
 
   let when = $derived(generatedDay(record));
+  let auditDetails = $derived(
+    `${record?.scopeLabel && record.scopeLabel !== "ALL org packages" ? ` — ${record.scopeLabel}` : ""}${when ? `, generated ${when}` : ""}`,
+  );
   let historyOrgs = $derived(record?.payload.trust?.summary.orgs ?? []);
   let historyEnabled = $derived(
     record?.scopeLabel === "ALL org packages" && !!record.payload.trust,
@@ -106,8 +110,7 @@
 
   $effect(() => {
     let cancelled = false;
-    record = null;
-    reportHistory = null;
+    loading = true;
     error = null;
 
     fetch(`/api/reports/${encodeURIComponent(id)}`)
@@ -125,10 +128,16 @@
         if (!cancelled) {
           reportHistory = history;
           record = next;
+          loading = false;
         }
       })
       .catch((reason: unknown) => {
-        if (!cancelled) error = reason instanceof Error ? reason.message : "Failed to load report.";
+        if (!cancelled) {
+          record = null;
+          reportHistory = null;
+          error = reason instanceof Error ? reason.message : "Failed to load report.";
+          loading = false;
+        }
       });
 
     return () => {
@@ -150,18 +159,15 @@
     </div>
     {#if record}
       <p>
-        Audit of <strong>{record.orgs || "npm packages"}</strong>
-        {record.scopeLabel && record.scopeLabel !== "ALL org packages"
-          ? ` — ${record.scopeLabel}`
-          : ""}
-        {when ? `, generated ${when}` : ""}. This is a read-only snapshot.
+        Audit of <strong>{record.orgs || "npm packages"}</strong>{auditDetails}. This is a read-only
+        snapshot.
         <br />
         <a href="/">Run your own audit →</a>
       </p>
     {/if}
   </header>
 
-  <main aria-busy={!record && !error}>
+  <main tabindex="-1" aria-busy={loading}>
     {#if error}
       <section class="panel">
         <div class="panel__body">
@@ -182,16 +188,10 @@
     {#if record}
       <h2 class="sr-only">Audit of {record.orgs || "npm packages"}</h2>
       <div class="shared-actions">
-        <button
-          class="btn btn--primary"
-          type="button"
-          onclick={() => {
-            if (record) window.location.href = rerunHref(record);
-          }}
-        >
+        <a class="btn btn--primary" href={rerunHref(record)}>
           <RefreshCw aria-hidden="true" size={15} strokeWidth={2} />
           Re-run this audit
-        </button>
+        </a>
         <DailyTrackingButton
           reportId={record.id}
           enabled={historyEnabled}

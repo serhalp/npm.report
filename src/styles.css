@@ -135,6 +135,10 @@ body {
   padding: 0;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background-color: var(--ink-900);
   color: var(--fg);
@@ -721,6 +725,7 @@ textarea {
   border: 1px solid var(--line);
   background: var(--ink-700);
   color: var(--fg);
+  text-decoration: none;
   border-radius: var(--radius);
   padding: 0.625rem 1rem;
   line-height: var(--leading-ui);
@@ -732,6 +737,7 @@ textarea {
 }
 .btn:hover:not(:disabled) {
   border-color: var(--gold-dim);
+  text-decoration: none;
 }
 .btn:active:not(:disabled) {
   transform: translateY(1px);
