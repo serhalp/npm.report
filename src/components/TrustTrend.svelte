@@ -20,12 +20,13 @@
   // Fixed 0–100 y-scale keeps histories comparable. X positions follow actual
   // capture times, so missing days do not look adjacent.
   const W = 720;
-  const H = 230;
+  const H = 192;
   const PAD_LEFT = 42;
   const PAD_RIGHT = 10;
-  const PAD_TOP = 48;
-  const PAD_BOTTOM = 42;
+  const PAD_TOP = 26;
+  const PAD_BOTTOM = 36;
   const PLOT_BOTTOM = H - PAD_BOTTOM;
+  const DATE_LABEL_SPACING = 52;
 
   function timestampAt(index: number): number {
     const parsed = Date.parse(points[index]?.capturedAt ?? "");
@@ -97,6 +98,17 @@
       .join(", ");
   }
 
+  function prioritizeDateLabel(indices: number[], prioritizedIndex: number): number[] {
+    const prioritizedX = xAt(prioritizedIndex);
+    return [
+      ...indices.filter(
+        (index) =>
+          index === prioritizedIndex || Math.abs(xAt(index) - prioritizedX) >= DATE_LABEL_SPACING,
+      ),
+      ...(indices.includes(prioritizedIndex) ? [] : [prioritizedIndex]),
+    ].toSorted((left, right) => left - right);
+  }
+
   function handleTargetKeydown(event: KeyboardEvent, index: number): void {
     if (event.key === "Escape") {
       activeIndex = null;
@@ -129,9 +141,18 @@
   let latestStrong = $derived(strong.at(-1) ?? 0);
   let latestAny = $derived(any.at(-1) ?? 0);
   let latestNone = $derived(none.at(-1) ?? 0);
-  let dateCandidates = $derived(trendDateCandidates(points));
-  let dateLabelIndices = $derived(spacedTrendDateIndices(dateCandidates, xAt, 52));
   let currentIndex = $derived(points.findIndex((point) => point.id === currentReportId));
+  let showCurrentIndicator = $derived(currentIndex >= 0 && currentIndex < points.length - 1);
+  let showCurrentLabel = $derived(showCurrentIndicator && activeIndex === currentIndex);
+  let dateCandidates = $derived(trendDateCandidates(points));
+  let spacedDateLabelIndices = $derived(
+    spacedTrendDateIndices(dateCandidates, xAt, DATE_LABEL_SPACING),
+  );
+  let dateLabelIndices = $derived(
+    showCurrentIndicator
+      ? prioritizeDateLabel(spacedDateLabelIndices, currentIndex)
+      : spacedDateLabelIndices,
+  );
   let preferredKeyboardIndex = $derived(
     currentIndex >= 0 ? currentIndex : Math.max(0, points.length - 1),
   );
@@ -147,7 +168,7 @@
 
 <svelte:window onkeydown={handleWindowKeydown} />
 
-<figure class="trust-trend">
+<figure class="trust-trend" style={`--trend-plot-top: ${(PAD_TOP / H) * 100}%`}>
   <figcaption class="trust-trend__legend">
     <span class="trust-trend__key trust-trend__key--strong">Strong trust</span>
     <span class="trust-trend__key trust-trend__key--any">Any trust</span>
@@ -176,6 +197,7 @@
         {#each dateLabelIndices as index (index)}
           <line
             class="trust-trend__tick"
+            class:trust-trend__tick--current={showCurrentIndicator && index === currentIndex}
             x1={xAt(index)}
             x2={xAt(index)}
             y1={PLOT_BOTTOM}
@@ -186,37 +208,21 @@
         {#each dateLabelIndices as index (index)}
           <text
             class="trust-trend__axis-label trust-trend__axis-label--x"
+            class:trust-trend__axis-label--current={showCurrentIndicator && index === currentIndex}
             x={xAt(index)}
             y={PLOT_BOTTOM + 19}
             text-anchor={index === 0 ? "start" : index === points.length - 1 ? "end" : "middle"}
-            >{shortDay(index)}</text
+            >{shortDay(index)}{#if showCurrentLabel && index === currentIndex}<tspan
+                class="trust-trend__current-label"
+                x={xAt(index)}
+                dy="12">[viewing]</tspan
+              >{/if}</text
           >
         {/each}
 
         <polyline class="trust-trend__line trust-trend__line--none" points={linePoints(none)} />
         <polyline class="trust-trend__line trust-trend__line--any" points={linePoints(any)} />
         <polyline class="trust-trend__line trust-trend__line--strong" points={linePoints(strong)} />
-
-        {#if currentIndex >= 0}
-          <line
-            class="trust-trend__current-line"
-            x1={xAt(currentIndex)}
-            x2={xAt(currentIndex)}
-            y1={PAD_TOP}
-            y2={PLOT_BOTTOM}
-          />
-          <circle class="trust-trend__current-marker" cx={xAt(currentIndex)} cy={PAD_TOP} r="3" />
-          <text
-            class="trust-trend__current-label"
-            x={xAt(currentIndex)}
-            y={PAD_TOP - 9}
-            text-anchor={currentIndex === 0
-              ? "start"
-              : currentIndex === points.length - 1
-                ? "end"
-                : "middle"}>[viewing]</text
-          >
-        {/if}
 
         {#if activeIndex !== null}
           <line
@@ -279,7 +285,6 @@
         >
           <div class="trust-trend__tooltip-head">
             <strong>{fullDay(activeIndex)}</strong>
-            {#if point.id === currentReportId}<span>[viewing]</span>{/if}
           </div>
           <dl>
             <div>

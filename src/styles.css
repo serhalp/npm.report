@@ -1419,21 +1419,15 @@ textarea {
   stroke: var(--t-none);
   stroke-dasharray: 1 5;
 }
-.trust-trend__current-line {
+.trust-trend__tick--current {
   stroke: var(--gold);
-  stroke-dasharray: 3 3;
-  vector-effect: non-scaling-stroke;
 }
-.trust-trend__current-marker {
-  fill: var(--gold);
-  stroke: var(--ink-850);
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
-}
+.trust-trend__axis-label--current,
 .trust-trend__current-label {
   fill: var(--gold);
-  font-family: var(--mono);
-  font-size: 10.5px;
+}
+.trust-trend__current-label {
+  font-size: 9px;
 }
 .trust-trend__hover-line {
   stroke: var(--fg-dim);
@@ -1473,7 +1467,7 @@ textarea {
 }
 .trust-trend__legend {
   position: absolute;
-  top: var(--space-2xs);
+  top: var(--trend-plot-top);
   right: var(--space-sm);
   z-index: 2;
   display: flex;
@@ -1482,6 +1476,9 @@ textarea {
   gap: var(--space-sm) var(--space-md);
   max-width: calc(100% - 3rem);
   margin: 0;
+  padding-inline-start: var(--space-sm);
+  background: var(--ink-850);
+  transform: translateY(-50%);
   font-family: var(--mono);
   font-size: var(--text-xs);
   color: var(--fg-dim);
@@ -1540,10 +1537,6 @@ textarea {
   align-items: baseline;
   gap: var(--space-md);
   margin-bottom: var(--space-xs);
-}
-.trust-trend__tooltip-head span {
-  color: var(--gold);
-  font-size: 0.6875rem;
 }
 .trust-trend__tooltip dl,
 .trust-trend__tooltip dl > div {

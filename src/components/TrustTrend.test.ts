@@ -60,12 +60,37 @@ describe("TrustTrend", () => {
     expect(container.querySelectorAll(".trust-trend__tick")).toHaveLength(
       container.querySelectorAll(".trust-trend__axis-label--x").length,
     );
-    expect(container.querySelector(".trust-trend__current-line")).toBeInTheDocument();
-    expect(screen.getByText("[viewing]", { selector: "text" })).toBeInTheDocument();
+    expect(container.querySelector(".trust-trend > .trust-trend__legend")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /2026-07-03 report/i })).toHaveAttribute(
       "aria-current",
       "page",
     );
+  });
+
+  test("marks an older current report on the x-axis and labels it while active", async () => {
+    const { container } = render(TrustTrend, {
+      props: { points, currentReportId: "two", linkReports: true },
+    });
+    const current = screen.getByRole("link", { name: /2026-07-03 report/i });
+
+    expect(screen.getByText("07-03")).toHaveClass("trust-trend__axis-label--current");
+    expect(container.querySelector(".trust-trend__tick--current")).toBeInTheDocument();
+
+    await fireEvent.pointerEnter(current);
+
+    expect(screen.getByText("[viewing]")).toHaveClass("trust-trend__current-label");
+  });
+
+  test("does not call out the current report when it is already latest", async () => {
+    const { container } = render(TrustTrend, {
+      props: { points, currentReportId: "three", linkReports: true },
+    });
+
+    await fireEvent.pointerEnter(screen.getByRole("link", { name: /2026-07-09 report/i }));
+
+    expect(screen.getByRole("tooltip")).toHaveTextContent("2026-07-09");
+    expect(container.querySelector(".trust-trend__axis-label--current")).not.toBeInTheDocument();
+    expect(container.querySelector(".trust-trend__tick--current")).not.toBeInTheDocument();
   });
 
   test("reveals exact values on hover and links each snapshot to its report", async () => {
