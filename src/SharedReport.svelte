@@ -150,7 +150,9 @@
     {#if record}
       <p>
         Audit of <strong>{record.orgs || "npm packages"}</strong>
-        {record.scopeLabel ? ` — ${record.scopeLabel}` : ""}
+        {record.scopeLabel && record.scopeLabel !== "ALL org packages"
+          ? ` — ${record.scopeLabel}`
+          : ""}
         {when ? `, generated ${when}` : ""}. This is a read-only snapshot.
         <a href="/">Run your own audit →</a>
       </p>

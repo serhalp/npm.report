@@ -110,7 +110,6 @@
   <section class="panel history-panel" aria-labelledby="history-title">
     <div class="panel__head">
       <h2 id="history-title">Progress over time</h2>
-      <span class="hint">ALL org packages</span>
     </div>
     <div class="panel__body">
       <p class="desc history-copy">

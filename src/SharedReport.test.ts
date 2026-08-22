@@ -30,6 +30,7 @@ describe("SharedReport", () => {
     expect(await screen.findByText(/Audit of/)).toBeInTheDocument();
     expect(screen.getByText("netlify")).toBeInTheDocument();
     expect(screen.getByText(/generated 2026-06-27/)).toBeInTheDocument();
+    expect(screen.getAllByText("last 12 months").length).toBeGreaterThan(0);
     expect(fetch).toHaveBeenCalledWith("/api/reports/report%2Fid");
   });
 

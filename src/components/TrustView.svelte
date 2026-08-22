@@ -15,6 +15,9 @@
 
   let rows = $derived(report.rows);
   let summary = $derived(report.summary);
+  let scopeNote = $derived(
+    summary.scopeLabel === "ALL org packages" ? undefined : summary.scopeLabel,
+  );
 
   const columns: Column<TrustRow>[] = [
     { key: "pkg", header: "Package" },
@@ -82,7 +85,7 @@
 
 <div>
   <div class="statgrid">
-    <Stat k="In scope" v={summary.total} sub={summary.scopeLabel} />
+    <Stat k="In scope" v={summary.total} sub={scopeNote} />
     <Stat k="Staged publish" v={summary.byLevel.stagedPublish} variant="accent" />
     <Stat k="Trusted publisher" v={summary.byLevel.trustedPublisher} variant="accent" />
     <Stat k="Provenance only" v={summary.byLevel.provenance} />
