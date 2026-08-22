@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { streamAudit } from "./auditStream";
+import { streamAudit, type AuditStreamRequest } from "./auditStream";
 
 const evt = (event: string, data: unknown, id?: number) => {
   const idLine = id === undefined ? "" : `id: ${id}\n`;
@@ -26,9 +26,9 @@ function sseResponse(frames: string[], { chunkBytes = false } = {}) {
   };
 }
 
-const REQUEST = {
+const REQUEST: AuditStreamRequest = {
   orgs: ["netlify"],
-  kinds: ["trust"] as const,
+  kinds: ["trust"],
   months: 12,
   all: true,
   bots: [],
