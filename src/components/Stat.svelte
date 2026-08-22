@@ -5,7 +5,7 @@
     k: string;
     v: string | number;
     sub?: string;
-    variant?: "accent" | "risk";
+    variant?: "accent" | "strong" | "any" | "risk";
     /** Optional trend series — renders a sparkline under the value. */
     spark?: number[];
     /** Optional evenly spaced x-axis labels for the sparkline. */

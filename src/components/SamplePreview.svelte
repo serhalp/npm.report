@@ -1,5 +1,8 @@
 <script lang="ts">
   import Stat from "./Stat.svelte";
+  import TrustTrend from "./TrustTrend.svelte";
+  import { EXAMPLE_TRUST_HISTORY_POINTS } from "../lib/exampleTrustHistory.ts";
+  import { anyTrustCount, strongTrustCount, trustPercent } from "../lib/reportHistory";
   import type { TrustLevel } from "../lib/types";
 
   // A static, illustrative report so first-time visitors see what npm.report
@@ -58,42 +61,11 @@
     },
   ];
 
-  const TOTAL_PACKAGES = 60;
-  const TREND_COUNTS: { strong: number; any: number }[] = [
-    { strong: 6, any: 15 },
-    { strong: 6, any: 15 },
-    { strong: 6, any: 15 },
-    { strong: 6, any: 15 },
-    { strong: 6, any: 16 },
-    { strong: 7, any: 16 },
-    { strong: 7, any: 16 },
-    { strong: 7, any: 16 },
-    { strong: 7, any: 25 },
-    { strong: 14, any: 25 },
-    { strong: 14, any: 25 },
-    { strong: 14, any: 25 },
-    { strong: 14, any: 25 },
-    { strong: 14, any: 25 },
-    { strong: 14, any: 25 },
-    { strong: 14, any: 26 },
-    { strong: 15, any: 26 },
-    { strong: 15, any: 26 },
-    { strong: 15, any: 26 },
-    { strong: 15, any: 26 },
-    { strong: 22, any: 36 },
-    { strong: 22, any: 36 },
-    { strong: 22, any: 36 },
-    { strong: 22, any: 36 },
-    { strong: 22, any: 36 },
-    { strong: 24, any: 39 },
-    { strong: 24, any: 39 },
-    { strong: 24, any: 39 },
-  ];
+  const LATEST = EXAMPLE_TRUST_HISTORY_POINTS.at(-1)!;
 
-  const toPercent = (count: number): number => Math.round((count / TOTAL_PACKAGES) * 100);
-  const STRONG_TREND = TREND_COUNTS.map(({ strong }) => toPercent(strong));
-  const ANY_TRUST_TREND = TREND_COUNTS.map(({ any }) => toPercent(any));
-  const NO_TRUST_TREND = ANY_TRUST_TREND.map((any) => 100 - any);
+  function pctCount(count: number): string {
+    return `${trustPercent(count, LATEST.total).toFixed(0)}% (${count})`;
+  }
 </script>
 
 <section class="preview" aria-labelledby="preview-tag">
@@ -101,31 +73,23 @@
     <span class="preview__tag" id="preview-tag">Example report</span>
   </div>
 
-  <div class="preview__stats">
+  <div class="statgrid trust-summary preview__stats">
     <Stat
       k="Strong trust"
-      v="40% (24)"
+      v={pctCount(strongTrustCount(LATEST))}
       sub="staged or trusted"
-      variant="accent"
-      spark={STRONG_TREND}
-      sparkLabels={["06-22", "07-01", "07-10", "07-19"]}
+      variant="strong"
     />
-    <Stat
-      k="Any trust"
-      v="65% (39)"
-      sub="incl. provenance"
-      spark={ANY_TRUST_TREND}
-      sparkLabels={["06-22", "07-01", "07-10", "07-19"]}
-    />
+    <Stat k="Any trust" v={pctCount(anyTrustCount(LATEST))} sub="incl. provenance" variant="any" />
     <Stat
       k="No trust signal"
-      v="35% (21)"
+      v={pctCount(LATEST.byLevel.none)}
+      sub="no trust metadata detected"
       variant="risk"
-      spark={NO_TRUST_TREND}
-      sparkLabels={["06-22", "07-01", "07-10", "07-19"]}
     />
   </div>
   <p class="preview__trend">Every package owned by acme, tracked daily.</p>
+  <TrustTrend points={EXAMPLE_TRUST_HISTORY_POINTS} />
 
   <div class="preview__frame" aria-hidden="true">
     <table class="preview__table">

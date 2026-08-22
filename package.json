@@ -8,6 +8,7 @@
   "scripts": {
     "build": "vite build",
     "build:analyze": "rm -rf .sonda/ && SONDA=true vite build",
+    "db:seed:local": "node --experimental-strip-types db/seed-local.ts",
     "dev": "vite",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",

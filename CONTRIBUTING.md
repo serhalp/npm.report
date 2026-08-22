@@ -13,6 +13,19 @@ The dev server runs the Vite app at `http://localhost:5173`. The Netlify Vite pl
 platform locally, wiring the `/api/*` routes for the audit stream, report links, and daily
 package-trust tracking API, hooking up Netlify Database, etc.
 
+To populate the local database with a repeatable 28-day trust history for the fictional `acme`
+organization, leave the dev server running and run:
+
+```bash
+pnpm run db:seed:local
+```
+
+Then enter `acme` in the organization field or open `/report/dev-example-acme-2026-07-19`. Daily
+tracking is already enabled for the seeded org, so the shared report shows the disabled tracking
+state. The seed
+uses Netlify's local database connection and is kept outside `netlify/database/migrations`, so it is
+never applied by a deploy.
+
 ## Before changing behaviour
 
 - Preserve partial-failure visibility. A failed or rate-limited fetch must be recorded and surfaced,

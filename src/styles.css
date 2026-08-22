@@ -1282,6 +1282,12 @@ textarea {
 .stat--accent .v {
   color: var(--gold);
 }
+.stat--strong .v {
+  color: var(--t-trusted);
+}
+.stat--any .v {
+  color: var(--t-provenance);
+}
 .stat--risk {
   border-color: var(--risk-line);
 }
