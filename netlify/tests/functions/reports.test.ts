@@ -298,6 +298,22 @@ describe("reports function", () => {
       },
     ]);
 
+    const laterHistory = makeHistory(
+      "netlify-2026-06-28-bbbbbbbb",
+      "netlify",
+      ["netlify"],
+      "2026-06-28T10:00:00.000Z",
+    );
+    await insertHistory(laterHistory);
+    const trackedOrgReport = await handler(
+      new Request(`https://audit.example/api/reports/${laterHistory.reportId}`),
+    );
+    await expect(trackedOrgReport.json()).resolves.toMatchObject({
+      id: laterHistory.reportId,
+      dailyTrackingEnabled: true,
+      dailyTrackingNextRunAt: "2026-06-28T10:00:00.000Z",
+    });
+
     const missing = await handler(
       new Request("https://audit.example/api/reports/manual-only/schedule-daily", {
         method: "POST",
@@ -322,6 +338,8 @@ describe("reports function", () => {
     await expect(found.json()).resolves.toEqual({
       ...row,
       createdAt: "2026-06-27T11:00:00.000Z",
+      dailyTrackingEnabled: false,
+      dailyTrackingNextRunAt: null,
     });
 
     const missing = await handler(new Request("https://audit.example/api/reports/missing"));

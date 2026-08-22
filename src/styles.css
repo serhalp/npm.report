@@ -31,6 +31,9 @@
   --danger: #e0675a;
   --danger-soft: rgba(224, 103, 90, 0.12);
   --risk-line: rgba(224, 122, 95, 0.4);
+  --status-ok: #8fbf7f;
+  --status-ok-soft: rgba(143, 191, 127, 0.08);
+  --status-ok-line: rgba(143, 191, 127, 0.38);
 
   --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --sans: "IBM Plex Sans Variable", "IBM Plex Sans", system-ui, sans-serif;
@@ -115,6 +118,9 @@
   --danger: #b63c2f;
   --danger-soft: rgba(182, 60, 47, 0.11);
   --risk-line: rgba(185, 71, 46, 0.38);
+  --status-ok: #3f7d3b;
+  --status-ok-soft: rgba(63, 125, 59, 0.09);
+  --status-ok-line: rgba(63, 125, 59, 0.42);
 
   --shadow: 0 14px 34px -28px rgba(23, 32, 42, 0.45);
   --row-hover: rgba(23, 32, 42, 0.035);
@@ -1181,6 +1187,30 @@ textarea {
 .schedule-cta > span.error {
   color: var(--danger);
 }
+.tracking-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.5625rem 0.75rem;
+  border: 1px solid var(--status-ok-line);
+  border-radius: var(--radius);
+  background: var(--status-ok-soft);
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-ui);
+  white-space: nowrap;
+}
+.tracking-status svg,
+.tracking-status__label {
+  color: var(--status-ok);
+}
+.tracking-status__label {
+  font-weight: 600;
+}
+.tracking-status__separator,
+.tracking-status__next {
+  color: var(--fg-dim);
+}
 .share-link {
   display: flex;
   align-items: center;
@@ -1342,6 +1372,9 @@ textarea {
 .shared-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
   margin: -0.625rem 0 1.125rem;
 }
 .history-copy {

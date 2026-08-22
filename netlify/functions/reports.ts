@@ -1,6 +1,6 @@
 import type { Config } from "@netlify/functions";
 import { getDb } from "../../db/index.js";
-import { parseRows, ReportRowSchema, ReportTrustHistoryRowSchema } from "../../db/schema.js";
+import { parseRows, ReportTrustHistoryRowSchema, SharedReportRowSchema } from "../../db/schema.js";
 import {
   normalizeOrgs,
   orgKeyFor,
@@ -94,16 +94,24 @@ export default async (req: Request) => {
     if (!id) return new Response("Not found", { status: 404 });
     const db = getDb();
     const [row] = parseRows(
-      ReportRowSchema,
+      SharedReportRowSchema,
       await db.sql<unknown>`
         SELECT
-          id,
-          orgs,
-          scope_label AS "scopeLabel",
-          payload,
-          created_at AS "createdAt"
+          reports.id,
+          reports.orgs,
+          reports.scope_label AS "scopeLabel",
+          reports.payload,
+          reports.created_at AS "createdAt",
+          COALESCE(report_rerun_schedules.enabled, ${false}) AS "dailyTrackingEnabled",
+          report_rerun_schedules.next_run_at AS "dailyTrackingNextRunAt"
         FROM reports
-        WHERE id = ${id}
+        LEFT JOIN report_trust_history
+          ON report_trust_history.report_id = reports.id
+        LEFT JOIN report_rerun_schedules
+          ON
+            report_rerun_schedules.org_key = report_trust_history.org_key
+            AND report_rerun_schedules.enabled = ${true}
+        WHERE reports.id = ${id}
       `,
     );
     if (!row) return new Response("Not found", { status: 404 });

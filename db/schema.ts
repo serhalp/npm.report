@@ -14,6 +14,18 @@ export const ReportRowSchema = v.object({
 });
 export type ReportRow = v.InferOutput<typeof ReportRowSchema>;
 
+// Schedule state is joined at read time rather than stored on the report row.
+export const SharedReportRowSchema = v.object({
+  id: v.string(),
+  orgs: v.string(),
+  scopeLabel: v.string(),
+  payload: v.unknown(),
+  createdAt: v.nullable(v.date()),
+  dailyTrackingEnabled: v.boolean(),
+  dailyTrackingNextRunAt: v.nullable(v.date()),
+});
+export type SharedReportRow = v.InferOutput<typeof SharedReportRowSchema>;
+
 export const ReportTrustHistoryRowSchema = v.object({
   reportId: v.string(),
   orgKey: v.string(),

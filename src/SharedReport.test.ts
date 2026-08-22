@@ -1,5 +1,4 @@
 import { render, screen, waitFor } from "@testing-library/svelte";
-import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import SharedReport from "./SharedReport.svelte";
 import { auditResult, trustReport } from "./test/fixtures";
@@ -19,6 +18,8 @@ describe("SharedReport", () => {
           scopeLabel: "last 12 months",
           payload: auditResult,
           createdAt: "2026-06-27T12:34:56.000Z",
+          dailyTrackingEnabled: false,
+          dailyTrackingNextRunAt: null,
         }),
       }),
     );
@@ -32,80 +33,7 @@ describe("SharedReport", () => {
     expect(fetch).toHaveBeenCalledWith("/api/reports/report%2Fid");
   });
 
-  test("shows trust history for all-scope shared reports", async () => {
-    const user = userEvent.setup();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        if (String(input) === "/api/reports/report-id") {
-          return {
-            ok: true,
-            status: 200,
-            json: async () => ({
-              id: "report-id",
-              orgs: "netlify",
-              scopeLabel: "ALL org packages",
-              payload: {
-                ...auditResult,
-                trust: {
-                  ...trustReport,
-                  summary: {
-                    ...trustReport.summary,
-                    scopeLabel: "ALL org packages",
-                  },
-                },
-              },
-              createdAt: "2026-06-27T12:34:56.000Z",
-            }),
-          };
-        }
-        if (String(input) === "/api/reports/report-id/schedule-daily") {
-          return {
-            ok: true,
-            status: 201,
-            json: async () => ({
-              orgs: ["netlify"],
-              enabled: true,
-              nextRunAt: "2026-06-28T12:34:56.000Z",
-              lastRunAt: null,
-              lastReportId: "report-id",
-              consecutiveFailures: 0,
-            }),
-          };
-        }
-        return {
-          ok: true,
-          status: 200,
-          json: async () => ({
-            orgs: ["netlify"],
-            points: [
-              {
-                id: "report-id",
-                url: "/report/report-id",
-                capturedAt: "2026-06-27T12:34:56.000Z",
-                total: 2,
-                byLevel: trustReport.summary.byLevel,
-                deprecated: 1,
-                failureCount: 1,
-              },
-            ],
-          }),
-        };
-      }),
-    );
-
-    render(SharedReport, { props: { id: "report-id" } });
-
-    expect(await screen.findByRole("heading", { name: "Progress over time" })).toBeInTheDocument();
-    expect(await screen.findByRole("link", { name: "2026-06-27" })).toHaveAttribute(
-      "href",
-      "/report/report-id",
-    );
-    await user.click(screen.getByRole("button", { name: "Track daily" }));
-    expect(await screen.findByRole("button", { name: "Tracking daily" })).toBeDisabled();
-  });
-
-  test("waits for trust history before rendering an all-scope report", async () => {
+  test("shows trust history and disables tracking for an already tracked org set", async () => {
     let resolveHistory!: (value: {
       ok: boolean;
       status: number;
@@ -135,6 +63,8 @@ describe("SharedReport", () => {
               },
             },
             createdAt: "2026-06-27T12:34:56.000Z",
+            dailyTrackingEnabled: true,
+            dailyTrackingNextRunAt: "2026-06-28T12:34:56.000Z",
           }),
         };
       }
@@ -173,6 +103,14 @@ describe("SharedReport", () => {
     expect(screen.getByRole("link", { name: "2026-06-27" })).toHaveAttribute(
       "href",
       "/report/report-id",
+    );
+    expect(screen.queryByRole("button", { name: "Tracking daily" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("status", { name: "Tracking daily, next run 2026-06-28 12:34Z" }),
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      "/api/reports/report-id/schedule-daily",
+      expect.anything(),
     );
   });
 

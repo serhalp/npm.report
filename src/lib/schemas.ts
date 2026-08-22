@@ -76,6 +76,8 @@ export const ReportRecordSchema = v.looseObject({
   scopeLabel: v.string(),
   payload: AuditResultSchema,
   createdAt: v.nullable(v.string()),
+  dailyTrackingEnabled: v.boolean(),
+  dailyTrackingNextRunAt: v.nullable(v.string()),
 });
 
 const TrustHistoryPoint = v.looseObject({

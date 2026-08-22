@@ -16,6 +16,8 @@
     scopeLabel: string;
     payload: AuditResult;
     createdAt: string | null;
+    dailyTrackingEnabled: boolean;
+    dailyTrackingNextRunAt: string | null;
   }
 
   interface Props {
@@ -184,7 +186,13 @@
         <RefreshCw aria-hidden="true" size={15} strokeWidth={2} />
         Re-run this audit
       </button>
-      <DailyTrackingButton reportId={record.id} enabled={historyEnabled} onToast={showToast} />
+      <DailyTrackingButton
+        reportId={record.id}
+        enabled={historyEnabled}
+        alreadyTracked={record.dailyTrackingEnabled}
+        nextRunAt={record.dailyTrackingNextRunAt}
+        onToast={showToast}
+      />
     </div>
     <HistoryPanel
       orgs={historyOrgs}

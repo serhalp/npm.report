@@ -198,8 +198,12 @@ describe("App", () => {
     expect(fetch).toHaveBeenCalledWith("/api/reports/netlify-2026-06-27-abc12345/schedule-daily", {
       method: "POST",
     });
-    expect(await screen.findByRole("button", { name: "Tracking daily" })).toBeDisabled();
-    expect(screen.getByText("Next run 2026-06-28.")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("status", {
+        name: "Tracking daily, next run 2026-06-28 12:00Z",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Tracking daily" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Copy link" }));
     expect(writeText).toHaveBeenCalledWith(
