@@ -40,6 +40,15 @@ describe("App", () => {
 
   afterEach(() => vi.unstubAllGlobals());
 
+  test("links to the source repository from the footer", () => {
+    render(App);
+
+    expect(screen.getByRole("link", { name: "npm.report on GitHub" })).toHaveAttribute(
+      "href",
+      "https://github.com/serhalp/npm.report",
+    );
+  });
+
   test("validates required organizations before running", async () => {
     const user = userEvent.setup();
     render(App);

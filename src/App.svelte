@@ -6,6 +6,7 @@
   import SamplePreview from "./components/SamplePreview.svelte";
   import DailyTrackingButton from "./components/DailyTrackingButton.svelte";
   import ResultsView from "./components/ResultsView.svelte";
+  import SiteFooter from "./components/SiteFooter.svelte";
   import TagInput from "./components/TagInput.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import TrustGlossary from "./components/TrustGlossary.svelte";
@@ -618,15 +619,7 @@
     </section>
   </main>
 
-  <footer class="footer">
-    <p class="footer__brand">
-      <span class="footer__mark">npm<span class="dot">.</span>report</span> · No affiliation or
-      endorsement by npm, Inc. · Made by
-      <a href="https://philippeserhal.com/" target="_blank" rel="noopener noreferrer"
-        >Philippe Serhal</a
-      >.
-    </p>
-  </footer>
+  <SiteFooter />
 
   <div
     class:toast={!!toast}

@@ -1991,8 +1991,10 @@ table.data tbody tr:hover td {
 
 .footer {
   display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-md) var(--space-xl);
   margin-top: 3.75rem;
   padding-top: 1.375rem;
   border-top: 1px solid var(--line);
@@ -2004,9 +2006,36 @@ table.data tbody tr:hover td {
 .footer p {
   margin: 0;
 }
+.footer__brand {
+  flex: 1 1 32rem;
+}
+.footer__credits {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-inline-start: auto;
+  white-space: nowrap;
+}
 .footer a {
   text-decoration: underline;
   text-underline-offset: 0.18em;
+}
+.footer__github {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius);
+  color: var(--fg-dim);
+  text-decoration: none;
+}
+.footer__github:hover {
+  color: var(--gold);
+}
+.footer__github:focus-visible {
+  outline: 2px solid var(--gold-dim);
+  outline-offset: 2px;
 }
 .footer__mark {
   color: var(--fg-dim);
@@ -2025,6 +2054,7 @@ table.data tbody tr:hover td {
   .report-frame > [role="tabpanel"]:focus-visible,
   .history-stack:focus-visible,
   .trust-trend__target:focus-visible,
+  .footer__github:focus-visible,
   table.data th .sort-button:focus-visible {
     outline: 2px solid Highlight;
     outline-offset: 2px;

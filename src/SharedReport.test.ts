@@ -35,6 +35,10 @@ describe("SharedReport", () => {
     expect(screen.getByText("netlify")).toBeInTheDocument();
     expect(screen.getByText(/generated 2026-06-27/)).toBeInTheDocument();
     expect(screen.getAllByText("last 12 months").length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: "npm.report on GitHub" })).toHaveAttribute(
+      "href",
+      "https://github.com/serhalp/npm.report",
+    );
     expect(fetch).toHaveBeenCalledWith("/api/reports/report%2Fid");
   });
 

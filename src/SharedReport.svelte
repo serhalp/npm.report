@@ -3,6 +3,7 @@
   import HistoryPanel from "./components/HistoryPanel.svelte";
   import DailyTrackingButton from "./components/DailyTrackingButton.svelte";
   import ResultsView from "./components/ResultsView.svelte";
+  import SiteFooter from "./components/SiteFooter.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import TrustGlossary from "./components/TrustGlossary.svelte";
   import Logo from "./components/Logo.svelte";
@@ -210,6 +211,8 @@
       </section>
     {/if}
   </main>
+
+  <SiteFooter />
 
   <div
     class:toast={!!toast}
