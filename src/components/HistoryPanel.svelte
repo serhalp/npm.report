@@ -1,6 +1,8 @@
 <script lang="ts">
+  import HistoryStack from "./HistoryStack.svelte";
   import Stat from "./Stat.svelte";
   import TrustTrend from "./TrustTrend.svelte";
+  import { groupTrustHistoryPoints } from "../lib/historyGroups";
   import {
     anyTrustCount,
     strongTrustCount,
@@ -40,6 +42,7 @@
   let cleanOrgs = $derived(orgs.map((org) => org.trim()).filter(Boolean));
   let response = $derived(preloadedHistory ?? fetchedHistory);
   let points = $derived(response?.points ?? []);
+  let pointGroups = $derived(groupTrustHistoryPoints(points).toReversed());
   let latest = $derived(points.at(-1) ?? null);
 
   function formatDay(value: string): string {
@@ -68,19 +71,8 @@
       : undefined,
   );
 
-  function segmentWidth(point: ReportTrustHistoryPoint, level: TrustLevel): string {
-    if (point.total <= 0) return "width: 0%";
-    return `width: ${(point.byLevel[level] / point.total) * 100}%`;
-  }
-
-  function stackLabel(point: ReportTrustHistoryPoint): string {
-    return [
-      `${formatDay(point.capturedAt)} trust summary`,
-      `${point.byLevel.stagedPublish} staged`,
-      `${point.byLevel.trustedPublisher} trusted publisher`,
-      `${point.byLevel.provenance} provenance only`,
-      `${point.byLevel.none} no trust signal`,
-    ].join(", ");
+  function containsCurrentReport(pointsInGroup: ReportTrustHistoryPoint[]): boolean {
+    return pointsInGroup.some((point) => point.id === currentReportId);
   }
 
   $effect(() => {
@@ -188,19 +180,63 @@
         </div>
 
         <ol class="history-list">
-          {#each points as point (point.id)}
-            <li class:current={point.id === currentReportId}>
-              <a class="history-date" href={point.url}>{formatDay(point.capturedAt)}</a>
-              <div class="history-stack" role="img" aria-label={stackLabel(point)}>
-                {#each LEVELS as level (level.key)}
-                  <span class={level.className} style={segmentWidth(point, level.key)}></span>
-                {/each}
-              </div>
-              <span class="history-total">
-                {anyTrustCount(point)}/{point.total}
-                <span class="muted">any trust</span>
-              </span>
-            </li>
+          {#each pointGroups as group (group.start.id)}
+            {@const point = group.end}
+            {#if group.points.length === 1}
+              <li class:current={point.id === currentReportId}>
+                <div class="history-date-cell">
+                  <a
+                    class="history-date"
+                    href={point.url}
+                    aria-current={point.id === currentReportId ? "page" : undefined}
+                    >{formatDay(point.capturedAt)}</a
+                  >
+                  {#if point.id === currentReportId}
+                    <span class="history-viewing">[viewing]</span>
+                  {/if}
+                </div>
+                <HistoryStack {point} />
+                <span class="history-total">
+                  {anyTrustCount(point)}/{point.total}
+                  <span class="muted">any trust</span>
+                </span>
+              </li>
+            {:else}
+              <li class="history-range" class:current={containsCurrentReport(group.points)}>
+                <details>
+                  <summary>
+                    <span class="history-range__summary">
+                      <span class="history-date history-range__date">
+                        {formatDay(group.start.capturedAt)}...{formatDay(group.end.capturedAt)}
+                        {#if containsCurrentReport(group.points)}
+                          <span class="history-viewing">[viewing]</span>
+                        {/if}
+                      </span>
+                      <HistoryStack {point} />
+                      <span class="history-total">
+                        {anyTrustCount(point)}/{point.total}
+                        <span class="muted">any trust</span>
+                      </span>
+                    </span>
+                  </summary>
+                  <ol class="history-range__reports">
+                    {#each group.points.toReversed() as groupedPoint (groupedPoint.id)}
+                      <li class:current={groupedPoint.id === currentReportId}>
+                        <a
+                          class="history-date"
+                          href={groupedPoint.url}
+                          aria-current={groupedPoint.id === currentReportId ? "page" : undefined}
+                          >{formatDay(groupedPoint.capturedAt)}</a
+                        >
+                        {#if groupedPoint.id === currentReportId}
+                          <span class="history-viewing">[viewing]</span>
+                        {/if}
+                      </li>
+                    {/each}
+                  </ol>
+                </details>
+              </li>
+            {/if}
           {/each}
         </ol>
       {/if}
