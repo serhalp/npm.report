@@ -96,45 +96,48 @@
 </script>
 
 {#if tabs.length > 0}
-  <div class="tabs" role="tablist" aria-label="Audit reports">
-    <span class="tabs__label">Reports</span>
-    {#each tabs as tab (tab.kind)}
-      <button
-        id={`tab-${tab.kind}`}
-        role="tab"
-        type="button"
-        aria-selected={activeTab === tab.kind}
-        aria-controls={activeTab === tab.kind ? `panel-${tab.kind}` : undefined}
-        tabindex={activeTab === tab.kind ? 0 : -1}
-        class={`tab${activeTab === tab.kind ? " active" : ""}`}
-        onclick={() => selectTab(tab.kind)}
-        onkeydown={(event) => moveTab(event, tab.kind)}
-      >
-        {tab.title}
-        <span class="count">{countFor(tab.kind)}</span>
-      </button>
-    {/each}
+  <div class="report-tabs">
+    <div class="tabs" role="tablist" aria-label="Audit reports">
+      {#each tabs as tab (tab.kind)}
+        <button
+          id={`tab-${tab.kind}`}
+          role="tab"
+          type="button"
+          aria-selected={activeTab === tab.kind}
+          aria-controls={activeTab === tab.kind ? `panel-${tab.kind}` : undefined}
+          tabindex={activeTab === tab.kind ? 0 : -1}
+          class={`tab${activeTab === tab.kind ? " active" : ""}`}
+          onclick={() => selectTab(tab.kind)}
+          onkeydown={(event) => moveTab(event, tab.kind)}
+        >
+          {tab.title}
+          <span class="count">{countFor(tab.kind)}</span>
+        </button>
+      {/each}
+    </div>
+
+    <div class="report-frame">
+      {#if activeTab === "trust" && result.trust}
+        <div id="panel-trust" role="tabpanel" aria-labelledby="tab-trust" tabindex="0">
+          <TrustView report={result.trust} {onToast} />
+        </div>
+      {/if}
+      {#if activeTab === "manual" && result.manual}
+        <div id="panel-manual" role="tabpanel" aria-labelledby="tab-manual" tabindex="0">
+          <ManualView report={result.manual} {onToast} />
+        </div>
+      {/if}
+      {#if activeTab === "external" && result.external}
+        <div id="panel-external" role="tabpanel" aria-labelledby="tab-external" tabindex="0">
+          <ExternalView report={result.external} {onToast} />
+        </div>
+      {/if}
+
+      {#if result.failures.length > 0}
+        <p class="inline-error incomplete-warning" role="alert">
+          {result.failures.length} fetch(es) failed after retries — results may be INCOMPLETE.
+        </p>
+      {/if}
+    </div>
   </div>
-
-  {#if activeTab === "trust" && result.trust}
-    <div id="panel-trust" role="tabpanel" aria-labelledby="tab-trust" tabindex="0">
-      <TrustView report={result.trust} {onToast} />
-    </div>
-  {/if}
-  {#if activeTab === "manual" && result.manual}
-    <div id="panel-manual" role="tabpanel" aria-labelledby="tab-manual" tabindex="0">
-      <ManualView report={result.manual} {onToast} />
-    </div>
-  {/if}
-  {#if activeTab === "external" && result.external}
-    <div id="panel-external" role="tabpanel" aria-labelledby="tab-external" tabindex="0">
-      <ExternalView report={result.external} {onToast} />
-    </div>
-  {/if}
-
-  {#if result.failures.length > 0}
-    <p class="inline-error incomplete-warning" role="alert">
-      {result.failures.length} fetch(es) failed after retries — results may be INCOMPLETE.
-    </p>
-  {/if}
 {/if}

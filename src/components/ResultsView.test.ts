@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import ResultsView from "./ResultsView.svelte";
-import { auditResult } from "../test/fixtures";
+import { auditResult, trustReport } from "../test/fixtures";
 
 describe("ResultsView", () => {
   afterEach(() => {
@@ -22,6 +22,23 @@ describe("ResultsView", () => {
     expect(screen.getByRole("tab", { name: /manual 1/i })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText(/1 fetch\(es\) failed after retries/i)).toBeInTheDocument();
     expect(screen.getByText("Detail — 1 publishes")).toBeInTheDocument();
+  });
+
+  test("presents a single report as a tab attached to its report frame", () => {
+    render(ResultsView, {
+      props: {
+        result: { trust: trustReport, failures: [] },
+        onToast: vi.fn(),
+      },
+    });
+
+    expect(screen.getAllByRole("tab")).toHaveLength(1);
+    expect(screen.getByRole("tab", { name: /package trust level 2/i })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.queryByText(/^reports$/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("tabpanel").parentElement).toHaveClass("report-frame");
   });
 
   test("tab clicks replace the hash without adding history entries", async () => {
