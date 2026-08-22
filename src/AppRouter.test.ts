@@ -112,6 +112,7 @@ describe("AppRouter", () => {
     expect(window.location.pathname).toBe("/report/two");
     expect(screen.getByRole("heading", { name: "Audit of first" })).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("Loading selected report…").closest('[role="status"]')).not.toBeNull();
 
     resolveSecond({
       ok: true,
@@ -121,6 +122,7 @@ describe("AppRouter", () => {
 
     expect(await screen.findByRole("heading", { name: "Audit of second" })).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "false");
+    expect(screen.queryByText("Loading selected report…")).not.toBeInTheDocument();
     expect(container.querySelector(".masthead")).toBe(masthead);
     expect(fetchMock).toHaveBeenCalledWith("/api/reports/two");
     expect(screen.getByRole("main")).toHaveFocus();

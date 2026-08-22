@@ -3,6 +3,7 @@
   import HistoryPanel from "./components/HistoryPanel.svelte";
   import DailyTrackingButton from "./components/DailyTrackingButton.svelte";
   import ResultsView from "./components/ResultsView.svelte";
+  import SignalSpinner from "./components/SignalSpinner.svelte";
   import SiteFooter from "./components/SiteFooter.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import TrustGlossary from "./components/TrustGlossary.svelte";
@@ -168,6 +169,19 @@
   </header>
 
   <main tabindex="-1" aria-busy={loading}>
+    <div
+      class:shared-route-loading={loading && !!record}
+      class:sr-only={!loading || !record}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      {#if loading && record}
+        <SignalSpinner />
+        <span>Loading selected report…</span>
+      {/if}
+    </div>
+
     {#if error}
       <section class="panel">
         <div class="panel__body">
@@ -178,9 +192,15 @@
     {/if}
 
     {#if !record && !error}
-      <section class="panel">
+      <section class="panel shared-loading-panel">
         <div class="panel__body">
-          <p class="desc shared-loading" role="status">Loading report…</p>
+          <div class="shared-loading" role="status">
+            <SignalSpinner />
+            <span>
+              <strong>Loading report</strong>
+              <span>Fetching the saved snapshot and trust history…</span>
+            </span>
+          </div>
         </div>
       </section>
     {/if}

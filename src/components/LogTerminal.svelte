@@ -1,4 +1,6 @@
 <script lang="ts">
+  import SignalSpinner from "./SignalSpinner.svelte";
+
   // Display-only progress log for streamed audit output. The visible log is
   // itself the screen-reader live region, so progress and the "results may be
   // INCOMPLETE" warning are announced.
@@ -81,12 +83,7 @@
     {/each}
     {#if activity}
       <div class="term-line term-line--activity">
-        <span class="term-spinner" aria-hidden="true">
-          <span class="term-spinner__dot">•</span>
-          <span class="term-spinner__arc term-spinner__arc--inner">)</span>
-          <span class="term-spinner__arc term-spinner__arc--middle">)</span>
-          <span class="term-spinner__arc term-spinner__arc--outer">)</span>
-        </span>
+        <SignalSpinner terminal />
         <span class="term-activity__label">{activity}</span>
       </div>
     {/if}

@@ -27,7 +27,9 @@ describe("SharedReport", () => {
     render(SharedReport, { props: { id: "report/id" } });
 
     expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByText("Loading report…").closest('[role="status"]')).not.toBeNull();
+    const loadingStatus = screen.getByText("Loading report").closest('[role="status"]');
+    expect(loadingStatus).not.toBeNull();
+    expect(loadingStatus?.querySelector(".signal-spinner")).not.toBeNull();
     expect(
       await screen.findByRole("heading", { level: 2, name: "Audit of netlify" }),
     ).toBeInTheDocument();
@@ -93,7 +95,7 @@ describe("SharedReport", () => {
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith("/api/reports/history?org=netlify");
     });
-    expect(screen.getByText("Loading report…").closest('[role="status"]')).not.toBeNull();
+    expect(screen.getByText("Loading report").closest('[role="status"]')).not.toBeNull();
     expect(screen.queryByRole("tab", { name: /package trust level/i })).not.toBeInTheDocument();
 
     resolveHistory({
