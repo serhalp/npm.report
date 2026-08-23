@@ -13,7 +13,7 @@
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "knip": "knip",
-    "lint": "oxlint .",
+    "lint": "oxlint --report-unused-disable-directives .",
     "lint:fix": "oxlint --fix .",
     "preview": "vite preview",
     "test": "pnpm run test:unit && pnpm run test:database && pnpm run typecheck && pnpm run format:check && pnpm run lint",
