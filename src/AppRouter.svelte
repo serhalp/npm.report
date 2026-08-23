@@ -18,9 +18,7 @@
 
   function routeFromUrl(url: URL): Route {
     const reportId = reportIdFromPath(url.pathname);
-    return reportId === null
-      ? { name: "app" }
-      : { name: "report", id: reportId };
+    return reportId === null ? { name: "app" } : { name: "report", id: reportId };
   }
 
   function isClientRoute(url: URL): boolean {

@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/svelte";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import SharedReport from "./SharedReport.svelte";
+import { formatCompactDateTime, formatDate, formatDateTime } from "./lib/dateFormatting";
 import { auditResult, trustReport } from "./test/fixtures";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -40,7 +41,11 @@ describe("SharedReport", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "false");
     expect(screen.getByText("netlify").closest("p")).toHaveTextContent(
-      /Audit of netlify — last 12 months, generated 2026-06-27/,
+      `Audit of netlify — last 12 months, generated ${formatDate("2026-06-27T12:34:56.000Z")}`,
+    );
+    expect(screen.getByText(formatDate("2026-06-27T12:34:56.000Z"))).toHaveAttribute(
+      "title",
+      formatDateTime("2026-06-27T12:34:56.000Z"),
     );
     expect(screen.getAllByText("last 12 months").length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: "Re-run this audit" }).getAttribute("href")).toContain(
@@ -128,16 +133,19 @@ describe("SharedReport", () => {
 
     expect(await screen.findByRole("heading", { name: "Progress over time" })).toBeInTheDocument();
     expect(document.querySelector(".masthead > p")).toHaveTextContent(
-      /Audit of netlify, generated 2026-06-27/,
+      `Audit of netlify, generated ${formatDate("2026-06-27T12:34:56.000Z")}`,
     );
     expect(screen.getByRole("tab", { name: /package trust level/i })).toBeInTheDocument();
-    expect(await screen.findByRole("link", { name: "2026-06-27" })).toHaveAttribute(
-      "href",
-      "/report/report-id",
-    );
+    expect(
+      await screen.findByRole("link", {
+        name: formatDate("2026-06-27T12:34:56.000Z"),
+      }),
+    ).toHaveAttribute("href", "/report/report-id");
     expect(screen.queryByRole("button", { name: "Tracking daily" })).not.toBeInTheDocument();
     expect(
-      screen.getByRole("status", { name: "Tracking daily, next run 2026-06-28 12:34Z" }),
+      screen.getByRole("status", {
+        name: `Tracking daily, next run ${formatCompactDateTime("2026-06-28T12:34:56.000Z")}`,
+      }),
     ).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalledWith(
       "/api/reports/report-id/schedule-daily",

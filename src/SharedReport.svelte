@@ -8,6 +8,7 @@
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import TrustGlossary from "./components/TrustGlossary.svelte";
   import Logo from "./components/Logo.svelte";
+  import { formatDate, formatDateTime } from "./lib/dateFormatting";
   import type { ReportHistoryResponse } from "./lib/reportHistory";
   import type { AuditResult } from "./lib/runAudit";
   import { parseOrNull, ReportHistoryResponseSchema, ReportRecordSchema } from "./lib/schemas";
@@ -34,13 +35,8 @@
   let loading = $state(true);
   let toast = $state<string | null>(null);
 
-  function generatedDay(value: ReportRecord | null): string | null {
-    return value?.createdAt ? new Date(value.createdAt).toISOString().slice(0, 10) : null;
-  }
-
-  let when = $derived(generatedDay(record));
-  let auditDetails = $derived(
-    `${record?.scopeLabel && record.scopeLabel !== "ALL org packages" ? ` — ${record.scopeLabel}` : ""}${when ? `, generated ${when}` : ""}`,
+  let scopeNote = $derived(
+    record?.scopeLabel && record.scopeLabel !== "ALL org packages" ? record.scopeLabel : null,
   );
   let historyOrgs = $derived(record?.payload.trust?.summary.orgs ?? []);
   let historyEnabled = $derived(
@@ -160,8 +156,12 @@
     </div>
     {#if record}
       <p>
-        Audit of <strong>{record.orgs || "npm packages"}</strong>{auditDetails}. This is a read-only
-        snapshot.
+        Audit of <strong>{record.orgs || "npm packages"}</strong>{#if scopeNote}<span>
+            &nbsp;— {scopeNote}</span
+          >{/if}{#if record.createdAt}, generated <time
+            datetime={record.createdAt}
+            title={formatDateTime(record.createdAt)}>{formatDate(record.createdAt)}</time
+          >{/if}. This is a read-only snapshot.
         <br />
         <a href="/">Run your own audit →</a>
       </p>

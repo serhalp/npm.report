@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { describe, expect, test } from "vitest";
+import { formatDate } from "../lib/dateFormatting";
 import type { ReportTrustHistoryPoint } from "../lib/reportHistory";
 import HistoryStack from "./HistoryStack.svelte";
 
@@ -16,7 +17,9 @@ const point: ReportTrustHistoryPoint = {
 describe("HistoryStack", () => {
   test("exposes each segment through focus and dismisses the tooltip with Escape", async () => {
     render(HistoryStack, { props: { point } });
-    const stack = screen.getByRole("button", { name: /2026-07-01 trust summary/i });
+    const stack = screen.getByRole("button", {
+      name: new RegExp(`${formatDate(point.capturedAt)} trust summary`, "i"),
+    });
 
     await fireEvent.focus(stack);
     expect(screen.getByRole("tooltip")).toHaveTextContent("Staged publish 1 (10%)");

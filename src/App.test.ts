@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import App from "./App.svelte";
 import { auditResult } from "./test/fixtures";
 import { streamAudit } from "./lib/auditStream";
+import { formatCompactDateTime } from "./lib/dateFormatting";
 import { streamUserPublishes } from "./lib/userPublishStream";
 
 // Both server-side workflows stream through these client adapters.
@@ -219,7 +220,7 @@ describe("App", () => {
     });
     expect(
       await screen.findByRole("status", {
-        name: "Tracking daily, next run 2026-06-28 12:00Z",
+        name: `Tracking daily, next run ${formatCompactDateTime("2026-06-28T12:00:00.000Z")}`,
       }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Tracking daily" })).not.toBeInTheDocument();

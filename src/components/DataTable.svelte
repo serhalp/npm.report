@@ -92,7 +92,11 @@
           {#each columns as column (column.key)}
             {@const cell = cellFor(row, column)}
             <td class:num={column.numeric}>
-              {#if cell.badgeClass}
+              {#if cell.dateTime}
+                <time datetime={cell.dateTime} title={cell.title} class={cell.className}
+                  >{textFor(cell.text)}</time
+                >
+              {:else if cell.badgeClass}
                 <span class={`badge ${cell.badgeClass}`}>{textFor(cell.text)}</span>
               {:else if cell.flag}
                 <span class="flag">{textFor(cell.text)}</span>

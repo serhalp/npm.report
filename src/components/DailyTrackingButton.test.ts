@@ -1,12 +1,15 @@
 import { render, screen } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
+import { formatCompactDateTime, formatDateTime } from "../lib/dateFormatting";
 import DailyTrackingButton from "./DailyTrackingButton.svelte";
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("DailyTrackingButton", () => {
   test("renders an existing schedule as a compact status without making a request", () => {
+    const nextRunAt = "2026-06-28T12:34:56.000Z";
+    const nextRun = formatCompactDateTime(nextRunAt);
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
@@ -14,19 +17,17 @@ describe("DailyTrackingButton", () => {
       props: {
         reportId: "report-id",
         alreadyTracked: true,
-        nextRunAt: "2026-06-28T12:34:56.000Z",
+        nextRunAt,
       },
     });
 
     expect(screen.queryByRole("button", { name: "Tracking daily" })).not.toBeInTheDocument();
     expect(
-      screen.getByRole("status", { name: "Tracking daily, next run 2026-06-28 12:34Z" }),
+      screen.getByRole("status", { name: `Tracking daily, next run ${nextRun}` }),
     ).toBeInTheDocument();
     expect(screen.getByText("Tracking daily")).toBeInTheDocument();
-    expect(screen.getByText("2026-06-28 12:34Z")).toHaveAttribute(
-      "datetime",
-      "2026-06-28T12:34:56.000Z",
-    );
+    expect(screen.getByText(nextRun)).toHaveAttribute("datetime", nextRunAt);
+    expect(screen.getByText(nextRun)).toHaveAttribute("title", formatDateTime(nextRunAt));
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -52,7 +53,7 @@ describe("DailyTrackingButton", () => {
 
     expect(
       await screen.findByRole("status", {
-        name: "Tracking daily, next run 2026-06-28 12:00Z",
+        name: `Tracking daily, next run ${formatCompactDateTime("2026-06-28T12:00:00.000Z")}`,
       }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Track daily" })).not.toBeInTheDocument();

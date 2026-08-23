@@ -1,5 +1,6 @@
 <script lang="ts">
   import { CalendarClock } from "@lucide/svelte";
+  import { formatCompactDateTime, formatDateTime } from "../lib/dateFormatting";
   import type { ReportRerunScheduleStatus } from "../lib/reportHistory";
   import { parseOrNull, ReportRerunScheduleStatusSchema } from "../lib/schemas";
 
@@ -24,14 +25,10 @@
   let scheduledFor = $state<string | null>(null);
   let isTracking = $derived(alreadyTracked || status === "done");
   let effectiveNextRunAt = $derived(scheduledFor ?? nextRunAt);
-  let compactNextRun = $derived(formatNextRun(effectiveNextRunAt));
-
-  function formatNextRun(value: string | null): string | null {
-    if (!value) return null;
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return null;
-    return `${date.toISOString().slice(0, 16).replace("T", " ")}Z`;
-  }
+  let compactNextRun = $derived.by(() => {
+    if (!effectiveNextRunAt || Number.isNaN(Date.parse(effectiveNextRunAt))) return null;
+    return formatCompactDateTime(effectiveNextRunAt);
+  });
 
   async function trackDaily() {
     if (!reportId) return;
@@ -69,7 +66,9 @@
       {#if compactNextRun && effectiveNextRunAt}
         <span class="tracking-status__separator" aria-hidden="true">·</span>
         <span class="tracking-status__next">
-          next <time datetime={effectiveNextRunAt}>{compactNextRun}</time>
+          next <time datetime={effectiveNextRunAt} title={formatDateTime(effectiveNextRunAt)}
+            >{compactNextRun}</time
+          >
         </span>
       {/if}
     </div>

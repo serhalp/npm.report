@@ -15,9 +15,3 @@ export const LEVEL_LABEL: Record<TrustLevel, string> = {
 };
 
 export const yn = (value: boolean) => (value ? "yes" : "no");
-
-const MS_SUFFIX_RE = /\.\d+Z$/;
-
-export function fmtDate(iso: string): string {
-  return iso ? iso.replace("T", " ").replace(MS_SUFFIX_RE, "Z") : "—";
-}

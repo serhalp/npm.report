@@ -10,6 +10,8 @@ export type CellValue =
       badgeClass?: string;
       flag?: boolean;
       muted?: boolean;
+      dateTime?: string;
+      title?: string;
     };
 
 export interface Column<T> {

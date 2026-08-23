@@ -1,6 +1,7 @@
 <script lang="ts">
   import Stat from "./Stat.svelte";
   import TrustTrend from "./TrustTrend.svelte";
+  import { formatDate } from "../lib/dateFormatting";
   import { EXAMPLE_TRUST_HISTORY_POINTS } from "../lib/exampleTrustHistory.ts";
   import { anyTrustCount, strongTrustCount, trustPercent } from "../lib/reportHistory";
   import type { TrustLevel } from "../lib/types";
@@ -112,7 +113,7 @@
             </td>
             <td class="mono">{row.publisher}</td>
             <td class="num mono">{row.downloads}</td>
-            <td class="mono">{row.latest}</td>
+            <td class="mono">{formatDate(row.latest)}</td>
           </tr>
         {/each}
       </tbody>

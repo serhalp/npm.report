@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import AppRouter from "./AppRouter.svelte";
+import { formatDateTime } from "./lib/dateFormatting";
 import { auditResult, trustReport } from "./test/fixtures";
 
 const points = [
@@ -108,7 +109,11 @@ describe("AppRouter", () => {
     const reportContent = firstHeading.closest(".shared-report-content");
     const masthead = container.querySelector(".masthead");
 
-    await user.click(screen.getByRole("link", { name: /2026-07-02 report/ }));
+    await user.click(
+      screen.getByRole("link", {
+        name: new RegExp(`${formatDateTime(points[1].capturedAt)} report`),
+      }),
+    );
 
     expect(window.location.pathname).toBe("/report/two");
     expect(firstHeading).toBeInTheDocument();

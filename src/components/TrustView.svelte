@@ -3,8 +3,9 @@
   import type { Column } from "./dataTableTypes";
   import ExportButtons from "./ExportButtons.svelte";
   import Stat from "./Stat.svelte";
+  import { formatDate, formatDateTime } from "../lib/dateFormatting";
   import type { TrustReport, TrustRow } from "../lib/types";
-  import { fmtDate, LEVEL_LABEL, LEVEL_ORDER, yn } from "./reportFormatting";
+  import { LEVEL_LABEL, LEVEL_ORDER, yn } from "./reportFormatting";
 
   interface Props {
     report: TrustReport;
@@ -43,7 +44,11 @@
       key: "latestPublish",
       header: "Latest publish",
       value: (row) => row.latestPublish,
-      cell: (row) => fmtDate(row.latestPublish),
+      cell: (row) => ({
+        text: formatDate(row.latestPublish),
+        dateTime: row.latestPublish,
+        title: formatDateTime(row.latestPublish),
+      }),
     },
     {
       key: "deprecated",

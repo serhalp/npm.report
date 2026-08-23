@@ -360,8 +360,8 @@ test("shared report tabs and chart snapshots support keyboard navigation", async
   );
 
   const snapshots = page.getByRole("group", { name: "Report snapshots" });
-  const olderSnapshot = snapshots.getByRole("link", { name: /2026-06-26 report/i });
-  const currentSnapshot = snapshots.getByRole("link", { name: /2026-06-27 report/i });
+  const olderSnapshot = snapshots.locator('a[href="/report/older-report"]');
+  const currentSnapshot = snapshots.locator('a[href="/report/a11y-report"]');
   await expect(currentSnapshot).toHaveAttribute("tabindex", "0");
   await expect(olderSnapshot).toHaveAttribute("tabindex", "-1");
   await currentSnapshot.focus();

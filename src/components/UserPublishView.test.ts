@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/svelte";
 import { describe, expect, test, vi } from "vitest";
+import { formatDateTime } from "../lib/dateFormatting";
 import UserPublishView from "./UserPublishView.svelte";
 
 describe("UserPublishView", () => {
@@ -29,7 +30,7 @@ describe("UserPublishView", () => {
     });
 
     expect(screen.getByText("1 versions")).toBeInTheDocument();
-    expect(screen.getByText("2026-06-01 02:03:04Z")).toBeInTheDocument();
+    expect(screen.getByText(formatDateTime("2026-06-01T02:03:04.000Z"))).toBeInTheDocument();
     expect(screen.getByText("pkg@1.0.0")).toBeInTheDocument();
     expect(screen.getByRole("table", { name: "Versions published by alice" })).toBeInTheDocument();
     expect(

@@ -3,8 +3,8 @@
   import type { Column } from "./dataTableTypes";
   import ExportButtons from "./ExportButtons.svelte";
   import Stat from "./Stat.svelte";
+  import { formatDateTime } from "../lib/dateFormatting";
   import type { ManualReport, ManualRow } from "../lib/types";
-  import { fmtDate } from "./reportFormatting";
 
   interface Props {
     report: ManualReport;
@@ -14,7 +14,12 @@
   let { report, onToast }: Props = $props();
 
   const detailCols: Column<ManualRow>[] = [
-    { key: "when", header: "When", value: (row) => row.when, cell: (row) => fmtDate(row.when) },
+    {
+      key: "when",
+      header: "When",
+      value: (row) => row.when,
+      cell: (row) => formatDateTime(row.when),
+    },
     { key: "who", header: "Publisher" },
     { key: "ref", header: "Package@version" },
   ];

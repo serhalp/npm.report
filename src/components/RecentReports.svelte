@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatDate, formatDateTime } from "../lib/dateFormatting";
   import type { RecentTrustReportLink, RecentTrustReportsResponse } from "../lib/reportHistory";
   import { parseOrNull, RecentTrustReportsResponseSchema } from "../lib/schemas";
 
@@ -7,10 +8,6 @@
 
   function orgLabel(orgs: string[]): string {
     return orgs.length ? orgs.join(", ") : "npm packages";
-  }
-
-  function formatDay(value: string): string {
-    return new Date(value).toISOString().slice(0, 10);
   }
 
   $effect(() => {
@@ -57,10 +54,12 @@
         <li>
           <a
             href={report.url}
-            aria-label={`${orgLabel(report.orgs)} report from ${formatDay(report.capturedAt)}`}
+            aria-label={`${orgLabel(report.orgs)} report from ${formatDate(report.capturedAt)}`}
             >{orgLabel(report.orgs)}</a
           >
-          <span>{formatDay(report.capturedAt)}</span>
+          <time datetime={report.capturedAt} title={formatDateTime(report.capturedAt)}
+            >{formatDate(report.capturedAt)}</time
+          >
         </li>
       {/each}
     </ol>

@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
+import { formatDate, formatDateTime } from "../lib/dateFormatting";
 import ResultsView from "./ResultsView.svelte";
 import { auditResult, trustReport } from "../test/fixtures";
 
@@ -39,6 +40,10 @@ describe("ResultsView", () => {
     );
     expect(screen.queryByText(/^reports$/i)).not.toBeInTheDocument();
     expect(screen.getByRole("tabpanel").parentElement).toHaveClass("report-frame");
+    expect(screen.getByText(formatDate(trustReport.rows[0].latestPublish))).toHaveAttribute(
+      "title",
+      formatDateTime(trustReport.rows[0].latestPublish),
+    );
   });
 
   test("tab clicks replace the hash without adding history entries", async () => {

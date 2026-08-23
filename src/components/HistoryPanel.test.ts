@@ -1,8 +1,9 @@
 import { fireEvent, render, screen, within } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import HistoryPanel from "./HistoryPanel.svelte";
+import { formatDate, formatDateTime } from "../lib/dateFormatting";
 import type { ReportHistoryResponse, ReportTrustHistoryPoint } from "../lib/reportHistory";
+import HistoryPanel from "./HistoryPanel.svelte";
 
 function mockHistory(body: ReportHistoryResponse) {
   vi.stubGlobal(
@@ -32,6 +33,10 @@ function historyPoint(
     failureCount: 0,
     ...rest,
   };
+}
+
+function dayLabel(day: number): string {
+  return formatDate(historyPoint(day).capturedAt);
 }
 
 describe("HistoryPanel", () => {
@@ -149,11 +154,15 @@ describe("HistoryPanel", () => {
     expect(
       screen.getByRole("img", { name: /trust coverage across 2 snapshots/i }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "2026-06-27" })).toHaveAttribute(
-      "href",
-      "/report/netlify-2026-06-27-bbbbbbbb",
+    const latestReportLink = screen.getByRole("link", { name: dayLabel(27) });
+    expect(latestReportLink).toHaveAttribute("href", "/report/netlify-2026-06-27-bbbbbbbb");
+    expect(latestReportLink.querySelector("time")).toHaveAttribute(
+      "title",
+      formatDateTime("2026-06-27T10:00:00.000Z"),
     );
-    expect(screen.getByLabelText(/2026-06-27 trust summary/i)).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(new RegExp(`${dayLabel(27)} trust summary`, "i")),
+    ).toBeInTheDocument();
 
     await fireEvent.pointerEnter(container.querySelector(".history-segment--provenance")!);
     expect(screen.getByRole("tooltip")).toHaveTextContent("Provenance only 1 (25%)");
@@ -208,25 +217,28 @@ describe("HistoryPanel", () => {
 
     const { container } = render(HistoryPanel, { props: { orgs: ["netlify"] } });
 
-    expect(await screen.findByText("2026-06-24...2026-06-26")).toBeInTheDocument();
+    expect(await screen.findByRole("group", { name: "Report snapshots" })).toBeInTheDocument();
     expect(screen.queryByText(/unchanged reports/)).not.toBeInTheDocument();
     const details = container.querySelector("details");
     expect(details).not.toHaveAttribute("open");
+    expect(container.querySelector("summary")).toHaveTextContent(
+      `${dayLabel(24)}...${dayLabel(26)}`,
+    );
 
     await user.click(container.querySelector("summary")!);
 
     expect(details).toHaveAttribute("open");
-    expect(screen.getByRole("link", { name: "2026-06-24" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: dayLabel(24) })).toHaveAttribute(
       "href",
       "/report/2026-06-24-report",
     );
-    expect(screen.getByRole("link", { name: "2026-06-26" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: dayLabel(26) })).toHaveAttribute(
       "href",
       "/report/2026-06-26-report",
     );
     expect(
       [...container.querySelectorAll("a.history-date")].map((link) => link.textContent),
-    ).toEqual(["2026-06-27", "2026-06-26", "2026-06-25", "2026-06-24"]);
+    ).toEqual([dayLabel(27), dayLabel(26), dayLabel(25), dayLabel(24)]);
     expect(screen.queryByText("Open report")).not.toBeInTheDocument();
   });
 
@@ -239,17 +251,18 @@ describe("HistoryPanel", () => {
       props: { orgs: ["netlify"], currentReportId: points[1].id },
     });
 
-    expect(await screen.findByText("2026-06-24...2026-06-26")).toBeInTheDocument();
+    expect(await screen.findByRole("group", { name: "Report snapshots" })).toBeInTheDocument();
     const details = container.querySelector("details")!;
     const summary = container.querySelector("summary")!;
+    expect(summary).toHaveTextContent(`${dayLabel(24)}...${dayLabel(26)}`);
     expect(details).not.toHaveAttribute("open");
     expect(within(summary).getByText("[viewing]")).toBeInTheDocument();
 
     await user.click(summary);
 
     expect(details).toHaveAttribute("open");
-    expect(screen.getByRole("link", { name: "2026-06-25" }).closest("li")).toHaveClass("current");
-    expect(screen.getByRole("link", { name: "2026-06-25" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: dayLabel(25) }).closest("li")).toHaveClass("current");
+    expect(screen.getByRole("link", { name: dayLabel(25) })).toHaveAttribute(
       "aria-current",
       "page",
     );

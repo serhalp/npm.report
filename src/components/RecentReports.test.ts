@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/svelte";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import RecentReports from "./RecentReports.svelte";
+import { formatDate, formatDateTime } from "../lib/dateFormatting";
 import type { RecentTrustReportsResponse } from "../lib/reportHistory";
+import RecentReports from "./RecentReports.svelte";
 
 function mockRecentReports(body: RecentTrustReportsResponse) {
   vi.stubGlobal(
@@ -27,6 +28,8 @@ describe("RecentReports", () => {
   });
 
   test("renders recent report links labeled by org set", async () => {
+    const latestDate = formatDate("2026-06-27T12:00:00.000Z");
+    const previousDate = formatDate("2026-06-26T12:00:00.000Z");
     mockRecentReports({
       reports: [
         {
@@ -48,10 +51,15 @@ describe("RecentReports", () => {
 
     expect(screen.getByText("Latest saved audits")).toBeInTheDocument();
     expect(
-      await screen.findByRole("link", { name: "gatsbyjs, netlify report from 2026-06-27" }),
+      await screen.findByRole("link", { name: `gatsbyjs, netlify report from ${latestDate}` }),
     ).toHaveAttribute("href", "/report/netlify-gatsby-2026-06-27-abc12345");
-    expect(screen.getByRole("link", { name: "svelte report from 2026-06-26" })).toBeInTheDocument();
-    expect(screen.getByText("2026-06-27")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: `svelte report from ${previousDate}` }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(latestDate)).toHaveAttribute(
+      "title",
+      formatDateTime("2026-06-27T12:00:00.000Z"),
+    );
   });
 
   test("renders an empty state", async () => {

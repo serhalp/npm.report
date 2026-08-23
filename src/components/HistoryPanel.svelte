@@ -3,6 +3,7 @@
   import HistoryStack from "./HistoryStack.svelte";
   import Stat from "./Stat.svelte";
   import TrustTrend from "./TrustTrend.svelte";
+  import { formatDate, formatDateTime } from "../lib/dateFormatting";
   import { groupTrustHistoryPoints } from "../lib/historyGroups";
   import {
     anyTrustCount,
@@ -37,10 +38,6 @@
   let points = $derived(response?.points ?? []);
   let pointGroups = $derived(groupTrustHistoryPoints(points).toReversed());
   let latest = $derived(points.at(-1) ?? null);
-
-  function formatDay(value: string): string {
-    return new Date(value).toISOString().slice(0, 10);
-  }
 
   function formatPercent(value: number): string {
     return `${value.toFixed(value % 1 === 0 ? 0 : 1)}%`;
@@ -157,7 +154,9 @@
                     class="history-date"
                     href={point.url}
                     aria-current={point.id === currentReportId ? "page" : undefined}
-                    >{formatDay(point.capturedAt)}</a
+                    ><time datetime={point.capturedAt} title={formatDateTime(point.capturedAt)}
+                      >{formatDate(point.capturedAt)}</time
+                    ></a
                   >
                   {#if point.id === currentReportId}
                     <span class="history-viewing">[viewing]</span>
@@ -175,7 +174,15 @@
                   <summary>
                     <span class="history-range__summary">
                       <span class="history-date history-range__date">
-                        {formatDay(group.start.capturedAt)}...{formatDay(group.end.capturedAt)}
+                        <time
+                          datetime={group.start.capturedAt}
+                          title={formatDateTime(group.start.capturedAt)}
+                          >{formatDate(group.start.capturedAt)}</time
+                        >...<time
+                          datetime={group.end.capturedAt}
+                          title={formatDateTime(group.end.capturedAt)}
+                          >{formatDate(group.end.capturedAt)}</time
+                        >
                         {#if containsCurrentReport(group.points)}
                           <span class="history-viewing">[viewing]</span>
                         {/if}
@@ -194,7 +201,11 @@
                           class="history-date"
                           href={groupedPoint.url}
                           aria-current={groupedPoint.id === currentReportId ? "page" : undefined}
-                          >{formatDay(groupedPoint.capturedAt)}</a
+                          ><time
+                            datetime={groupedPoint.capturedAt}
+                            title={formatDateTime(groupedPoint.capturedAt)}
+                            >{formatDate(groupedPoint.capturedAt)}</time
+                          ></a
                         >
                         {#if groupedPoint.id === currentReportId}
                           <span class="history-viewing">[viewing]</span>

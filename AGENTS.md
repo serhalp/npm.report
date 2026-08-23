@@ -182,9 +182,14 @@ Two deliberate exceptions exist so they don't get "fixed":
 - The audit stream reads a `fetch` `ReadableStream`, not `EventSource` — the
   request body (esp. `external` member lists) can exceed URL limits and
   `EventSource` is GET-only. See the SSE Contract.
-- Timestamps render as stable ISO-ish strings (`toISOString().slice(…)`,
-  `fmtDate`) rather than `Intl.DateTimeFormat`, so a report reads the same for
-  every viewer regardless of locale.
+- Human-facing dates and timestamps use the shared `Intl.DateTimeFormat`
+  helpers in `src/lib/dateFormatting.ts`, so they follow the viewer's locale
+  and local timezone. Keep raw ISO-8601 values for persistence, API boundaries,
+  sorting, report ids, exports, and `<time datetime>` attributes. Date-only
+  values are calendar dates and must not shift across timezones. When visible
+  copy intentionally omits part of a timestamp, expose the full localized value
+  in a tooltip; use semantic `<time>` markup for ordinary text and the existing
+  custom tooltip for interactive charts.
 
 ## Layout
 

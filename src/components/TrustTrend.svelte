@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatChartDate, formatDate, formatDateTime } from "../lib/dateFormatting";
   import {
     anyTrustCount,
     strongTrustCount,
@@ -51,11 +52,15 @@
     values.map((value, index) => `${xAt(index).toFixed(1)},${yAt(value).toFixed(1)}`).join(" ");
 
   function shortDay(index: number): string {
-    return new Date(points[index].capturedAt).toISOString().slice(5, 10);
+    return formatChartDate(points[index].capturedAt);
   }
 
   function fullDay(index: number): string {
-    return new Date(points[index].capturedAt).toISOString().slice(0, 10);
+    return formatDate(points[index].capturedAt);
+  }
+
+  function fullTimestamp(index: number): string {
+    return formatDateTime(points[index].capturedAt);
   }
 
   function formatPercent(value: number): string {
@@ -88,7 +93,7 @@
   function reportLabel(index: number): string {
     const point = points[index];
     return [
-      `${fullDay(index)} report`,
+      `${fullTimestamp(index)} report`,
       `${strongTrustCount(point)} of ${point.total} strong trust`,
       `${anyTrustCount(point)} of ${point.total} any trust`,
       `${point.byLevel.none} of ${point.total} no trust signal`,
@@ -284,7 +289,7 @@
           style={tooltipPosition(activeIndex)}
         >
           <div class="trust-trend__tooltip-head">
-            <strong>{fullDay(activeIndex)}</strong>
+            <strong>{fullTimestamp(activeIndex)}</strong>
           </div>
           <dl>
             <div>

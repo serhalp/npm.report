@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatDate } from "../lib/dateFormatting";
   import type { ReportTrustHistoryPoint } from "../lib/reportHistory";
   import type { TrustLevel } from "../lib/types";
 
@@ -80,7 +81,7 @@
   let active = $derived(LEVELS.find((level) => level.key === activeLevel) ?? null);
   let stackLabel = $derived(
     [
-      `${new Date(point.capturedAt).toISOString().slice(0, 10)} trust summary`,
+      `${formatDate(point.capturedAt)} trust summary`,
       ...LEVELS.map((level) => `${point.byLevel[level.key]} ${level.label.toLowerCase()}`),
     ].join(", "),
   );

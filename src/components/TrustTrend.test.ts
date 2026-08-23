@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { describe, expect, test } from "vitest";
+import { formatChartDate, formatDateTime } from "../lib/dateFormatting";
 import type { ReportTrustHistoryPoint } from "../lib/reportHistory";
 import TrustTrend from "./TrustTrend.svelte";
 
@@ -33,6 +34,11 @@ const points: ReportTrustHistoryPoint[] = [
   },
 ];
 
+function reportLink(index: number): HTMLElement {
+  const date = formatDateTime(points[index].capturedAt);
+  return screen.getByRole("link", { name: (name) => name.startsWith(`${date} report`) });
+}
+
 describe("TrustTrend", () => {
   test("renders three color-independent series with labeled axes", () => {
     const { container } = render(TrustTrend, {
@@ -51,9 +57,9 @@ describe("TrustTrend", () => {
     expect(screen.getByText("100%")).toBeInTheDocument();
     expect(screen.getByText("50%")).toBeInTheDocument();
     expect(screen.getByText("0%")).toBeInTheDocument();
-    expect(screen.getByText("07-01")).toBeInTheDocument();
-    expect(screen.getByText("07-03")).toBeInTheDocument();
-    expect(screen.getByText("07-09")).toBeInTheDocument();
+    expect(screen.getByText(formatChartDate(points[0].capturedAt))).toBeInTheDocument();
+    expect(screen.getByText(formatChartDate(points[1].capturedAt))).toBeInTheDocument();
+    expect(screen.getByText(formatChartDate(points[2].capturedAt))).toBeInTheDocument();
     expect(screen.getByText("Strong trust")).toHaveClass("trust-trend__key--strong");
     expect(screen.getByText("Any trust")).toHaveClass("trust-trend__key--any");
     expect(screen.getByText("No trust signal")).toHaveClass("trust-trend__key--none");
@@ -61,19 +67,18 @@ describe("TrustTrend", () => {
       container.querySelectorAll(".trust-trend__axis-label--x").length,
     );
     expect(container.querySelector(".trust-trend > .trust-trend__legend")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /2026-07-03 report/i })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    expect(reportLink(1)).toHaveAttribute("aria-current", "page");
   });
 
   test("marks an older current report on the x-axis and labels it while active", async () => {
     const { container } = render(TrustTrend, {
       props: { points, currentReportId: "two", linkReports: true },
     });
-    const current = screen.getByRole("link", { name: /2026-07-03 report/i });
+    const current = reportLink(1);
 
-    expect(screen.getByText("07-03")).toHaveClass("trust-trend__axis-label--current");
+    expect(screen.getByText(formatChartDate(points[1].capturedAt))).toHaveClass(
+      "trust-trend__axis-label--current",
+    );
     expect(container.querySelector(".trust-trend__tick--current")).toBeInTheDocument();
 
     await fireEvent.pointerEnter(current);
@@ -86,21 +91,21 @@ describe("TrustTrend", () => {
       props: { points, currentReportId: "three", linkReports: true },
     });
 
-    await fireEvent.pointerEnter(screen.getByRole("link", { name: /2026-07-09 report/i }));
+    await fireEvent.pointerEnter(reportLink(2));
 
-    expect(screen.getByRole("tooltip")).toHaveTextContent("2026-07-09");
+    expect(screen.getByRole("tooltip")).toHaveTextContent(formatDateTime(points[2].capturedAt));
     expect(container.querySelector(".trust-trend__axis-label--current")).not.toBeInTheDocument();
     expect(container.querySelector(".trust-trend__tick--current")).not.toBeInTheDocument();
   });
 
   test("reveals exact values on hover and links each snapshot to its report", async () => {
     const { container } = render(TrustTrend, { props: { points, linkReports: true } });
-    const first = screen.getByRole("link", { name: /2026-07-01 report/i });
+    const first = reportLink(0);
 
     expect(first).toHaveAttribute("href", "/report/one");
     await fireEvent.pointerEnter(first);
 
-    expect(screen.getByRole("tooltip")).toHaveTextContent("2026-07-01");
+    expect(screen.getByRole("tooltip")).toHaveTextContent(formatDateTime(points[0].capturedAt));
     expect(screen.getByRole("tooltip")).toHaveTextContent("Strong trust 3/10 · 30%");
     expect(screen.getByRole("tooltip")).toHaveTextContent("Any trust 5/10 · 50%");
     expect(screen.getByRole("tooltip")).toHaveTextContent("No trust signal 5/10 · 50%");
@@ -119,12 +124,12 @@ describe("TrustTrend", () => {
     expect(links.map((link) => link.tabIndex)).toEqual([-1, 0, -1]);
 
     await fireEvent.focus(links[1]);
-    expect(screen.getByRole("tooltip")).toHaveTextContent("2026-07-03");
+    expect(screen.getByRole("tooltip")).toHaveTextContent(formatDateTime(points[1].capturedAt));
 
     await fireEvent.keyDown(links[1], { key: "ArrowRight" });
     expect(links[2]).toHaveFocus();
     expect(links.map((link) => link.tabIndex)).toEqual([-1, -1, 0]);
-    expect(screen.getByRole("tooltip")).toHaveTextContent("2026-07-09");
+    expect(screen.getByRole("tooltip")).toHaveTextContent(formatDateTime(points[2].capturedAt));
 
     await fireEvent.keyDown(links[2], { key: "Home" });
     expect(links[0]).toHaveFocus();
