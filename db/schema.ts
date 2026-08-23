@@ -14,6 +14,40 @@ export const ReportRowSchema = v.object({
 });
 export type ReportRow = v.InferOutput<typeof ReportRowSchema>;
 
+const ReportSocialCountSchema = v.pipe(v.number(), v.integer(), v.minValue(0));
+const ReportSocialByLevelSchema = v.object({
+  stagedPublish: ReportSocialCountSchema,
+  trustedPublisher: ReportSocialCountSchema,
+  provenance: ReportSocialCountSchema,
+  none: ReportSocialCountSchema,
+});
+const ReportSocialTrustSchema = v.object({
+  total: ReportSocialCountSchema,
+  byLevel: ReportSocialByLevelSchema,
+});
+const reportSocialFields = {
+  id: v.string(),
+  orgs: v.string(),
+  createdAt: v.nullable(v.date()),
+  trust: v.nullable(ReportSocialTrustSchema),
+};
+
+export const ReportSocialBaseRowSchema = v.object(reportSocialFields);
+export type ReportSocialBaseRow = v.InferOutput<typeof ReportSocialBaseRowSchema>;
+
+export const ReportSocialRowSchema = v.object({
+  ...reportSocialFields,
+  history: v.array(
+    v.object({
+      id: v.string(),
+      capturedAt: v.date(),
+      total: ReportSocialCountSchema,
+      byLevel: ReportSocialByLevelSchema,
+    }),
+  ),
+});
+export type ReportSocialRow = v.InferOutput<typeof ReportSocialRowSchema>;
+
 // Schedule state is joined at read time rather than stored on the report row.
 export const SharedReportRowSchema = v.object({
   id: v.string(),
