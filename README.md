@@ -4,7 +4,7 @@
 trust signals on each package's latest release (none, provenance, trusted publishing, staged
 publishing), all versions published manually, and all maintainers of org packages who aren't org
 members. Reports are shareable and exportable and can be set to automatically update daily in order
-track progress and trends over time.
+to track progress and trends over time.
 
 > Not affiliated with or endorsed by npm, Inc. This is a free, open-source project for the
 > community.
@@ -45,7 +45,7 @@ More specifically, it offers four report types:
   `npm.antfu.dev`).
 - Daily tracking reruns the all-package package trust report for opted-in org sets from an hourly
   Netlify scheduled background function that picks up daily work that is due.
-- Report links and daily tracking are the only stateful features. The audit stream saves the
+- Report links and daily tracking are the only durable stateful features. The audit stream saves the
   completed `AuditResult` plus display metadata to Netlify Database as part of the run; `/report/:id`
   renders that snapshot read-only.
 - Resumable audit jobs retain non-sensitive request metadata, progress, and results temporarily;

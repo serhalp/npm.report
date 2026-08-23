@@ -21,10 +21,9 @@ pnpm run db:seed:local
 ```
 
 Then enter `acme` in the organization field or open `/report/dev-example-acme-2026-07-19`. Daily
-tracking is already enabled for the seeded org, so the shared report shows the disabled tracking
-state. The seed
-uses Netlify's local database connection and is kept outside `netlify/database/migrations`, so it is
-never applied by a deploy.
+tracking is already enabled for the seeded org, so the shared report shows its tracking status and
+next scheduled run. The seed uses Netlify's local database connection and is kept outside
+`netlify/database/migrations`, so it is never applied by a deploy.
 
 ## Before changing behaviour
 
@@ -57,8 +56,12 @@ pnpm run format:check
 pnpm run lint
 pnpm run typecheck
 pnpm run test:unit
+pnpm run test:coverage
 pnpm run knip
 ```
+
+`test:coverage` writes a browsable HTML report to `coverage/`. Pull requests also publish the
+coverage report in the GitHub Actions job summary; coverage is reported, not enforced.
 
 Before opening a PR, run:
 

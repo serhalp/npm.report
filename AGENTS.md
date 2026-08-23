@@ -20,10 +20,11 @@ authoritative by construction — the browser never submits trust data — and t
 is no CORS-proxy/SSRF surface to maintain. Do not move audit computation back
 into the browser, and do not add a browser-submitted report-write path.
 
-The audit library (`src/lib/*`) therefore runs in BOTH the browser (bundled by
-Vite) and the Deno edge runtime. Keep it free of `node:` builtins and
-browser-only globals: hashing uses Web Crypto (`crypto.subtle`), not
-`node:crypto`.
+The server-side audit graph under `src/lib/*` runs in both the Deno edge runtime
+and the Node scheduled-function runtime. Keep code reachable from `runAudit` or
+`runUserPublishes` free of runtime-specific APIs: hashing uses Web Crypto
+(`crypto.subtle`), not `node:crypto`, and audit code must not use browser-only
+globals.
 
 The server-side entry points are:
 
@@ -37,7 +38,7 @@ The server-side entry points are:
   `POST /api/user-publishes-stream`. Runs `runUserPublishes` and streams
   `log`/`result`. It does not persist anything.
 - `netlify/functions/trust-reruns-background.ts` — an hourly scheduled background
-  function. It reruns the all-package `recent`/package-trust report for opted-in
+  function. It reruns the all-package `trust`/package-trust report for opted-in
   org sets so the public timeline can grow without a browser session. It must not
   run, derive, store, or query `manual` or `external` report data.
 - `netlify/functions/audit-jobs-cleanup-background.ts` — an hourly scheduled
@@ -155,8 +156,9 @@ endpoint is eligible only when the saved report already has a
 `report_trust_history` row, which means it came from an all-scope package trust
 report. Schedules are keyed by the same normalized org set as the timeline.
 
-The client detects `/report/:id` in `src/main.ts`, renders
-`src/SharedReport.svelte`, and reuses `components/ResultsView.svelte` for the
+`src/AppRouter.svelte` handles `/` and `/report/:id`, preserving the shared app
+shell during client-side navigation. The report route renders
+`src/SharedReport.svelte`, which reuses `components/ResultsView.svelte` for the
 read-only snapshot.
 
 Reads and schedule writes are small JSON, so `reports.ts` stays a serverless
@@ -208,12 +210,14 @@ netlify/
     audit-jobs-cleanup-background.ts  Hourly prune of transient audit_jobs (resumable-audit) rows
     _shared/                    Shared report persistence, schedule, and audit-job helpers
 src/
-  main.ts               Svelte root and tiny /report/:id path switch
+  main.ts               Mounts the Svelte app
+  AppRouter.svelte      Tiny two-route client router for / and /report/:id
   App.svelte            Live audit UI; submits audits to the server, renders streamed progress + result
   SharedReport.svelte   Read-only shared report route
   styles.css            Design system and app styling
   lib/
-    types.ts            Shared types; field names mirror script TSV columns
+    types.ts            Shared audit and report types
+    dateFormatting.ts   Localized display dates/times and full-value tooltip formatting
     schemas.ts          valibot schemas for serialization boundaries (SSE requests, stored reports)
     auditDefaults.ts    Shared fetch concurrency and generic bot defaults
     npmClient.ts        npmGet/npmGetJson (direct npm fetch), retry/backoff, FailureLog, URL helpers
@@ -279,12 +283,13 @@ src/
   orgs per audit, and `BLOCKED_ORGS` (currently `types`) denylists orgs too large
   to audit within platform limits. These bound cost/abuse — they are not defaults
   that audit a specific org.
-- The audit library runs in both the browser bundle and the Deno edge runtime.
-  Nothing reachable from `runAudit`/`runUserPublishes` in `src/lib/*` may use
-  `node:` builtins or browser-only globals; hashing uses Web Crypto.
+- The server-side audit graph runs in both the Deno edge runtime and the Node
+  scheduled-function runtime. Nothing reachable from `runAudit` or
+  `runUserPublishes` may use `node:` builtins or browser-only globals; use Web
+  APIs that both runtimes provide.
 - Reports are authoritative because the server computes them. `audit-stream.ts`
   owns the save; there is no browser-submitted report-write path, and the daily
-  background rerun writes only `recent`/package-trust data.
+  background rerun writes only `trust`/package-trust data.
 - The interactive audit is a resumable durable job. The client-facing SSE
   connection is recycled (~60s), so `audit-stream` persists progress to the
   `audit_jobs` table keyed by a client `jobId`, and the client reconnects to
