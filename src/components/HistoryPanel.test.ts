@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import { mockFetch, mockResolvedFetch } from "../test/mock";
 import { formatDate, formatDateTime } from "../lib/dateFormatting";
 import type { ReportHistoryResponse, ReportTrustHistoryPoint } from "../lib/reportHistory";
 import HistoryPanel from "./HistoryPanel.svelte";
@@ -8,7 +9,7 @@ import HistoryPanel from "./HistoryPanel.svelte";
 function mockHistory(body: ReportHistoryResponse) {
   vi.stubGlobal(
     "fetch",
-    vi.fn().mockResolvedValue({
+    mockResolvedFetch({
       ok: true,
       json: async () => body,
     }),
@@ -45,7 +46,10 @@ describe("HistoryPanel", () => {
   });
 
   test("exposes its loading state", () => {
-    vi.stubGlobal("fetch", vi.fn().mockReturnValue(new Promise(() => {})));
+    vi.stubGlobal(
+      "fetch",
+      mockFetch(() => new Promise(() => {})),
+    );
 
     render(HistoryPanel, { props: { orgs: ["netlify"] } });
 
@@ -90,7 +94,7 @@ describe("HistoryPanel", () => {
   test("falls back to the empty state when history cannot load", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
+      mockResolvedFetch({
         ok: false,
         status: 502,
         json: async () => ({}),

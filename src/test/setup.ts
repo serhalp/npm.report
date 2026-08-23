@@ -47,7 +47,7 @@ if (typeof window !== "undefined") {
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: {
-        writeText: vi.fn().mockResolvedValue(undefined),
+        writeText: vi.fn<(data: string) => Promise<void>>().mockResolvedValue(undefined),
       },
     });
   });

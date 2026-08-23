@@ -8,7 +8,7 @@ describe("UserPublishView", () => {
     render(UserPublishView, {
       props: {
         report: { user: "alice", scanned: 4, rows: [] },
-        onToast: vi.fn(),
+        onToast: vi.fn<(message: string) => void>(),
       },
     });
 
@@ -25,7 +25,7 @@ describe("UserPublishView", () => {
           scanned: 2,
           rows: [{ when: "2026-06-01T02:03:04.000Z", ref: "pkg@1.0.0" }],
         },
-        onToast: vi.fn(),
+        onToast: vi.fn<(message: string) => void>(),
       },
     });
 

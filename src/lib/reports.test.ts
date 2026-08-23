@@ -24,7 +24,7 @@ function jsonResponse(body: unknown) {
 function installRoutes(routes: Record<string, unknown>) {
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (input: RequestInfo | URL) => {
+    vi.fn<typeof fetch>(async (input) => {
       const key = requestUrl(input);
       if (!(key in routes)) return new Response(`missing route: ${key}`, { status: 500 });
       return jsonResponse(routes[key]);
@@ -59,7 +59,7 @@ describe("report builders", () => {
         },
       ],
     });
-    const log = vi.fn();
+    const log = vi.fn<(message: string) => void>();
 
     await expect(discoverInScope(config, new FailureLog(), log)).resolves.toEqual([
       {
@@ -98,7 +98,7 @@ describe("report builders", () => {
         },
       ],
     });
-    const log = vi.fn();
+    const log = vi.fn<(message: string) => void>();
 
     await expect(discoverInScope({ ...config, all: true }, new FailureLog(), log)).resolves.toEqual(
       [
@@ -139,7 +139,7 @@ describe("report builders", () => {
       },
     });
     const failures = new FailureLog();
-    const log = vi.fn();
+    const log = vi.fn<(message: string) => void>();
 
     const promise = runTrust(config, failures, log, [
       {
@@ -222,7 +222,12 @@ describe("report builders", () => {
       },
     });
 
-    const report = await runManual(config, ["pkg"], new FailureLog(), vi.fn());
+    const report = await runManual(
+      config,
+      ["pkg"],
+      new FailureLog(),
+      vi.fn<(message: string) => void>(),
+    );
 
     expect(report.totalScanned).toBe(2);
     expect(report.rows).toEqual([
@@ -248,7 +253,12 @@ describe("report builders", () => {
       },
     });
 
-    const report = await runExternal(config, ["alice"], new FailureLog(), vi.fn());
+    const report = await runExternal(
+      config,
+      ["alice"],
+      new FailureLog(),
+      vi.fn<(message: string) => void>(),
+    );
 
     expect(report.rows).toEqual([
       { user: "mallory", pkg: "other" },
@@ -285,7 +295,7 @@ describe("report builders", () => {
       },
     });
 
-    const log = vi.fn();
+    const log = vi.fn<(message: string) => void>();
     const report = await runUserPublishes("alice", 6, 2, ["extra", "mine"], new FailureLog(), log);
 
     expect(report.scanned).toBe(2);

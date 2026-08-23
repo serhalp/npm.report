@@ -32,7 +32,7 @@ describe("npm client", () => {
   });
 
   it("fetches npm directly and records exhausted retryable failures", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(textResponse("rate limited", 429));
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(textResponse("rate limited", 429));
     vi.stubGlobal("fetch", fetchMock);
     const failures = new FailureLog();
     const url = "https://registry.npmjs.org/@scope%2fpkg?write=true";
@@ -46,7 +46,7 @@ describe("npm client", () => {
   });
 
   it("sends the request URL verbatim (scoped names and + separators intact)", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(textResponse("[]"));
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(textResponse("[]"));
     vi.stubGlobal("fetch", fetchMock);
     const url = "https://npm.antfu.dev/@scope/pkg+left-pad?metadata=true";
 
@@ -60,7 +60,7 @@ describe("npm client", () => {
   it("honors retry-after before retrying and does not log successful retries", async () => {
     vi.useFakeTimers();
     const fetchMock = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(textResponse("temporary", 503, { "retry-after": "2" }))
       .mockResolvedValueOnce(textResponse("ok"));
     vi.stubGlobal("fetch", fetchMock);
@@ -76,7 +76,7 @@ describe("npm client", () => {
 
   it("treats 404 as legitimately empty but logs a non-empty unparseable body as a failure", async () => {
     const fetchMock = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(textResponse("missing", 404))
       .mockResolvedValueOnce(textResponse("<html>not json</html>"));
     vi.stubGlobal("fetch", fetchMock);
@@ -94,7 +94,7 @@ describe("npm client", () => {
   });
 
   it("logs a parseable response that violates the supplied JSON schema", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(textResponse('{"downloads":"many"}'));
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(textResponse('{"downloads":"many"}'));
     vi.stubGlobal("fetch", fetchMock);
     const failures = new FailureLog();
     const url = "https://api.npmjs.org/downloads/point/last-week/left-pad";

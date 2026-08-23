@@ -6,11 +6,16 @@ import { auditResult } from "./test/fixtures";
 import { streamAudit } from "./lib/auditStream";
 import { formatCompactDateTime } from "./lib/dateFormatting";
 import { streamUserPublishes } from "./lib/userPublishStream";
+import { mockFetch, mockResolvedFetch } from "./test/mock";
 import { requestUrl } from "./test/request";
 
 // Both server-side workflows stream through these client adapters.
-vi.mock("./lib/auditStream", () => ({ streamAudit: vi.fn() }));
-vi.mock("./lib/userPublishStream", () => ({ streamUserPublishes: vi.fn() }));
+vi.mock("./lib/auditStream", () => ({
+  streamAudit: vi.fn<typeof import("./lib/auditStream").streamAudit>(),
+}));
+vi.mock("./lib/userPublishStream", () => ({
+  streamUserPublishes: vi.fn<typeof import("./lib/userPublishStream").streamUserPublishes>(),
+}));
 
 const mockedStreamAudit = vi.mocked(streamAudit);
 const mockedStreamUserPublishes = vi.mocked(streamUserPublishes);
@@ -32,7 +37,7 @@ describe("App", () => {
     vi.unstubAllGlobals();
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
+      mockResolvedFetch({
         ok: true,
         json: async () => ({ orgs: [], points: [] }),
       }),
@@ -157,7 +162,7 @@ describe("App", () => {
   test("streams an audit, renders results, shows the saved link, and copies it on request", async () => {
     const user = userEvent.setup();
     const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = mockFetch(async (input) => {
       if (requestUrl(input) === "/api/reports/netlify-2026-06-27-abc12345/schedule-daily") {
         return {
           ok: true,
@@ -173,7 +178,7 @@ describe("App", () => {
       }
       return { ok: true, json: async () => ({ orgs: ["netlify"], points: [] }) };
     });
-    const scrollIntoView = vi.fn();
+    const scrollIntoView = vi.fn<typeof HTMLElement.prototype.scrollIntoView>();
     Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", {
       configurable: true,
       value: scrollIntoView,

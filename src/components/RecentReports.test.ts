@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/svelte";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import { mockFetch, mockResolvedFetch } from "../test/mock";
 import { formatDate, formatDateTime } from "../lib/dateFormatting";
 import type { RecentTrustReportsResponse } from "../lib/reportHistory";
 import RecentReports from "./RecentReports.svelte";
@@ -7,7 +8,7 @@ import RecentReports from "./RecentReports.svelte";
 function mockRecentReports(body: RecentTrustReportsResponse) {
   vi.stubGlobal(
     "fetch",
-    vi.fn().mockResolvedValue({
+    mockResolvedFetch({
       ok: true,
       json: async () => body,
     }),
@@ -20,7 +21,10 @@ describe("RecentReports", () => {
   });
 
   test("exposes its loading state", () => {
-    vi.stubGlobal("fetch", vi.fn().mockReturnValue(new Promise(() => {})));
+    vi.stubGlobal(
+      "fetch",
+      mockFetch(() => new Promise(() => {})),
+    );
 
     render(RecentReports);
 
@@ -73,7 +77,7 @@ describe("RecentReports", () => {
   test("falls back to the empty state when recent reports cannot load", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
+      mockResolvedFetch({
         ok: false,
         status: 502,
         json: async () => ({}),

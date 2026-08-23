@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { formatCompactDateTime, formatDateTime } from "../lib/dateFormatting";
+import { mockFetch, mockResolvedFetch } from "../test/mock";
 import DailyTrackingButton from "./DailyTrackingButton.svelte";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -10,7 +11,7 @@ describe("DailyTrackingButton", () => {
   test("renders an existing schedule as a compact status without making a request", () => {
     const nextRunAt = "2026-06-28T12:34:56.000Z";
     const nextRun = formatCompactDateTime(nextRunAt);
-    const fetchMock = vi.fn();
+    const fetchMock = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", fetchMock);
 
     render(DailyTrackingButton, {
@@ -35,7 +36,7 @@ describe("DailyTrackingButton", () => {
     const user = userEvent.setup();
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
+      mockResolvedFetch({
         ok: true,
         json: async () => ({
           orgs: ["netlify"],
@@ -65,7 +66,10 @@ describe("DailyTrackingButton", () => {
       ok: boolean;
       json: () => Promise<unknown>;
     }>();
-    vi.stubGlobal("fetch", vi.fn().mockReturnValue(request.promise));
+    vi.stubGlobal(
+      "fetch",
+      mockFetch(() => request.promise),
+    );
 
     render(DailyTrackingButton, { props: { reportId: "report-id" } });
     await user.click(screen.getByRole("button", { name: "Track daily" }));
@@ -101,8 +105,8 @@ describe("DailyTrackingButton", () => {
     ],
   ])("shows %s and permits a retry", async (_name, response, message) => {
     const user = userEvent.setup();
-    const onToast = vi.fn();
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
+    const onToast = vi.fn<(message: string) => void>();
+    vi.stubGlobal("fetch", mockResolvedFetch(response));
 
     render(DailyTrackingButton, {
       props: { reportId: "report/id", onToast },

@@ -12,7 +12,7 @@ describe("ManualView", () => {
           byPublisher: [{ who: "alice", count: 1 }],
           rows: [{ when: "2026-06-01T02:03:04.000Z", who: "alice", ref: "pkg@1.0.0" }],
         },
-        onToast: vi.fn(),
+        onToast: vi.fn<(message: string) => void>(),
       },
     });
 

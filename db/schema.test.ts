@@ -38,7 +38,7 @@ describe("database row contracts", () => {
           updatedAt: new Date(),
         },
       ]),
-    ).toThrow();
+    ).toThrow(/Expected.*running.*done.*error.*finished/);
   });
 
   it("serializes arrays as JSON rather than Postgres array parameters", () => {

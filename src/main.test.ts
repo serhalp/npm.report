@@ -10,7 +10,7 @@ afterEach(() => {
 
 async function importMain() {
   document.body.innerHTML = '<div id="root"></div>';
-  const mount = vi.fn();
+  const mount = vi.fn<(component: unknown, options: { target: Element | null }) => unknown>();
   const AppRouter = { name: "AppRouter" };
   vi.doMock("svelte", () => ({ mount }));
   vi.doMock("./AppRouter.svelte", () => ({ default: AppRouter }));
@@ -28,7 +28,7 @@ describe("main entry", () => {
   });
 
   test("throws when the root element is missing", async () => {
-    vi.doMock("svelte", () => ({ mount: vi.fn() }));
+    vi.doMock("svelte", () => ({ mount: vi.fn<() => void>() }));
     vi.doMock("./AppRouter.svelte", () => ({ default: {} }));
 
     await expect(import("./main")).rejects.toThrow("Missing #root mount point");

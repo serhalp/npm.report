@@ -4,6 +4,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import AppRouter from "./AppRouter.svelte";
 import { formatDateTime } from "./lib/dateFormatting";
 import { auditResult, trustReport } from "./test/fixtures";
+import { mockFetch, mockResolvedFetch } from "./test/mock";
 import { requestUrl } from "./test/request";
 
 const points = [
@@ -57,7 +58,7 @@ afterEach(() => {
 describe("AppRouter", () => {
   test("decodes report ids from direct permalink loads", async () => {
     window.history.replaceState(null, "", "/report/netlify%20report/");
-    const fetchMock = vi.fn().mockResolvedValue({
+    const fetchMock = mockResolvedFetch({
       ok: true,
       status: 200,
       json: async () => ({
@@ -87,7 +88,7 @@ describe("AppRouter", () => {
     }>((resolve) => {
       resolveSecond = resolve;
     });
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = mockFetch(async (input) => {
       const url = requestUrl(input);
       if (url === "/api/reports/one") {
         return { ok: true, status: 200, json: async () => reportRecord("one", "first") };
@@ -146,7 +147,7 @@ describe("AppRouter", () => {
     window.history.replaceState(null, "", "/report/one");
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (input: RequestInfo | URL) => ({
+      mockFetch(async (input) => ({
         ok: true,
         status: 200,
         json: async () =>

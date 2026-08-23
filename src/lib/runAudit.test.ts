@@ -4,10 +4,10 @@ import { discoverInScope, runExternal, runManual, runTrust } from "./reports";
 import type { AuditConfig, PkgMeta } from "./types";
 
 vi.mock("./reports", () => ({
-  discoverInScope: vi.fn(),
-  runExternal: vi.fn(),
-  runManual: vi.fn(),
-  runTrust: vi.fn(),
+  discoverInScope: vi.fn<typeof import("./reports").discoverInScope>(),
+  runExternal: vi.fn<typeof import("./reports").runExternal>(),
+  runManual: vi.fn<typeof import("./reports").runManual>(),
+  runTrust: vi.fn<typeof import("./reports").runTrust>(),
 }));
 
 const config: AuditConfig = {
@@ -66,7 +66,7 @@ describe("runAudit", () => {
   });
 
   it("shares discovery for trust/manual and skips external without members", async () => {
-    const log = vi.fn();
+    const log = vi.fn<(message: string) => void>();
 
     const result = await runAudit(config, ["trust", "manual", "external"], [], log);
 
@@ -84,7 +84,7 @@ describe("runAudit", () => {
   });
 
   it("runs external-only audits without trust/manual discovery", async () => {
-    const log = vi.fn();
+    const log = vi.fn<(message: string) => void>();
 
     const result = await runAudit(config, ["external"], ["alice"], log);
 
@@ -100,7 +100,7 @@ describe("runAudit", () => {
       failures.add("https://registry.npmjs.org/pkg", "http 500");
       return { rows: [], distinctUsers: 0, byUser: [] };
     });
-    const log = vi.fn();
+    const log = vi.fn<(message: string) => void>();
 
     const result = await runAudit(config, ["external"], ["alice"], log);
 

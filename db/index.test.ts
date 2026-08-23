@@ -8,8 +8,10 @@ describe("db connection", () => {
 
   it("creates and caches the native connection lazily", async () => {
     const database = { sql: {} };
-    const getConnectionString = vi.fn(() => "postgres://app:secret@database.example/test");
-    const getDatabase = vi.fn(() => database);
+    const getConnectionString = vi.fn<() => string>(
+      () => "postgres://app:secret@database.example/test",
+    );
+    const getDatabase = vi.fn<() => typeof database>(() => database);
     vi.doMock("@netlify/database", () => ({ getConnectionString, getDatabase }));
 
     const mod = await import("./index");
@@ -25,8 +27,8 @@ describe("db connection", () => {
 
   it("adds the username missing from Netlify's local Database URL", async () => {
     const database = { sql: {} };
-    const getConnectionString = vi.fn(() => "postgres://localhost:5432/postgres");
-    const getDatabase = vi.fn(() => database);
+    const getConnectionString = vi.fn<() => string>(() => "postgres://localhost:5432/postgres");
+    const getDatabase = vi.fn<() => typeof database>(() => database);
     vi.doMock("@netlify/database", () => ({ getConnectionString, getDatabase }));
 
     const mod = await import("./index");
@@ -41,10 +43,10 @@ describe("db connection", () => {
   });
 
   it("does not hide a missing Database configuration", async () => {
-    const getConnectionString = vi.fn(() => {
+    const getConnectionString = vi.fn<() => string>(() => {
       throw new Error("Database is not configured");
     });
-    const getDatabase = vi.fn();
+    const getDatabase = vi.fn<() => void>();
     vi.doMock("@netlify/database", () => ({ getConnectionString, getDatabase }));
 
     const mod = await import("./index");

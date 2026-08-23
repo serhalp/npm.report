@@ -1,7 +1,9 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const runUserPublishes = vi.hoisted(() => vi.fn());
+const runUserPublishes = vi.hoisted(() =>
+  vi.fn<typeof import("../../../src/lib/reports.ts").runUserPublishes>(),
+);
 
 vi.mock("../../../src/lib/reports.ts", () => ({ runUserPublishes }));
 

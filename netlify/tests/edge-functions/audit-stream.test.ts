@@ -2,12 +2,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocked = vi.hoisted(() => ({
-  createJobIfAbsent: vi.fn(),
-  finishJob: vi.fn(),
-  getJob: vi.fn(),
-  runAudit: vi.fn(),
-  saveReportSnapshot: vi.fn(),
-  updateJobLog: vi.fn(),
+  createJobIfAbsent:
+    vi.fn<typeof import("../../functions/_shared/audit-jobs.ts").createJobIfAbsent>(),
+  finishJob: vi.fn<typeof import("../../functions/_shared/audit-jobs.ts").finishJob>(),
+  getJob: vi.fn<typeof import("../../functions/_shared/audit-jobs.ts").getJob>(),
+  runAudit: vi.fn<typeof import("../../../src/lib/runAudit.ts").runAudit>(),
+  saveReportSnapshot:
+    vi.fn<typeof import("../../functions/_shared/report-persistence.ts").saveReportSnapshot>(),
+  updateJobLog: vi.fn<typeof import("../../functions/_shared/audit-jobs.ts").updateJobLog>(),
 }));
 
 vi.mock("../../functions/_shared/audit-jobs.ts", () => ({

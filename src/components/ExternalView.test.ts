@@ -7,7 +7,7 @@ describe("ExternalView", () => {
     render(ExternalView, {
       props: {
         report: { rows: [], distinctUsers: 0, byUser: [] },
-        onToast: vi.fn(),
+        onToast: vi.fn<(message: string) => void>(),
       },
     });
 
@@ -26,7 +26,7 @@ describe("ExternalView", () => {
             { user: "mallory", pkg: "beta" },
           ],
         },
-        onToast: vi.fn(),
+        onToast: vi.fn<(message: string) => void>(),
       },
     });
 
