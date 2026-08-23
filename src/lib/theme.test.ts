@@ -7,24 +7,43 @@ import {
   THEME_STORAGE_KEY,
 } from "./theme.svelte";
 
-function createMedia(matches: boolean) {
-  const listeners = new Set<(event: MediaQueryListEvent) => void>();
-  const media = {
-    matches,
-    media: "(prefers-color-scheme: dark)",
-    addEventListener: (_event: "change", listener: (event: MediaQueryListEvent) => void) => {
-      listeners.add(listener);
-    },
-    removeEventListener: (_event: "change", listener: (event: MediaQueryListEvent) => void) => {
-      listeners.delete(listener);
-    },
-    setMatches(next: boolean) {
-      this.matches = next;
-      const event = { matches: next } as MediaQueryListEvent;
-      for (const listener of listeners) listener(event);
-    },
-  };
-  return media as MediaQueryList & { setMatches: (next: boolean) => void };
+class TestMediaQueryListEvent extends Event implements MediaQueryListEvent {
+  constructor(
+    readonly matches: boolean,
+    readonly media: string,
+  ) {
+    super("change");
+  }
+}
+
+class TestMediaQueryList extends EventTarget implements MediaQueryList {
+  readonly media = "(prefers-color-scheme: dark)";
+  onchange: MediaQueryList["onchange"] = null;
+  readonly #legacyListeners = new Set<NonNullable<MediaQueryList["onchange"]>>();
+
+  constructor(public matches: boolean) {
+    super();
+  }
+
+  addListener(callback: MediaQueryList["onchange"]): void {
+    if (callback) this.#legacyListeners.add(callback);
+  }
+
+  removeListener(callback: MediaQueryList["onchange"]): void {
+    if (callback) this.#legacyListeners.delete(callback);
+  }
+
+  setMatches(next: boolean): void {
+    this.matches = next;
+    const event = new TestMediaQueryListEvent(next, this.media);
+    this.dispatchEvent(event);
+    this.onchange?.(event);
+    for (const listener of this.#legacyListeners) listener.call(this, event);
+  }
+}
+
+function createMedia(matches: boolean): TestMediaQueryList {
+  return new TestMediaQueryList(matches);
 }
 
 afterEach(() => {

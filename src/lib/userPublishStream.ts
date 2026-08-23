@@ -30,7 +30,7 @@ export async function streamUserPublishes(
     if (event === "log" && typeof data === "string") {
       onLog(data);
     } else if (event === "result") {
-      result = parseOrNull(UserPublishReportSchema, data) as UserPublishReport | null;
+      result = parseOrNull(UserPublishReportSchema, data);
     } else if (event === "error" && typeof data === "string") {
       fatal = data;
     }

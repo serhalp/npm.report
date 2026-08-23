@@ -52,6 +52,7 @@
     "knip": "^6.32.2",
     "oxfmt": "^0.64.0",
     "oxlint": "^1.79.0",
+    "oxlint-tsgolint": "^7.0.2001",
     "sonda": "^0.14.0",
     "svelte-check": "^4.7.6",
     "typescript": "6.0.3",

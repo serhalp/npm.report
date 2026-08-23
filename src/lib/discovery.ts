@@ -1,4 +1,5 @@
 /* eslint-disable no-await-in-loop -- Discovery intentionally resolves orgs and fast-npm-meta batches in a bounded sequence so failures stay attributable and upstream request shape matches the shell reference. */
+import * as v from "valibot";
 import { chunk } from "./concurrency.ts";
 import { FailureLog, npmGet, npmGetJson } from "./npmClient.ts";
 import type { PkgMeta } from "./types.ts";
@@ -15,25 +16,25 @@ export async function listOrgPackages(orgs: string[], failures: FailureLog): Pro
   for (const org of orgs) {
     const slug = org.trim();
     if (!slug) continue;
-    const obj = await npmGetJson<Record<string, unknown>>(
+    const obj = await npmGetJson(
       `https://registry.npmjs.org/-/org/${encodeURIComponent(slug)}/package`,
       failures,
+      v.record(v.string(), v.unknown()),
       5,
     );
-    if (obj && typeof obj === "object") {
-      for (const name of Object.keys(obj)) seen.add(name);
-    }
+    if (obj) for (const name of Object.keys(obj)) seen.add(name);
   }
   return [...seen].toSorted();
 }
 
-interface FastMetaItem {
-  name?: string;
-  version?: string;
-  publishedAt?: string;
-  deprecated?: unknown;
-  error?: unknown;
-}
+const FastMetaItemSchema = v.looseObject({
+  name: v.optional(v.string()),
+  version: v.optional(v.string()),
+  publishedAt: v.optional(v.string()),
+  deprecated: v.optional(v.unknown()),
+  error: v.optional(v.unknown()),
+});
+const FastMetaResponseSchema = v.union([v.array(FastMetaItemSchema), FastMetaItemSchema]);
 
 /**
  * Resolve latest version + publishedAt + deprecated for each package via
@@ -58,9 +59,9 @@ export async function resolveMeta(
     done += grp.length;
     onProgress?.(Math.min(done, pkgs.length), pkgs.length);
     if (!body) continue; // npmGet already recorded the exhausted failure
-    let parsed: unknown;
+    let json: unknown;
     try {
-      parsed = JSON.parse(body);
+      json = JSON.parse(body);
     } catch {
       // A 200 with an unparseable body (e.g. an HTML rate-limit interstitial)
       // is NOT a legitimately-empty result. Per the "no silent failure"
@@ -69,9 +70,12 @@ export async function resolveMeta(
       failures.add(url, "unparseable fast-npm-meta response");
       continue;
     }
-    const items: FastMetaItem[] = Array.isArray(parsed)
-      ? (parsed as FastMetaItem[])
-      : [parsed as FastMetaItem];
+    const parsed = v.safeParse(FastMetaResponseSchema, json);
+    if (!parsed.success) {
+      failures.add(url, "unexpected fast-npm-meta response");
+      continue;
+    }
+    const items = Array.isArray(parsed.output) ? parsed.output : [parsed.output];
     let resolved = 0;
     for (const it of items) {
       if (!it || !it.name || !it.version) continue; // drop unresolvable rows

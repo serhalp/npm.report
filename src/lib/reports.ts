@@ -1,4 +1,5 @@
 /* eslint-disable no-underscore-dangle -- npm packuments expose publisher metadata as the documented `_npmUser` field. */
+import * as v from "valibot";
 import { mapLimit } from "./concurrency.ts";
 import { resolveMeta, listOrgPackages } from "./discovery.ts";
 import { fetchWeeklyDownloads } from "./downloads.ts";
@@ -19,6 +20,31 @@ import type {
 } from "./types.ts";
 
 export type LogFn = (msg: string) => void;
+
+const JsonObjectSchema = v.record(v.string(), v.unknown());
+const NpmUserSchema = v.looseObject({ name: v.optional(v.string()) });
+const PackumentSchema = v.looseObject({
+  name: v.optional(v.string()),
+  versions: v.optional(
+    v.record(
+      v.string(),
+      v.looseObject({
+        _npmUser: v.optional(NpmUserSchema),
+      }),
+    ),
+  ),
+  time: v.optional(v.record(v.string(), v.string())),
+});
+const MaintainerDocumentSchema = v.looseObject({
+  name: v.optional(v.string()),
+  maintainers: v.optional(
+    v.array(
+      v.looseObject({
+        name: v.optional(v.string()),
+      }),
+    ),
+  ),
+});
 
 /** ISO-8601 cutoff `months` calendar-months before now (UTC). */
 export function cutoffIso(months: number): string {
@@ -70,11 +96,7 @@ export async function runTrust(
 
   let done = 0;
   const rows: TrustRow[] = await mapLimit(inScopeMeta, config.jobs, async (m) => {
-    const manifest = await npmGetJson<Record<string, unknown>>(
-      versionUrl(m.name, m.version),
-      failures,
-      5,
-    );
+    const manifest = await npmGetJson(versionUrl(m.name, m.version), failures, JsonObjectSchema, 5);
     if (!manifest) {
       // A missing per-version manifest (404 or exhausted retries) would make the
       // package read as trust "none" instead of "unknown" — a silently wrong
@@ -146,12 +168,6 @@ export async function runTrust(
 // manual: who published manually (non-bot account) in the window.
 // ---------------------------------------------------------------------------
 
-interface Packument {
-  name?: string;
-  versions?: Record<string, { _npmUser?: { name?: string } }>;
-  time?: Record<string, string>;
-}
-
 export async function runManual(
   config: AuditConfig,
   packages: string[],
@@ -164,7 +180,7 @@ export async function runManual(
   );
   let done = 0;
   const nested: ManualRow[][] = await mapLimit(packages, config.jobs, async (pkg) => {
-    const doc = await npmGetJson<Packument>(pkgUrl(pkg), failures, 5);
+    const doc = await npmGetJson(pkgUrl(pkg), failures, PackumentSchema, 5);
     done++;
     if (done % 25 === 0 || done === packages.length)
       log(`[manual]   scanned ${done}/${packages.length}`);
@@ -207,11 +223,6 @@ export async function runManual(
 // external: users who can publish now but aren't org members.
 // ---------------------------------------------------------------------------
 
-interface MaintainerDoc {
-  name?: string;
-  maintainers?: { name?: string }[];
-}
-
 export async function runExternal(
   config: AuditConfig,
   members: string[],
@@ -224,7 +235,7 @@ export async function runExternal(
   log(`[external] scanning ${pkgs.length} packages for current maintainers...`);
   let done = 0;
   const nested: ExternalRow[][] = await mapLimit(pkgs, config.jobs, async (pkg) => {
-    const doc = await npmGetJson<MaintainerDoc>(pkgUrl(pkg), failures, 5);
+    const doc = await npmGetJson(pkgUrl(pkg), failures, MaintainerDocumentSchema, 5);
     done++;
     if (done % 25 === 0 || done === pkgs.length) log(`[external]   scanned ${done}/${pkgs.length}`);
     if (!doc || !doc.maintainers) return [];
@@ -277,13 +288,12 @@ export async function runUserPublishes(
   const cutoff = toEpoch(cutoffIso(months))!;
   const universe = new Set<string>();
 
-  const ownBody = await npmGetJson<Record<string, unknown>>(
+  const ownBody = await npmGetJson(
     `https://registry.npmjs.org/-/user/${encodeURIComponent(username)}/package`,
     failures,
+    JsonObjectSchema,
   );
-  if (ownBody && typeof ownBody === "object") {
-    for (const n of Object.keys(ownBody)) universe.add(n);
-  }
+  if (ownBody) for (const n of Object.keys(ownBody)) universe.add(n);
   for (const n of extraPackages) universe.add(n);
   const all = [...universe].toSorted();
 
@@ -292,7 +302,7 @@ export async function runUserPublishes(
   );
   let done = 0;
   const nested: UserPublishRow[][] = await mapLimit(all, jobs, async (pkg) => {
-    const doc = await npmGetJson<Packument>(pkgUrl(pkg), failures);
+    const doc = await npmGetJson(pkgUrl(pkg), failures, PackumentSchema);
     done++;
     if (done % 25 === 0 || done === all.length) log(`[user]   scanned ${done}/${all.length}`);
     if (!doc || !doc.versions) return [];

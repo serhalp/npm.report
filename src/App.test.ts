@@ -6,6 +6,7 @@ import { auditResult } from "./test/fixtures";
 import { streamAudit } from "./lib/auditStream";
 import { formatCompactDateTime } from "./lib/dateFormatting";
 import { streamUserPublishes } from "./lib/userPublishStream";
+import { requestUrl } from "./test/request";
 
 // Both server-side workflows stream through these client adapters.
 vi.mock("./lib/auditStream", () => ({ streamAudit: vi.fn() }));
@@ -29,7 +30,6 @@ describe("App", () => {
     mockedStreamAudit.mockReset();
     mockedStreamUserPublishes.mockReset();
     vi.unstubAllGlobals();
-    vi.mocked(navigator.clipboard.writeText).mockClear();
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -158,7 +158,7 @@ describe("App", () => {
     const user = userEvent.setup();
     const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input) === "/api/reports/netlify-2026-06-27-abc12345/schedule-daily") {
+      if (requestUrl(input) === "/api/reports/netlify-2026-06-27-abc12345/schedule-daily") {
         return {
           ok: true,
           json: async () => ({

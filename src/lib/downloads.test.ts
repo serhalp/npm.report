@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fetchWeeklyDownloads } from "./downloads";
 import { FailureLog } from "./npmClient";
+import { requestUrl } from "../test/request";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -16,7 +17,7 @@ describe("fetchWeeklyDownloads", () => {
     vi.useFakeTimers();
     const seen: string[] = [];
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
+      const url = requestUrl(input);
       seen.push(url);
       if (url.endsWith("/left-pad,is-number")) {
         return jsonResponse({
@@ -44,7 +45,9 @@ describe("fetchWeeklyDownloads", () => {
       "https://api.npmjs.org/downloads/point/last-week/left-pad,is-number",
       "https://api.npmjs.org/downloads/point/last-week/@scope/pkg",
     ]);
-    expect([...downloads.entries()].toSorted()).toEqual([
+    expect(
+      [...downloads.entries()].toSorted(([left], [right]) => left.localeCompare(right)),
+    ).toEqual([
       ["@scope/pkg", 3],
       ["is-number", 20],
       ["left-pad", 10],
@@ -59,7 +62,7 @@ describe("fetchWeeklyDownloads", () => {
     vi.useFakeTimers();
     const seen: string[] = [];
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
+      const url = requestUrl(input);
       seen.push(url);
       if (url.includes("/a,b")) return jsonResponse({ a: { downloads: 5 }, b: null });
       if (url.endsWith("/@s/one")) return jsonResponse({ downloads: 1 });

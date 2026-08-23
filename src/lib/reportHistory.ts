@@ -1,4 +1,5 @@
-import type { TrustReport, TrustLevel } from "./types.ts";
+import { parseOrNull, TrustHistoryPayloadSchema } from "./schemas.ts";
+import type { TrustLevel } from "./types.ts";
 
 export type SharedReportScope = "all" | { months: number };
 
@@ -54,16 +55,6 @@ interface HistoryInput {
   payload: unknown;
 }
 
-const TRUST_LEVELS: TrustLevel[] = ["stagedPublish", "trustedPublisher", "provenance", "none"];
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === "object";
-}
-
-function numberFrom(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
 export function normalizeOrgSlug(org: string): string {
   return org.trim().toLowerCase();
 }
@@ -102,31 +93,11 @@ export function trustPercent(count: number, total: number): number {
   return total > 0 ? (count / total) * 100 : 0;
 }
 
-function readByLevel(summary: Record<string, unknown>): Record<TrustLevel, number> | null {
-  const raw = summary.byLevel;
-  if (!isObject(raw)) return null;
-
-  const byLevel = {} as Record<TrustLevel, number>;
-  for (const level of TRUST_LEVELS) {
-    const count = numberFrom(raw[level]);
-    if (count === null) return null;
-    byLevel[level] = count;
-  }
-  return byLevel;
-}
-
 export function extractTrustHistory(input: HistoryInput): TrustHistorySnapshot | null {
   if (!isAllScope(input.scope) || Number.isNaN(Date.parse(input.capturedAt))) return null;
-  if (!isObject(input.payload)) return null;
-
-  const trust = input.payload.trust as TrustReport | undefined;
-  if (!trust || !isObject(trust.summary)) return null;
-
-  const summary = trust.summary as unknown as Record<string, unknown>;
-  const total = numberFrom(summary.total);
-  const deprecated = numberFrom(summary.deprecated);
-  const byLevel = readByLevel(summary);
-  if (total === null || deprecated === null || !byLevel) return null;
+  const payload = parseOrNull(TrustHistoryPayloadSchema, input.payload);
+  if (!payload) return null;
+  const { trust } = payload;
 
   const orgs = normalizeOrgs(input.orgs.length > 0 ? input.orgs : trust.summary.orgs);
   if (orgs.length === 0) return null;
@@ -135,9 +106,9 @@ export function extractTrustHistory(input: HistoryInput): TrustHistorySnapshot |
     orgKey: orgs.join(","),
     orgs,
     capturedAt: new Date(input.capturedAt).toISOString(),
-    total,
-    byLevel,
-    deprecated,
-    failureCount: Array.isArray(input.payload.failures) ? input.payload.failures.length : 0,
+    total: trust.summary.total,
+    byLevel: trust.summary.byLevel,
+    deprecated: trust.summary.deprecated,
+    failureCount: payload.failures.length,
   };
 }

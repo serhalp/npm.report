@@ -4,6 +4,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import AppRouter from "./AppRouter.svelte";
 import { formatDateTime } from "./lib/dateFormatting";
 import { auditResult, trustReport } from "./test/fixtures";
+import { requestUrl } from "./test/request";
 
 const points = [
   {
@@ -87,7 +88,7 @@ describe("AppRouter", () => {
       resolveSecond = resolve;
     });
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
+      const url = requestUrl(input);
       if (url === "/api/reports/one") {
         return { ok: true, status: 200, json: async () => reportRecord("one", "first") };
       }
@@ -149,7 +150,7 @@ describe("AppRouter", () => {
         ok: true,
         status: 200,
         json: async () =>
-          String(input).startsWith("/api/reports/history")
+          requestUrl(input).startsWith("/api/reports/history")
             ? { orgs: ["first"], points }
             : reportRecord("one", "first"),
       })),

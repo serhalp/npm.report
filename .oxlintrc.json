@@ -2,6 +2,9 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "oxc", "import", "jsx-a11y"],
   "jsPlugins": ["@e18e/eslint-plugin"],
+  "options": {
+    "typeAware": true
+  },
   "categories": {
     "correctness": "error",
     "suspicious": "error",
