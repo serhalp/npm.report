@@ -23,7 +23,8 @@
 
   /* Trust-level semantics. "none" is the actionable risk signal → warm red. */
   --t-staged: #c9a0dc;
-  --t-trusted: #8fbf7f;
+  --t-trusted: #d8a657;
+  --t-strong: #8fbf7f;
   --t-provenance: #5fb3b3;
   --t-none: #e07a5f;
   --warn: #e0a458;
@@ -109,7 +110,8 @@
   --accent-ink-muted: rgba(255, 248, 236, 0.72);
 
   --t-staged: #8752a0;
-  --t-trusted: #3f7d3b;
+  --t-trusted: #9a671b;
+  --t-strong: #3f7d3b;
   --t-provenance: #1f777b;
   --t-none: #b9472e;
   --warn: #9a671b;
@@ -926,7 +928,7 @@ textarea {
   animation-name: term-signal-inner;
 }
 .signal-spinner__arc--middle {
-  color: var(--t-trusted);
+  color: var(--t-strong);
   animation-name: term-signal-middle;
 }
 .signal-spinner__arc--outer {
@@ -1306,9 +1308,18 @@ textarea {
   color: var(--gold);
 }
 .stat--strong .v {
-  color: var(--t-trusted);
+  color: var(--t-strong);
 }
 .stat--any .v {
+  color: var(--t-provenance);
+}
+.stat--staged .v {
+  color: var(--t-staged);
+}
+.stat--trusted .v {
+  color: var(--t-trusted);
+}
+.stat--provenance .v {
   color: var(--t-provenance);
 }
 .stat--risk {
@@ -1428,7 +1439,7 @@ textarea {
   vector-effect: non-scaling-stroke;
 }
 .trust-trend__line--strong {
-  stroke: var(--t-trusted);
+  stroke: var(--t-strong);
 }
 .trust-trend__line--any {
   stroke: var(--t-provenance);
@@ -1459,7 +1470,7 @@ textarea {
   vector-effect: non-scaling-stroke;
 }
 .trust-trend__dot--strong {
-  fill: var(--t-trusted);
+  fill: var(--t-strong);
 }
 .trust-trend__dot--any {
   fill: var(--t-provenance);
@@ -1514,7 +1525,7 @@ textarea {
   border-top: 2px solid;
 }
 .trust-trend__key--strong::before {
-  border-color: var(--t-trusted);
+  border-color: var(--t-strong);
 }
 .trust-trend__key--any::before {
   border-color: var(--t-provenance);

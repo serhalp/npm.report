@@ -3,7 +3,7 @@
     k: string;
     v: string | number;
     sub?: string;
-    variant?: "accent" | "strong" | "any" | "risk";
+    variant?: "accent" | "strong" | "any" | "staged" | "trusted" | "provenance" | "risk";
   }
 
   let { k, v, sub, variant }: Props = $props();
