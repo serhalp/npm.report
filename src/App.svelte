@@ -10,7 +10,7 @@
   import TagInput from "./components/TagInput.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import TrustGlossary from "./components/TrustGlossary.svelte";
-  import Logo from "./components/Logo.svelte";
+  import logo from "./components/logo.svg";
   import UserPublishView from "./components/UserPublishView.svelte";
   import {
     DEFAULT_BOT_EXCLUSIONS,
@@ -322,7 +322,9 @@
   <header class="masthead">
     <div class="masthead__top">
       <h1 class="wordmark">
-        <a href="/#" aria-label="npm.report"><span>npm</span><Logo /><span>report</span></a>
+        <a href="/#" aria-label="npm.report"
+          ><span>npm</span><img class="logo" src={logo} alt="" /><span>report</span></a
+        >
       </h1>
       <div class="masthead__controls">
         <ThemeToggle />

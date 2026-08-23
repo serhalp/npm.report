@@ -7,7 +7,7 @@
   import SiteFooter from "./components/SiteFooter.svelte";
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import TrustGlossary from "./components/TrustGlossary.svelte";
-  import Logo from "./components/Logo.svelte";
+  import logo from "./components/logo.svg";
   import { formatDate, formatDateTime } from "#client/dateFormatting";
   import type { ReportHistoryResponse } from "#shared/reportHistory";
   import { parseOrNull, ReportHistoryResponseSchema, ReportRecordSchema } from "#shared/schemas";
@@ -147,7 +147,9 @@
   <header class="masthead">
     <div class="masthead__top">
       <h1 class="wordmark">
-        <a href="/#" aria-label="npm.report"><span>npm</span><Logo /><span>report</span></a>
+        <a href="/#" aria-label="npm.report"
+          ><span>npm</span><img class="logo" src={logo} alt="" /><span>report</span></a
+        >
       </h1>
       <div class="masthead__controls">
         <ThemeToggle />
