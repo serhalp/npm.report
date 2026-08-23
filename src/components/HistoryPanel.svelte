@@ -3,16 +3,16 @@
   import HistoryStack from "./HistoryStack.svelte";
   import Stat from "./Stat.svelte";
   import TrustTrend from "./TrustTrend.svelte";
-  import { formatDate, formatDateTime } from "../lib/dateFormatting";
-  import { groupTrustHistoryPoints } from "../lib/historyGroups";
+  import { formatDate, formatDateTime } from "#client/dateFormatting";
+  import { groupTrustHistoryPoints } from "#client/historyGroups";
   import {
     anyTrustCount,
     strongTrustCount,
     trustPercent,
     type ReportHistoryResponse,
     type ReportTrustHistoryPoint,
-  } from "../lib/reportHistory";
-  import { parseOrNull, ReportHistoryResponseSchema } from "../lib/schemas";
+  } from "#shared/reportHistory";
+  import { parseOrNull, ReportHistoryResponseSchema } from "#shared/schemas";
 
   interface Props {
     orgs: string[];

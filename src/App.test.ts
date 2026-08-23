@@ -3,18 +3,18 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import App from "./App.svelte";
 import { auditResult } from "./test/fixtures";
-import { streamAudit } from "./lib/auditStream";
-import { formatCompactDateTime } from "./lib/dateFormatting";
-import { streamUserPublishes } from "./lib/userPublishStream";
+import { streamAudit } from "#client/auditStream";
+import { formatCompactDateTime } from "#client/dateFormatting";
+import { streamUserPublishes } from "#client/userPublishStream";
 import { mockFetch, mockResolvedFetch } from "./test/mock";
 import { requestUrl } from "./test/request";
 
 // Both server-side workflows stream through these client adapters.
-vi.mock("./lib/auditStream", () => ({
-  streamAudit: vi.fn<typeof import("./lib/auditStream").streamAudit>(),
+vi.mock("#client/auditStream", () => ({
+  streamAudit: vi.fn<typeof import("#client/auditStream").streamAudit>(),
 }));
-vi.mock("./lib/userPublishStream", () => ({
-  streamUserPublishes: vi.fn<typeof import("./lib/userPublishStream").streamUserPublishes>(),
+vi.mock("#client/userPublishStream", () => ({
+  streamUserPublishes: vi.fn<typeof import("#client/userPublishStream").streamUserPublishes>(),
 }));
 
 const mockedStreamAudit = vi.mocked(streamAudit);

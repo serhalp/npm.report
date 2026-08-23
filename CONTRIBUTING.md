@@ -88,7 +88,7 @@ TypeScript validation.
 ## Pull Request checklist
 
 - Any new npm fetch path preserves retry/backoff and `FailureLog` semantics.
-- Audit request, response, or SSE changes keep `src/lib/schemas.ts`, the edge functions, and the
+- Audit request, response, or SSE changes keep `src/shared/schemas.ts`, the edge functions, and the
   client stream wrappers in sync.
 - Edge-reachable changes follow the runtime and bundling rules in `AGENTS.md` and pass the
   deploy-time edge build.

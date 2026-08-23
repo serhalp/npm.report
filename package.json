@@ -5,6 +5,14 @@
   "description": "A browser-based supply-chain audit tool for npm organizations: trusted-publishing/provenance rollout, manual publishes, and external maintainers.",
   "license": "MIT",
   "type": "module",
+  "imports": {
+    "#audit/*": "./src/audit/*.ts",
+    "#client/*": "./src/client/*.ts",
+    "#db/*": "./db/*.ts",
+    "#node/*": "./netlify/functions/_shared/*.ts",
+    "#server/*": "./netlify/_shared/*.ts",
+    "#shared/*": "./src/shared/*.ts"
+  },
   "scripts": {
     "build": "vite build",
     "build:analyze": "rm -rf .sonda/ && SONDA=true vite build",

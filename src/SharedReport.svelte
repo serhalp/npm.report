@@ -8,10 +8,10 @@
   import ThemeToggle from "./components/ThemeToggle.svelte";
   import TrustGlossary from "./components/TrustGlossary.svelte";
   import Logo from "./components/Logo.svelte";
-  import { formatDate, formatDateTime } from "./lib/dateFormatting";
-  import type { ReportHistoryResponse } from "./lib/reportHistory";
-  import type { AuditResult } from "./lib/runAudit";
-  import { parseOrNull, ReportHistoryResponseSchema, ReportRecordSchema } from "./lib/schemas";
+  import { formatDate, formatDateTime } from "#client/dateFormatting";
+  import type { ReportHistoryResponse } from "#shared/reportHistory";
+  import { parseOrNull, ReportHistoryResponseSchema, ReportRecordSchema } from "#shared/schemas";
+  import type { AuditResult } from "#shared/types";
 
   interface ReportRecord {
     id: string;

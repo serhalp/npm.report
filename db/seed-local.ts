@@ -5,7 +5,7 @@ import {
   EXAMPLE_ORG,
   EXAMPLE_TOTAL_PACKAGES,
   EXAMPLE_TRUST_HISTORY,
-} from "../src/lib/exampleTrustHistory.ts";
+} from "#shared/exampleTrustHistory";
 
 function snapshotValues(): string {
   return EXAMPLE_TRUST_HISTORY.map(

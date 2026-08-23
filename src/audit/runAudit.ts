@@ -1,20 +1,6 @@
-import { FailureLog } from "./npmClient.ts";
-import { discoverInScope, runExternal, runManual, runTrust, type LogFn } from "./reports.ts";
-import type {
-  AuditConfig,
-  ExternalReport,
-  FetchFailure,
-  ManualReport,
-  TrustReport,
-  ReportKind,
-} from "./types.ts";
-
-export interface AuditResult {
-  trust?: TrustReport;
-  manual?: ManualReport;
-  external?: ExternalReport;
-  failures: FetchFailure[];
-}
+import { FailureLog } from "#audit/npmClient";
+import { discoverInScope, runExternal, runManual, runTrust, type LogFn } from "#audit/reports";
+import type { AuditConfig, AuditResult, ReportKind } from "#shared/types";
 
 /**
  * Top-level audit orchestration.

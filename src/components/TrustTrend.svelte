@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { formatChartDate, formatDate, formatDateTime } from "../lib/dateFormatting";
+  import { formatChartDate, formatDate, formatDateTime } from "#client/dateFormatting";
   import {
     anyTrustCount,
     strongTrustCount,
     trustPercent,
     type ReportTrustHistoryPoint,
-  } from "../lib/reportHistory";
-  import { spacedTrendDateIndices, trendDateCandidates } from "../lib/trustTrend";
+  } from "#shared/reportHistory";
+  import { spacedTrendDateIndices, trendDateCandidates } from "#client/trustTrend";
 
   interface Props {
     points: ReportTrustHistoryPoint[];

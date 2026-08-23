@@ -17,12 +17,11 @@
     MAX_ORGS,
     blockedOrgMessage,
     isBlockedOrg,
-  } from "./lib/auditDefaults";
-  import { streamAudit } from "./lib/auditStream";
-  import { parseMembers } from "./lib/members";
-  import type { AuditResult } from "./lib/runAudit";
-  import type { ReportKind, UserPublishReport } from "./lib/types";
-  import { streamUserPublishes } from "./lib/userPublishStream";
+  } from "#shared/auditDefaults";
+  import { streamAudit } from "#client/auditStream";
+  import { parseMembers } from "#client/members";
+  import type { AuditResult, ReportKind, UserPublishReport } from "#shared/types";
+  import { streamUserPublishes } from "#client/userPublishStream";
 
   type TerminalHandle = {
     writeLine: (line: string) => void;

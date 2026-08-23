@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { TrustLevel } from "./types";
-import type { ReportTrustHistoryPoint } from "./reportHistory";
+import type { ReportTrustHistoryPoint } from "#shared/reportHistory";
+import type { TrustLevel } from "#shared/types";
 import { groupTrustHistoryPoints } from "./historyGroups";
 
 function point(

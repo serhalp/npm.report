@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { formatCompactDateTime, formatDateTime } from "../lib/dateFormatting";
+import { formatCompactDateTime, formatDateTime } from "#client/dateFormatting";
 import { mockFetch, mockResolvedFetch } from "../test/mock";
 import DailyTrackingButton from "./DailyTrackingButton.svelte";
 

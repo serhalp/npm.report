@@ -6,7 +6,7 @@ import { resetTestDatabase, startTestDatabase, stopTestDatabase } from "../datab
 
 let database: DatabaseConnection;
 let local: NetlifyDB;
-let jobs: typeof import("../../_shared/audit-jobs.js");
+let jobs: typeof import("#server/audit-jobs");
 
 beforeAll(async () => {
   const started = await startTestDatabase();
@@ -14,8 +14,8 @@ beforeAll(async () => {
   vi.stubEnv("NETLIFY_DB_URL", started.connectionString);
   vi.stubEnv("NETLIFY_DB_DRIVER", "server");
   vi.resetModules();
-  database = (await import("../../../db/index.js")).getDb();
-  jobs = await import("../../_shared/audit-jobs.js");
+  database = (await import("#db/index")).getDb();
+  jobs = await import("#server/audit-jobs");
 });
 
 beforeEach(async () => {

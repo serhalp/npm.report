@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FailureLog } from "./npmClient";
 import { discoverInScope, runExternal, runManual, runTrust, runUserPublishes } from "./reports";
-import type { AuditConfig } from "./types";
+import type { AuditConfig } from "#shared/types";
 import { requestUrl } from "../test/request";
 
 const config: AuditConfig = {

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { describe, expect, test } from "vitest";
-import { formatChartDate, formatDateTime } from "../lib/dateFormatting";
-import type { ReportTrustHistoryPoint } from "../lib/reportHistory";
+import { formatChartDate, formatDateTime } from "#client/dateFormatting";
+import type { ReportTrustHistoryPoint } from "#shared/reportHistory";
 import TrustTrend from "./TrustTrend.svelte";
 
 const points: ReportTrustHistoryPoint[] = [

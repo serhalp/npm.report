@@ -3,8 +3,8 @@
   import type { Column } from "./dataTableTypes";
   import ExportButtons from "./ExportButtons.svelte";
   import Stat from "./Stat.svelte";
-  import { formatDateTime } from "../lib/dateFormatting";
-  import type { ManualReport, ManualRow } from "../lib/types";
+  import { formatDateTime } from "#client/dateFormatting";
+  import type { ManualReport, ManualRow } from "#shared/types";
 
   interface Props {
     report: ManualReport;

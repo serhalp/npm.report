@@ -1,13 +1,13 @@
 /* eslint-disable no-await-in-loop -- The reconnect tail polls the stored log sequentially until the run reaches a terminal state. */
 import type { Config } from "@netlify/edge-functions";
-import { FETCH_CONCURRENCY, blockedOrgMessage, isBlockedOrg } from "../../src/lib/auditDefaults.ts";
-import { scopeLabelFor, type SharedReportScope } from "../../src/lib/reportHistory.ts";
-import { AuditRequestSchema, parseOrNull } from "../../src/lib/schemas.ts";
-import { type AuditResult, runAudit } from "../../src/lib/runAudit.ts";
-import type { AuditConfig, ReportKind } from "../../src/lib/types.ts";
-import { saveReportSnapshot } from "../_shared/report-persistence.ts";
-import { createJobIfAbsent, finishJob, getJob, updateJobLog } from "../_shared/audit-jobs.ts";
-import type { AuditJobLine } from "../../db/schema.ts";
+import { runAudit } from "#audit/runAudit";
+import type { AuditJobLine } from "#db/schema";
+import { createJobIfAbsent, finishJob, getJob, updateJobLog } from "#server/audit-jobs";
+import { saveReportSnapshot } from "#server/report-persistence";
+import { FETCH_CONCURRENCY, blockedOrgMessage, isBlockedOrg } from "#shared/auditDefaults";
+import { scopeLabelFor, type SharedReportScope } from "#shared/reportHistory";
+import { AuditRequestSchema, parseOrNull } from "#shared/schemas";
+import type { AuditConfig, AuditResult, ReportKind } from "#shared/types";
 
 // Interactive audits run HERE, server-side, and stream progress to the browser
 // over SSE (the progress log consumes `log` events). Because the server runs the

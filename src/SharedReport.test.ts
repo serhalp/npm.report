@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/svelte";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import SharedReport from "./SharedReport.svelte";
-import { formatCompactDateTime, formatDate, formatDateTime } from "./lib/dateFormatting";
+import { formatCompactDateTime, formatDate, formatDateTime } from "#client/dateFormatting";
 import { auditResult, trustReport } from "./test/fixtures";
 import { mockFetch, mockResolvedFetch } from "./test/mock";
 import { requestUrl } from "./test/request";

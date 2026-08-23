@@ -1,8 +1,8 @@
 <script lang="ts">
   import { CalendarClock } from "@lucide/svelte";
-  import { formatCompactDateTime, formatDateTime } from "../lib/dateFormatting";
-  import type { ReportRerunScheduleStatus } from "../lib/reportHistory";
-  import { parseOrNull, ReportRerunScheduleStatusSchema } from "../lib/schemas";
+  import { formatCompactDateTime, formatDateTime } from "#client/dateFormatting";
+  import type { ReportRerunScheduleStatus } from "#shared/reportHistory";
+  import { parseOrNull, ReportRerunScheduleStatusSchema } from "#shared/schemas";
 
   interface Props {
     reportId: string | null;

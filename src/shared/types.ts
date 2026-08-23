@@ -105,3 +105,10 @@ export interface FetchFailure {
   url: string;
   reason: string;
 }
+
+export interface AuditResult {
+  trust?: TrustReport;
+  manual?: ManualReport;
+  external?: ExternalReport;
+  failures: FetchFailure[];
+}

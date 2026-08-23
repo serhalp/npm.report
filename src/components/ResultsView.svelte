@@ -2,8 +2,7 @@
   import ExternalView from "./ExternalView.svelte";
   import ManualView from "./ManualView.svelte";
   import TrustView from "./TrustView.svelte";
-  import type { AuditResult } from "../lib/runAudit";
-  import type { ReportKind } from "../lib/types";
+  import type { AuditResult, ReportKind } from "#shared/types";
 
   const TAB_META: { kind: ReportKind; title: string }[] = [
     { kind: "trust", title: "package trust level" },

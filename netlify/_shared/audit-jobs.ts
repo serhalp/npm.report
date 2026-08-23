@@ -1,4 +1,4 @@
-import { getDb } from "../../db/index.ts";
+import { getDb } from "#db/index";
 import {
   type AuditJobLine,
   type AuditJobRow,
@@ -7,7 +7,7 @@ import {
   IdRowSchema,
   parseRows,
   serializeJson,
-} from "../../db/schema.ts";
+} from "#db/schema";
 
 // Persistence for a resumable interactive audit (see the `auditJobs` table). The
 // audit-stream edge function is the only writer; a reconnecting client reads

@@ -1,5 +1,4 @@
-import type { AuditResult } from "../lib/runAudit";
-import type { TrustReport } from "../lib/types";
+import type { AuditResult, TrustReport } from "#shared/types";
 
 export const trustReport: TrustReport = {
   summary: {

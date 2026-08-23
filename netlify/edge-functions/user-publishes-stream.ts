@@ -1,8 +1,8 @@
 import type { Config } from "@netlify/edge-functions";
-import { FETCH_CONCURRENCY } from "../../src/lib/auditDefaults.ts";
-import { FailureLog } from "../../src/lib/npmClient.ts";
-import { runUserPublishes } from "../../src/lib/reports.ts";
-import { UserPublishRequestSchema, parseOrNull } from "../../src/lib/schemas.ts";
+import { FailureLog } from "#audit/npmClient";
+import { runUserPublishes } from "#audit/reports";
+import { FETCH_CONCURRENCY } from "#shared/auditDefaults";
+import { UserPublishRequestSchema, parseOrNull } from "#shared/schemas";
 
 // Per-user publish history, run server-side and streamed over SSE — same shape
 // as audit-stream. Runs in the Deno edge runtime; `npmClient` fetches npm

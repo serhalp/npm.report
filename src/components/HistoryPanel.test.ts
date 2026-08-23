@@ -2,8 +2,8 @@ import { fireEvent, render, screen, within } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { mockFetch, mockResolvedFetch } from "../test/mock";
-import { formatDate, formatDateTime } from "../lib/dateFormatting";
-import type { ReportHistoryResponse, ReportTrustHistoryPoint } from "../lib/reportHistory";
+import { formatDate, formatDateTime } from "#client/dateFormatting";
+import type { ReportHistoryResponse, ReportTrustHistoryPoint } from "#shared/reportHistory";
 import HistoryPanel from "./HistoryPanel.svelte";
 
 function mockHistory(body: ReportHistoryResponse) {

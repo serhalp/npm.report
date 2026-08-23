@@ -55,7 +55,7 @@ export default defineConfig({
         "src/**/*.{test,spec}.svelte.ts",
         "src/test/**",
         "src/vite-env.d.ts",
-        "src/lib/types.ts",
+        "src/shared/types.ts",
         "src/components/dataTableTypes.ts",
         "netlify/database/**",
       ],

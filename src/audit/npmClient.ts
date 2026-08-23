@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop -- Retry/backoff must wait between attempts; parallelizing retries would violate rate-limit handling. */
-import type { FetchFailure } from "./types.ts";
+import type { FetchFailure } from "#shared/types";
 import * as v from "valibot";
 
 // ---------------------------------------------------------------------------

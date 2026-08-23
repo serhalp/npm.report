@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ReportTrustHistoryPoint } from "./reportHistory";
+import type { ReportTrustHistoryPoint } from "#shared/reportHistory";
 import { spacedTrendDateIndices, trendDateCandidates } from "./trustTrend";
 
 function point(day: number, strong: number, any: number): ReportTrustHistoryPoint {

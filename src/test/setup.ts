@@ -2,7 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/svelte";
 import { afterEach, beforeEach, vi } from "vitest";
-import { resetThemeForTests, THEME_STORAGE_KEY } from "../lib/theme.svelte";
+import { resetThemeForTests, THEME_STORAGE_KEY } from "#client/theme.svelte";
 
 function createMemoryStorage(): Storage {
   const items = new Map<string, string>();

@@ -10,10 +10,9 @@
 // resume. The server keeps the audit running headless across reconnects and
 // replays only newer lines, so the terminal keeps scrolling and the report stays
 // complete however long the audit runs.
-import { readSseStream } from "./sseStream.ts";
-import { AuditResultSchema, AuditStreamDoneSchema, parseOrNull } from "./schemas.ts";
-import type { AuditResult } from "./runAudit.ts";
-import type { ReportKind } from "./types.ts";
+import { readSseStream } from "#client/sseStream";
+import { AuditResultSchema, AuditStreamDoneSchema, parseOrNull } from "#shared/schemas";
+import type { AuditResult, ReportKind } from "#shared/types";
 
 export interface AuditStreamRequest {
   orgs: string[];

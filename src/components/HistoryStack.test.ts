@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { describe, expect, test } from "vitest";
-import { formatDate } from "../lib/dateFormatting";
-import type { ReportTrustHistoryPoint } from "../lib/reportHistory";
+import { formatDate } from "#client/dateFormatting";
+import type { ReportTrustHistoryPoint } from "#shared/reportHistory";
 import HistoryStack from "./HistoryStack.svelte";
 
 const point: ReportTrustHistoryPoint = {

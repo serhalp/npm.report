@@ -2,13 +2,13 @@
 import type { DatabaseConnection } from "@netlify/database";
 import type { NetlifyDB } from "@netlify/database-dev";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { parseRows, ReportRowSchema, ReportTrustHistoryRowSchema } from "../../../db/schema.js";
-import type { AuditResult } from "../../../src/lib/runAudit.js";
+import { parseRows, ReportRowSchema, ReportTrustHistoryRowSchema } from "#db/schema";
+import type { AuditResult } from "#shared/types";
 import { resetTestDatabase, startTestDatabase, stopTestDatabase } from "../database.js";
 
 let database: DatabaseConnection;
 let local: NetlifyDB;
-let persistence: typeof import("../../_shared/report-persistence.js");
+let persistence: typeof import("#server/report-persistence");
 
 beforeAll(async () => {
   const started = await startTestDatabase();
@@ -16,8 +16,8 @@ beforeAll(async () => {
   vi.stubEnv("NETLIFY_DB_URL", started.connectionString);
   vi.stubEnv("NETLIFY_DB_DRIVER", "server");
   vi.resetModules();
-  database = (await import("../../../db/index.js")).getDb();
-  persistence = await import("../../_shared/report-persistence.js");
+  database = (await import("#db/index")).getDb();
+  persistence = await import("#server/report-persistence");
 });
 
 beforeEach(async () => {

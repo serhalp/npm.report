@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Monitor, Moon, Sun } from "@lucide/svelte";
-  import { initTheme, setThemeMode, themeState, type ThemeMode } from "../lib/theme.svelte";
+  import { initTheme, setThemeMode, themeState, type ThemeMode } from "#client/theme.svelte";
 
   const MODES: { mode: ThemeMode; label: string }[] = [
     { mode: "system", label: "System" },
