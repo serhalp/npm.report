@@ -1,4 +1,4 @@
-import type { ReportTrustHistoryPoint } from "./reportHistory.ts";
+import type { ReportTrustHistoryPoint } from "#shared/reportHistory";
 
 export interface ExampleTrustHistorySnapshot {
   capturedAt: string;

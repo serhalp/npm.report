@@ -34,6 +34,30 @@
     "builtin": true
   },
   "overrides": [
+    {
+      // Deno resolves relative specifiers literally in deployed edge bundles.
+      "files": [
+        "src/{audit,shared}/**/*.ts",
+        "netlify/edge-functions/**/*.ts",
+        "netlify/_shared/**/*.ts",
+        "db/{index,schema}.ts"
+      ],
+      "excludeFiles": ["**/*.test.ts"],
+      "rules": {
+        "import/no-nodejs-modules": "error",
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["./**", "../**", "!./**/*.ts", "!../**/*.ts"],
+                "message": "Edge-reachable relative imports must use a literal .ts specifier."
+              }
+            ]
+          }
+        ]
+      }
+    },
     // Don't enable e18e perf rules in test files
     {
       "files": ["**/*.{js,jsx,ts,tsx}"],

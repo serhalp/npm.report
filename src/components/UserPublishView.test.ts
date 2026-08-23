@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/svelte";
 import { describe, expect, test, vi } from "vitest";
-import { formatDateTime } from "../lib/dateFormatting";
+import { formatDateTime } from "#client/dateFormatting";
 import UserPublishView from "./UserPublishView.svelte";
 
 describe("UserPublishView", () => {

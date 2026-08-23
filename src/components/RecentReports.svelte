@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { formatDate, formatDateTime } from "../lib/dateFormatting";
-  import type { RecentTrustReportLink, RecentTrustReportsResponse } from "../lib/reportHistory";
-  import { parseOrNull, RecentTrustReportsResponseSchema } from "../lib/schemas";
+  import { formatDate, formatDateTime } from "#client/dateFormatting";
+  import type { RecentTrustReportLink, RecentTrustReportsResponse } from "#shared/reportHistory";
+  import { parseOrNull, RecentTrustReportsResponseSchema } from "#shared/schemas";
 
   let reports = $state<RecentTrustReportLink[]>([]);
   let loading = $state(true);

@@ -1,10 +1,10 @@
 <script lang="ts">
   import Stat from "./Stat.svelte";
   import TrustTrend from "./TrustTrend.svelte";
-  import { formatDate } from "../lib/dateFormatting";
-  import { EXAMPLE_TRUST_HISTORY_POINTS } from "../lib/exampleTrustHistory.ts";
-  import { anyTrustCount, strongTrustCount, trustPercent } from "../lib/reportHistory";
-  import type { TrustLevel } from "../lib/types";
+  import { formatDate } from "#client/dateFormatting";
+  import { EXAMPLE_TRUST_HISTORY_POINTS } from "#shared/exampleTrustHistory";
+  import { anyTrustCount, strongTrustCount, trustPercent } from "#shared/reportHistory";
+  import type { TrustLevel } from "#shared/types";
 
   // A static, illustrative report so first-time visitors see what npm.report
   // produces before running one. It reuses the real Stat tiles and trust-level

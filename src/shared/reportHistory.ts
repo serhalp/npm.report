@@ -1,5 +1,5 @@
-import { parseOrNull, TrustHistoryPayloadSchema } from "./schemas.ts";
-import type { TrustLevel } from "./types.ts";
+import { parseOrNull, TrustHistoryPayloadSchema } from "#shared/schemas";
+import type { TrustLevel } from "#shared/types";
 
 export type SharedReportScope = "all" | { months: number };
 

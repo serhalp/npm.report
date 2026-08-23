@@ -3,7 +3,7 @@ import {
   strongTrustCount,
   trustPercent,
   type ReportTrustHistoryPoint,
-} from "./reportHistory.ts";
+} from "#shared/reportHistory";
 
 export interface TrendDateCandidate {
   index: number;

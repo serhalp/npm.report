@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/svelte";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { mockFetch, mockResolvedFetch } from "../test/mock";
-import { formatDate, formatDateTime } from "../lib/dateFormatting";
-import type { RecentTrustReportsResponse } from "../lib/reportHistory";
+import { formatDate, formatDateTime } from "#client/dateFormatting";
+import type { RecentTrustReportsResponse } from "#shared/reportHistory";
 import RecentReports from "./RecentReports.svelte";
 
 function mockRecentReports(body: RecentTrustReportsResponse) {

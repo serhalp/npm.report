@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop -- api.npmjs.org has a strict token bucket; scoped downloads must remain sequential and paced. */
 import * as v from "valibot";
-import { chunk } from "./concurrency.ts";
-import { FailureLog, npmGetJson, sleep } from "./npmClient.ts";
+import { chunk } from "#audit/concurrency";
+import { FailureLog, npmGetJson, sleep } from "#audit/npmClient";
 
 // ---------------------------------------------------------------------------
 // Weekly download retrieval and pacing contract.

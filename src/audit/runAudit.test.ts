@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runAudit } from "./runAudit";
 import { discoverInScope, runExternal, runManual, runTrust } from "./reports";
-import type { AuditConfig, PkgMeta } from "./types";
+import type { AuditConfig, PkgMeta } from "#shared/types";
 
 vi.mock("./reports", () => ({
   discoverInScope: vi.fn<typeof import("./reports").discoverInScope>(),

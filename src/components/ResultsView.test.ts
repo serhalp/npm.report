@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { formatDate, formatDateTime } from "../lib/dateFormatting";
+import { formatDate, formatDateTime } from "#client/dateFormatting";
 import ResultsView from "./ResultsView.svelte";
 import { auditResult, trustReport } from "../test/fixtures";
 

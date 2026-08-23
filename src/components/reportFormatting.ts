@@ -1,4 +1,4 @@
-import type { TrustLevel } from "../lib/types";
+import type { TrustLevel } from "#shared/types";
 
 export const LEVEL_ORDER: Record<TrustLevel, number> = {
   none: 0,

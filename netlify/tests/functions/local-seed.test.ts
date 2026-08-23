@@ -7,10 +7,10 @@ import {
   ReportRerunScheduleRowSchema,
   ReportRowSchema,
   ReportTrustHistoryRowSchema,
-} from "../../../db/schema.js";
+} from "#db/schema";
+import { EXAMPLE_TRUST_HISTORY } from "#shared/exampleTrustHistory";
+import { parseOrNull, AuditResultSchema } from "#shared/schemas";
 import { buildExampleSeedSql } from "../../../db/seed-local.js";
-import { EXAMPLE_TRUST_HISTORY } from "../../../src/lib/exampleTrustHistory.js";
-import { parseOrNull, AuditResultSchema } from "../../../src/lib/schemas.js";
 import { resetTestDatabase, startTestDatabase, stopTestDatabase } from "../database.js";
 
 let database: DatabaseConnection;

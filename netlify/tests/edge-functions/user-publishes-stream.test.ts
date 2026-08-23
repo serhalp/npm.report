@@ -2,10 +2,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const runUserPublishes = vi.hoisted(() =>
-  vi.fn<typeof import("../../../src/lib/reports.ts").runUserPublishes>(),
+  vi.fn<typeof import("#audit/reports").runUserPublishes>(),
 );
 
-vi.mock("../../../src/lib/reports.ts", () => ({ runUserPublishes }));
+vi.mock("#audit/reports", () => ({ runUserPublishes }));
 
 import handler, { config } from "../../edge-functions/user-publishes-stream.ts";
 

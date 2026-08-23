@@ -1,10 +1,10 @@
 /* eslint-disable no-underscore-dangle -- npm packuments expose publisher metadata as the documented `_npmUser` field. */
 import * as v from "valibot";
-import { mapLimit } from "./concurrency.ts";
-import { resolveMeta, listOrgPackages } from "./discovery.ts";
-import { fetchWeeklyDownloads } from "./downloads.ts";
-import { FailureLog, npmGetJson, pkgUrl, toEpoch, versionUrl } from "./npmClient.ts";
-import { getTrustStatus } from "./trust.ts";
+import { mapLimit } from "#audit/concurrency";
+import { resolveMeta, listOrgPackages } from "#audit/discovery";
+import { fetchWeeklyDownloads } from "#audit/downloads";
+import { FailureLog, npmGetJson, pkgUrl, toEpoch, versionUrl } from "#audit/npmClient";
+import { getTrustStatus } from "#audit/trust";
 import type {
   AuditConfig,
   ExternalReport,
@@ -17,7 +17,7 @@ import type {
   TrustLevel,
   UserPublishReport,
   UserPublishRow,
-} from "./types.ts";
+} from "#shared/types";
 
 export type LogFn = (msg: string) => void;
 

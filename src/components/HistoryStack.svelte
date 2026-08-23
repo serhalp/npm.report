@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { formatDate } from "../lib/dateFormatting";
-  import type { ReportTrustHistoryPoint } from "../lib/reportHistory";
-  import type { TrustLevel } from "../lib/types";
+  import { formatDate } from "#client/dateFormatting";
+  import type { ReportTrustHistoryPoint } from "#shared/reportHistory";
+  import type { TrustLevel } from "#shared/types";
 
   interface Props {
     point: ReportTrustHistoryPoint;

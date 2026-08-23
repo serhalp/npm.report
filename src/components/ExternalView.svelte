@@ -3,7 +3,7 @@
   import type { Column } from "./dataTableTypes";
   import ExportButtons from "./ExportButtons.svelte";
   import Stat from "./Stat.svelte";
-  import type { ExternalReport } from "../lib/types";
+  import type { ExternalReport } from "#shared/types";
 
   interface Props {
     report: ExternalReport;

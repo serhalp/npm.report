@@ -27,20 +27,35 @@ snapshots render through `SharedReport.svelte` and reuse
 
 ## Runtime boundaries
 
-The server-side audit graph under `src/lib/` runs in both Deno edge functions
-and Node scheduled functions. Anything reachable from `runAudit` or
-`runUserPublishes` must use APIs available in both runtimes: no `node:` builtins
-and no browser-only globals. Use Web Crypto, not `node:crypto`.
+Runtime ownership is explicit in the source tree:
+
+- `src/client/` is browser-only.
+- `src/shared/` contains contracts and utilities usable in the browser, Deno,
+  and Node.
+- `src/audit/` is the server-side audit graph shared by Deno edge functions and
+  Node scheduled functions.
+
+Anything in `src/shared/` or `src/audit/` must use APIs available in every
+declared runtime: no `node:` builtins or browser-only globals. Use Web Crypto,
+not `node:crypto`.
 
 Cross-runtime Netlify helpers live in `netlify/_shared/`;
 `netlify/functions/_shared/` is reserved for Node-only function helpers.
+
+Internal modules use the `package.json#imports` namespaces `#client/*`,
+`#shared/*`, `#audit/*`, `#server/*`, `#node/*`, and `#db/*`. Prefer these over
+cross-directory relative imports; the namespace makes runtime ownership visible.
+Every edge-reachable alias must also have an exact `.ts` mapping in
+`import_map.json`: Netlify's deploy-time Deno bundler does not resolve the
+`package.json` wildcard mappings.
 
 Netlify edge bundling has stricter rules than Vite or local development:
 
 - Edge-reachable relative imports require explicit `.ts` extensions. Node-only
   serverless files use `.js` and must not enter an edge bundle.
-- `valibot` and `packumeta` are mapped to pinned esm.sh builds in
-  `import_map.json`. A new edge-reachable dependency may need the same treatment.
+- Edge-reachable internal aliases, `valibot`, and `packumeta` are mapped in
+  `import_map.json`. Keep internal mappings synchronized with their
+  `package.json#imports` targets and pin third-party esm.sh builds.
 - `@netlify/database` is Netlify-first-party and deliberately not mapped. Use
   its native tagged-SQL client; validate returned rows with `db/schema.ts`.
 - Never put tests in `netlify/edge-functions/`: Netlify treats every `.ts` or
@@ -51,7 +66,7 @@ Netlify edge bundling has stricter rules than Vite or local development:
 
 ### npm access and failure handling
 
-Fetch npm directly through `src/lib/npmClient.ts`:
+Fetch npm directly through `src/audit/npmClient.ts`:
 
 - `registry.npmjs.org`: packuments and per-version manifests.
 - `api.npmjs.org`: weekly downloads.
@@ -142,7 +157,7 @@ Clipboard and Web Crypto APIs, `matchMedia`, semantic live regions,
 by default and progressive enhancement for newer ones; do not add JS polyfills
 for CSS anchor positioning.
 
-Human-facing dates and times go through `src/lib/dateFormatting.ts` and follow
+Human-facing dates and times go through `src/client/dateFormatting.ts` and follow
 the viewer's locale and timezone. Persistence, APIs, sorting, report ids,
 exports, and `<time datetime>` retain ISO-8601 values. Date-only values are
 calendar dates and must not shift across timezones. If visible text omits part

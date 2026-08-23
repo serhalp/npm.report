@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
-import { THEME_STORAGE_KEY } from "../lib/theme.svelte";
+import { THEME_STORAGE_KEY } from "#client/theme.svelte";
 import ThemeToggle from "./ThemeToggle.svelte";
 
 function stubMatchMedia(matches: boolean) {

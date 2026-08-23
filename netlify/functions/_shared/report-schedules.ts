@@ -1,18 +1,17 @@
 /* eslint-disable no-await-in-loop -- Due schedules run sequentially to avoid stacking full org audits against npm APIs. */
-import { getDb } from "../../../db/index.js";
+import { runAudit } from "#audit/runAudit";
+import { getDb } from "#db/index";
 import {
   parseRows,
   type ReportRerunScheduleRow,
   ReportRerunScheduleRowSchema,
   ReportTrustHistoryRowSchema,
   serializeJson,
-} from "../../../db/schema.js";
-import { FETCH_CONCURRENCY } from "../../../src/lib/auditDefaults.js";
-import type { ReportRerunScheduleStatus } from "../../../src/lib/reportHistory.js";
-import type { AuditResult } from "../../../src/lib/runAudit.js";
-import { runAudit } from "../../../src/lib/runAudit.js";
-import type { AuditConfig } from "../../../src/lib/types.js";
-import { saveReportSnapshot } from "../../_shared/report-persistence.js";
+} from "#db/schema";
+import { saveReportSnapshot } from "#server/report-persistence";
+import { FETCH_CONCURRENCY } from "#shared/auditDefaults";
+import type { ReportRerunScheduleStatus } from "#shared/reportHistory";
+import type { AuditConfig, AuditResult } from "#shared/types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;

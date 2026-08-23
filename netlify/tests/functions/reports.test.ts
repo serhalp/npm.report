@@ -2,7 +2,7 @@
 import type { DatabaseConnection } from "@netlify/database";
 import type { NetlifyDB } from "@netlify/database-dev";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { serializeJson } from "../../../db/schema.js";
+import { serializeJson } from "#db/schema";
 import { resetTestDatabase, startTestDatabase, stopTestDatabase } from "../database.js";
 
 interface StoredReport {
@@ -110,7 +110,7 @@ beforeAll(async () => {
   vi.stubEnv("NETLIFY_DB_URL", started.connectionString);
   vi.stubEnv("NETLIFY_DB_DRIVER", "server");
   vi.resetModules();
-  database = (await import("../../../db/index.js")).getDb();
+  database = (await import("#db/index")).getDb();
   const reports = await import("../../functions/reports.js");
   handler = reports.default;
   config = reports.config;

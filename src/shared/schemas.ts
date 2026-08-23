@@ -7,7 +7,7 @@
 // Objects use `looseObject` so unknown/extra keys pass through — we validate the
 // fields the app actually reads, not the exact shape.
 import * as v from "valibot";
-import { MAX_ORGS } from "./auditDefaults.ts";
+import { MAX_ORGS } from "#shared/auditDefaults";
 
 const TrustLevel = v.picklist(["stagedPublish", "trustedPublisher", "provenance", "none"]);
 

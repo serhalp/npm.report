@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import AppRouter from "./AppRouter.svelte";
-import { formatDateTime } from "./lib/dateFormatting";
+import { formatDateTime } from "#client/dateFormatting";
 import { auditResult, trustReport } from "./test/fixtures";
 import { mockFetch, mockResolvedFetch } from "./test/mock";
 import { requestUrl } from "./test/request";

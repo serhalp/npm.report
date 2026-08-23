@@ -1,8 +1,8 @@
 /* eslint-disable no-await-in-loop -- Discovery intentionally resolves orgs and fast-npm-meta batches in a bounded sequence so failures stay attributable and upstream request shape matches the shell reference. */
 import * as v from "valibot";
-import { chunk } from "./concurrency.ts";
-import { FailureLog, npmGet, npmGetJson } from "./npmClient.ts";
-import type { PkgMeta } from "./types.ts";
+import { chunk } from "#audit/concurrency";
+import { FailureLog, npmGet, npmGetJson } from "#audit/npmClient";
+import type { PkgMeta } from "#shared/types";
 
 // ---------------------------------------------------------------------------
 // Org package discovery and fast-npm-meta batch metadata resolution.

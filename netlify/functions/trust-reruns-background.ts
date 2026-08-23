@@ -1,5 +1,5 @@
 import type { Config } from "@netlify/functions";
-import { processDueTrustReruns } from "./_shared/report-schedules.js";
+import { processDueTrustReruns } from "#node/report-schedules";
 
 export default async () => {
   const result = await processDueTrustReruns();

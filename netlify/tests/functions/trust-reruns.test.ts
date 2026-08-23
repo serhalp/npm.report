@@ -2,7 +2,7 @@
 import type { DatabaseConnection } from "@netlify/database";
 import type { NetlifyDB } from "@netlify/database-dev";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { serializeJson } from "../../../db/schema.js";
+import { serializeJson } from "#db/schema";
 import { resetTestDatabase, startTestDatabase, stopTestDatabase } from "../database.js";
 
 const defaultAuditResult = {
@@ -27,11 +27,11 @@ const defaultAuditResult = {
   failures: [],
 };
 
-const runAudit = vi.fn<typeof import("../../../src/lib/runAudit.js").runAudit>();
+const runAudit = vi.fn<typeof import("#audit/runAudit").runAudit>();
 
 let database: DatabaseConnection;
 let local: NetlifyDB;
-let schedules: typeof import("../../functions/_shared/report-schedules.js");
+let schedules: typeof import("#node/report-schedules");
 
 async function seedSchedule(): Promise<void> {
   await database.sql`
@@ -90,9 +90,9 @@ beforeAll(async () => {
   vi.stubEnv("NETLIFY_DB_URL", started.connectionString);
   vi.stubEnv("NETLIFY_DB_DRIVER", "server");
   vi.resetModules();
-  vi.doMock("../../../src/lib/runAudit.js", () => ({ runAudit }));
-  database = (await import("../../../db/index.js")).getDb();
-  schedules = await import("../../functions/_shared/report-schedules.js");
+  vi.doMock("#audit/runAudit", () => ({ runAudit }));
+  database = (await import("#db/index")).getDb();
+  schedules = await import("#node/report-schedules");
 });
 
 beforeEach(async () => {
@@ -108,7 +108,7 @@ afterEach(() => vi.useRealTimers());
 
 afterAll(async () => {
   await stopTestDatabase(local, database);
-  vi.doUnmock("../../../src/lib/runAudit.js");
+  vi.doUnmock("#audit/runAudit");
   vi.unstubAllEnvs();
 });
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { copyJson, downloadCsv, toCsv } from "../lib/export";
+  import { copyJson, downloadCsv, toCsv } from "#client/export";
 
   interface Props {
     label: string;

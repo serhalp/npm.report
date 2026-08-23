@@ -1,6 +1,21 @@
 {
   "imports": {
-    "valibot": "https://esm.sh/valibot@1.4.2",
-    "packumeta": "https://esm.sh/packumeta@0.4.1"
+    "#audit/concurrency": "./src/audit/concurrency.ts",
+    "#audit/discovery": "./src/audit/discovery.ts",
+    "#audit/downloads": "./src/audit/downloads.ts",
+    "#audit/npmClient": "./src/audit/npmClient.ts",
+    "#audit/reports": "./src/audit/reports.ts",
+    "#audit/runAudit": "./src/audit/runAudit.ts",
+    "#audit/trust": "./src/audit/trust.ts",
+    "#db/index": "./db/index.ts",
+    "#db/schema": "./db/schema.ts",
+    "#server/audit-jobs": "./netlify/_shared/audit-jobs.ts",
+    "#server/report-persistence": "./netlify/_shared/report-persistence.ts",
+    "#shared/auditDefaults": "./src/shared/auditDefaults.ts",
+    "#shared/reportHistory": "./src/shared/reportHistory.ts",
+    "#shared/schemas": "./src/shared/schemas.ts",
+    "#shared/types": "./src/shared/types.ts",
+    "packumeta": "https://esm.sh/packumeta@0.4.1",
+    "valibot": "https://esm.sh/valibot@1.4.2"
   }
 }
