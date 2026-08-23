@@ -39,10 +39,10 @@ next scheduled run. The seed uses Netlify's local database connection and is kep
 
 ## Data privacy and retention
 
-The private org membership list is input to the `external` report, not the `manual` report. The
-edge function uses it to identify public package maintainers who are not members, but must not write
-the raw list to logs, `audit_jobs.request`, or the saved report payload. Saved reports do include the
-derived external findings.
+The private org membership list is input to the `external` report (only). The edge function uses it
+to identify public package maintainers who are not members, but must not write the raw list to logs,
+`audit_jobs.request`, or the saved report payload. Saved reports do include the derived external
+findings.
 
 Resumable `audit_jobs` rows contain non-sensitive request metadata, progress logs, and the completed
 result. `audit-jobs-cleanup-background.ts` runs hourly and deletes rows once their `created_at` is
@@ -90,8 +90,8 @@ TypeScript validation.
 - Any new npm fetch path preserves retry/backoff and `FailureLog` semantics.
 - Audit request, response, or SSE changes keep `src/lib/schemas.ts`, the edge functions, and the
   client stream wrappers in sync.
-- Any new third-party npm dependency reachable from an edge function has an `import_map.json` entry.
-- Files reachable from an edge function use explicit `.ts` import extensions.
+- Edge-reachable changes follow the runtime and bundling rules in `AGENTS.md` and pass the
+  deploy-time edge build.
 - User-visible behaviour is reflected in `README.md`.
 - Agent-facing architecture or invariants are reflected in `AGENTS.md`.
 - New report types update types, orchestration, dispatch, the request schema, views, tabs, exports,

@@ -60,8 +60,6 @@ More specifically, it offers four report types:
   distinguish a human login from any of that account's automation tokens.
 - Scoped package download counts are intentionally fetched sequentially with a 500 ms delay because
   `api.npmjs.org` rate-limits aggressively.
-- Failed or exhausted fetches are counted and surfaced. A rate-limited package must not silently
-  look clean.
 
 ## Development
 
