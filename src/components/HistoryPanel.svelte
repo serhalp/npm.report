@@ -109,10 +109,6 @@
       <h2 id="history-title">Progress over time</h2>
     </div>
     <div class="panel__body">
-      <p class="desc history-copy">
-        Public trust history from saved package trust level reports for this exact org set.
-      </p>
-
       {#if loading}
         <p class="desc history-loading" role="status">Loading history…</p>
       {:else if points.length === 0}

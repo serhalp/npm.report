@@ -75,7 +75,7 @@ SELECT
               ELSE format('maintainer-%s', (package_number % 4) + 1)
             END,
             'deprecated', package_number > ${EXAMPLE_TOTAL_PACKAGES - 3},
-            'downloads', 1250000 - package_number * 13000
+            'downloads', 1250000 - package_number * 13000 + ((package_number * 7919) % 997)
           ) ORDER BY package_number
         )
         FROM generate_series(1, ${EXAMPLE_TOTAL_PACKAGES}) AS packages(package_number)
