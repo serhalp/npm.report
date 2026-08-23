@@ -2026,7 +2026,7 @@ table.data tbody tr:hover td {
 }
 .shared-loading span span {
   margin-top: var(--space-2xs);
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-size: var(--text-sm);
 }
 .user-publish-result {

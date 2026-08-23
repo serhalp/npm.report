@@ -104,15 +104,22 @@ describe("AppRouter", () => {
 
     const { container } = render(AppRouter);
 
-    expect(await screen.findByRole("heading", { name: "Audit of first" })).toBeInTheDocument();
+    const firstHeading = await screen.findByRole("heading", { name: "Audit of first" });
+    const reportContent = firstHeading.closest(".shared-report-content");
     const masthead = container.querySelector(".masthead");
 
     await user.click(screen.getByRole("link", { name: /2026-07-02 report/ }));
 
     expect(window.location.pathname).toBe("/report/two");
-    expect(screen.getByRole("heading", { name: "Audit of first" })).toBeInTheDocument();
-    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByText("Loading selected report…").closest('[role="status"]')).not.toBeNull();
+    expect(firstHeading).toBeInTheDocument();
+    await waitFor(() => {
+      expect(reportContent).toHaveProperty("inert", true);
+      expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    });
+    expect(screen.getByText("Loading selected report.").closest('[role="status"]')).not.toBeNull();
+    expect(
+      screen.getByText("Loading selected report…").closest(".shared-route-loading"),
+    ).not.toBeNull();
 
     resolveSecond({
       ok: true,
@@ -121,6 +128,7 @@ describe("AppRouter", () => {
     });
 
     expect(await screen.findByRole("heading", { name: "Audit of second" })).toBeInTheDocument();
+    expect(reportContent).toHaveProperty("inert", false);
     expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "false");
     expect(screen.queryByText("Loading selected report…")).not.toBeInTheDocument();
     expect(container.querySelector(".masthead")).toBe(masthead);

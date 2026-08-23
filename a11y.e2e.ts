@@ -178,6 +178,43 @@ test("home page has no detectable accessibility violations", async ({ page }) =>
   await expectNoAccessibilityViolations(page);
 });
 
+test("shared report loading state is announced and axe-clean", async ({ page }) => {
+  let releaseReport!: () => void;
+  const reportPending = new Promise<void>((resolve) => {
+    releaseReport = resolve;
+  });
+
+  await page.route("**/api/reports/loading-report", async (route) => {
+    await reportPending;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: "loading-report",
+        orgs: "netlify",
+        scopeLabel: "last 12 months",
+        payload: auditResult,
+        createdAt: "2026-06-27T12:34:56.000Z",
+        dailyTrackingEnabled: false,
+        dailyTrackingNextRunAt: null,
+      }),
+    });
+  });
+
+  await page.goto("/report/loading-report");
+  await expect(page.getByRole("main")).toHaveAttribute("aria-busy", "true");
+  await expect(
+    page.getByRole("status").filter({
+      hasText: "Loading report. Fetching the saved snapshot and trust history.",
+    }),
+  ).toBeAttached();
+  await expect(page.locator(".shared-loading")).toBeVisible();
+  await expectNoAccessibilityViolations(page);
+
+  releaseReport();
+  await expect(page.getByRole("heading", { name: "Audit of netlify" })).toBeVisible();
+  await expect(page.getByRole("main")).toHaveAttribute("aria-busy", "false");
+});
+
 for (const colorScheme of EFFECTIVE_COLOR_SCHEMES) {
   test(`home page has no detectable accessibility violations when system resolves ${colorScheme}`, async ({
     page,
