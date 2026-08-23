@@ -9,12 +9,22 @@ to track progress and trends over time.
 > Not affiliated with or endorsed by npm, Inc. This is a free, open-source project for the
 > community.
 
+<img width="1490" height="1172" alt="Screenshot 2026-08-23 at 10 14 13" src="https://github.com/user-attachments/assets/4a17e72e-52c2-402f-aba9-82fe9442749e" />
+
+<img width="1455" height="877" alt="Screenshot 2026-08-23 at 10 17 02" src="https://github.com/user-attachments/assets/f87c25c3-d167-442b-9868-08e65db89162" />
+
 More specifically, it offers four report types:
 
 1. Package trust level: trust status of each in-scope package's `latest` release.
 2. `manual`: versions published by non-bot accounts in the selected window.
 3. `external`: current package maintainers who are not listed as org members.
 4. User publish history: versions a specific npm user personally published.
+
+## What problem does this solve?
+
+Users and organizations should use modern, secure npm publishing mechanisms. They may have many
+(perhaps hundreds) of packages to audit, prioritize, and keep tabs on. Although the necessary
+information exists, there is no official tooling that makes this easy. npm.report attempts to fill that gap.
 
 ## How to use
 
