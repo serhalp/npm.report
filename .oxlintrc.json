@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "oxc", "import", "react", "jsx-a11y", "react-perf"],
+  "plugins": ["typescript", "oxc", "import", "jsx-a11y"],
   "jsPlugins": ["@e18e/eslint-plugin"],
   "categories": {
     "correctness": "error",
@@ -20,7 +20,6 @@
     "e18e/prefer-spread-syntax": "error",
     "e18e/prefer-url-canparse": "error",
     "e18e/ban-dependencies": "error",
-    "react/react-in-jsx-scope": "off",
     "import/no-unassigned-import": [
       "error",
       {
