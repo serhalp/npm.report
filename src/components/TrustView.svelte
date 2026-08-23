@@ -91,9 +91,9 @@
 <div>
   <div class="statgrid">
     <Stat k="In scope" v={summary.total} sub={scopeNote} />
-    <Stat k="Staged publish" v={summary.byLevel.stagedPublish} variant="accent" />
-    <Stat k="Trusted publisher" v={summary.byLevel.trustedPublisher} variant="accent" />
-    <Stat k="Provenance only" v={summary.byLevel.provenance} />
+    <Stat k="Staged publish" v={summary.byLevel.stagedPublish} variant="staged" />
+    <Stat k="Trusted publisher" v={summary.byLevel.trustedPublisher} variant="trusted" />
+    <Stat k="Provenance only" v={summary.byLevel.provenance} variant="provenance" />
     <Stat k="No trust signal" v={summary.byLevel.none} variant="risk" />
     <Stat k="Deprecated latest" v={summary.deprecated} />
   </div>
