@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { mockFetch, mockResolvedFetch } from "../test/mock";
 import { streamAudit, type AuditStreamRequest } from "./auditStream";
 
 const evt = (event: string, data: unknown, id?: number) => {
@@ -61,7 +62,7 @@ describe("streamAudit", () => {
   it("streams log lines and returns the result + saved report link", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
+      mockResolvedFetch(
         sseResponse([
           evt("log", "[trust] listing packages"),
           evt("log", "Done."),
@@ -86,7 +87,7 @@ describe("streamAudit", () => {
   it("reassembles frames split across stream chunks", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
+      mockResolvedFetch(
         sseResponse(
           [evt("log", "chunky"), evt("result", RESULT), evt("done", { id: "x", url: "/report/x" })],
           {
@@ -104,11 +105,9 @@ describe("streamAudit", () => {
   it("surfaces a save failure via saveError instead of throwing", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          sseResponse([evt("result", RESULT), evt("done", { error: "db unavailable" })]),
-        ),
+      mockResolvedFetch(
+        sseResponse([evt("result", RESULT), evt("done", { error: "db unavailable" })]),
+      ),
     );
     const outcome = await streamAudit(REQUEST, () => {});
     expect(outcome.result).not.toBeNull();
@@ -117,37 +116,35 @@ describe("streamAudit", () => {
   });
 
   it("throws when the audit itself errors", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(sseResponse([evt("error", "upstream exploded")])),
-    );
+    vi.stubGlobal("fetch", mockResolvedFetch(sseResponse([evt("error", "upstream exploded")])));
     await expect(streamAudit(REQUEST, () => {})).rejects.toThrow("upstream exploded");
   });
 
   it("throws on a non-ok response", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 429, body: null }));
+    vi.stubGlobal("fetch", mockResolvedFetch({ ok: false, status: 429, body: null }));
     await expect(streamAudit(REQUEST, () => {})).rejects.toThrow("Audit failed (429)");
   });
 
   it("posts the request to the audit-stream endpoint", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        sseResponse([evt("result", RESULT), evt("done", { id: "x", url: "/report/x" })]),
-      );
+    const fetchMock = mockResolvedFetch(
+      sseResponse([evt("result", RESULT), evt("done", { id: "x", url: "/report/x" })]),
+    );
     vi.stubGlobal("fetch", fetchMock);
     await streamAudit(REQUEST, () => {});
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/audit-stream",
       expect.objectContaining({ method: "POST" }),
     );
-    const body = JSON.parse(String(fetchMock.mock.calls[0][1].body));
+    const requestBody = fetchMock.mock.calls[0]?.[1]?.body;
+    if (typeof requestBody !== "string") throw new TypeError("Expected a string request body");
+    const body = JSON.parse(requestBody);
     expect(body).toMatchObject({ orgs: ["netlify"], kinds: ["trust"], all: true });
   });
 
   it("reconnects with jobId + from and resumes after a mid-stream disconnect", async () => {
     const bodies: Array<{ jobId: string; from: number }> = [];
-    const fetchMock = vi.fn(async (_url: string, init: { body: string }) => {
+    const fetchMock = mockFetch(async (_url, init) => {
+      if (typeof init?.body !== "string") throw new TypeError("Expected a string request body");
       bodies.push(JSON.parse(init.body));
       if (bodies.length === 1) {
         // First connection: two log lines, then the stream ends with NO terminal
@@ -182,17 +179,15 @@ describe("streamAudit", () => {
   it("ignores SSE keepalive comment frames", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          sseResponse([
-            ": keepalive\n\n",
-            evt("log", "working"),
-            ": keepalive\n\n",
-            evt("result", RESULT),
-            evt("done", { id: "x", url: "/report/x" }),
-          ]),
-        ),
+      mockResolvedFetch(
+        sseResponse([
+          ": keepalive\n\n",
+          evt("log", "working"),
+          ": keepalive\n\n",
+          evt("result", RESULT),
+          evt("done", { id: "x", url: "/report/x" }),
+        ]),
+      ),
     );
     const logs: string[] = [];
     const outcome = await streamAudit(REQUEST, (line) => logs.push(line));

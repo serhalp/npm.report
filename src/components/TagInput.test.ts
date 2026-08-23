@@ -8,7 +8,7 @@ describe("TagInput", () => {
     render(TagInput, {
       props: {
         values: [],
-        onChange: vi.fn(),
+        onChange: vi.fn<(values: string[]) => void>(),
         ariaInvalid: true,
         ariaDescribedby: "org-help org-error",
       },
@@ -20,7 +20,7 @@ describe("TagInput", () => {
 
   test("commits comma and enter separated values with dedupe", async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = vi.fn<(values: string[]) => void>();
     render(TagInput, {
       props: {
         values: ["netlify"],
@@ -37,7 +37,7 @@ describe("TagInput", () => {
 
   test("commits on blur and lowercases when requested", async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = vi.fn<(values: string[]) => void>();
     render(TagInput, {
       props: {
         values: [],
@@ -55,7 +55,7 @@ describe("TagInput", () => {
 
   test("removes chips by button and with empty backspace", async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
+    const onChange = vi.fn<(values: string[]) => void>();
     render(TagInput, {
       props: {
         values: ["alpha", "beta"],

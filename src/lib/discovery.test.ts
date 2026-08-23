@@ -13,7 +13,7 @@ function jsonResponse(body: unknown) {
 
 describe("discovery", () => {
   it("lists org packages from registry responses with dedupe and sorting", async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn<typeof fetch>(async (input) => {
       if (requestUrl(input).endsWith("/-/org/Netlify/package")) {
         return jsonResponse({ zebra: {}, alpha: {} });
       }
@@ -29,7 +29,7 @@ describe("discovery", () => {
   });
 
   it("resolves fast-npm-meta batches without registry fallback", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       jsonResponse([
         {
           name: "@scope/pkg",
@@ -77,7 +77,7 @@ describe("discovery", () => {
 
   it("records incomplete discovery when fast-npm-meta returns unparseable or empty batches", async () => {
     const fetchMock = vi
-      .fn()
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(new Response("<html>rate limited</html>", { status: 200 }))
       .mockResolvedValueOnce(jsonResponse({ error: "too many packages" }));
     vi.stubGlobal("fetch", fetchMock);

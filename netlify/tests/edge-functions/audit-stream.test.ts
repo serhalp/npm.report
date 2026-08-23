@@ -1,13 +1,16 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { AuditJobRow } from "../../../db/schema.ts";
 
 const mocked = vi.hoisted(() => ({
-  createJobIfAbsent: vi.fn(),
-  finishJob: vi.fn(),
-  getJob: vi.fn(),
-  runAudit: vi.fn(),
-  saveReportSnapshot: vi.fn(),
-  updateJobLog: vi.fn(),
+  createJobIfAbsent:
+    vi.fn<typeof import("../../functions/_shared/audit-jobs.ts").createJobIfAbsent>(),
+  finishJob: vi.fn<typeof import("../../functions/_shared/audit-jobs.ts").finishJob>(),
+  getJob: vi.fn<typeof import("../../functions/_shared/audit-jobs.ts").getJob>(),
+  runAudit: vi.fn<typeof import("../../../src/lib/runAudit.ts").runAudit>(),
+  saveReportSnapshot:
+    vi.fn<typeof import("../../functions/_shared/report-persistence.ts").saveReportSnapshot>(),
+  updateJobLog: vi.fn<typeof import("../../functions/_shared/audit-jobs.ts").updateJobLog>(),
 }));
 
 vi.mock("../../functions/_shared/audit-jobs.ts", () => ({
@@ -34,6 +37,12 @@ const VALID_REQUEST = {
   bots: ["GitHub Actions"],
   members: [],
 };
+const JOB_METADATA = {
+  id: "job-1",
+  request: VALID_REQUEST,
+  createdAt: new Date("2026-08-09T12:00:00.000Z"),
+  updatedAt: new Date("2026-08-09T12:01:00.000Z"),
+} satisfies Pick<AuditJobRow, "id" | "request" | "createdAt" | "updatedAt">;
 
 interface Frame {
   event: string;
@@ -82,7 +91,10 @@ beforeEach(() => {
   mocked.createJobIfAbsent.mockResolvedValue(true);
   mocked.finishJob.mockResolvedValue(undefined);
   mocked.runAudit.mockResolvedValue(RESULT);
-  mocked.saveReportSnapshot.mockResolvedValue({ id: "vue-2026-08-09-abc12345" });
+  mocked.saveReportSnapshot.mockResolvedValue({
+    id: "vue-2026-08-09-abc12345",
+    history: null,
+  });
   mocked.updateJobLog.mockResolvedValue(undefined);
 });
 
@@ -263,6 +275,7 @@ describe("audit stream edge function", () => {
   it("resumes a completed job without rerunning the audit", async () => {
     mocked.createJobIfAbsent.mockResolvedValueOnce(false);
     mocked.getJob.mockResolvedValueOnce({
+      ...JOB_METADATA,
       status: "done",
       log: [
         { seq: 0, line: "already seen" },
@@ -271,7 +284,7 @@ describe("audit stream edge function", () => {
       result: RESULT,
       reportId: "vue-resumed",
       error: null,
-    });
+    } satisfies AuditJobRow);
 
     const response = await handler(post({ ...VALID_REQUEST, from: 0 }));
 
@@ -298,12 +311,13 @@ describe("audit stream edge function", () => {
   it("forwards a resumed job's terminal audit error", async () => {
     mocked.createJobIfAbsent.mockResolvedValueOnce(false);
     mocked.getJob.mockResolvedValueOnce({
+      ...JOB_METADATA,
       status: "error",
       log: [],
       result: null,
       reportId: null,
       error: "manifest unavailable",
-    });
+    } satisfies AuditJobRow);
 
     const response = await handler(post(VALID_REQUEST));
 

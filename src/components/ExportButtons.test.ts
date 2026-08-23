@@ -10,7 +10,7 @@ afterEach(() => {
 describe("ExportButtons", () => {
   test("copies JSON and reports success or clipboard failure", async () => {
     const user = userEvent.setup();
-    const onToast = vi.fn();
+    const onToast = vi.fn<(message: string) => void>();
     const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
     render(ExportButtons, {
       props: {
@@ -38,7 +38,7 @@ describe("ExportButtons", () => {
 
   test("downloads CSV and reports the generated filename", async () => {
     const user = userEvent.setup();
-    const onToast = vi.fn();
+    const onToast = vi.fn<(message: string) => void>();
     const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test");
     const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});

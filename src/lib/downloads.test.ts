@@ -16,7 +16,7 @@ describe("fetchWeeklyDownloads", () => {
   it("uses bulk unscoped downloads and paced sequential scoped downloads", async () => {
     vi.useFakeTimers();
     const seen: string[] = [];
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn<typeof fetch>(async (input) => {
       const url = requestUrl(input);
       seen.push(url);
       if (url.endsWith("/left-pad,is-number")) {
@@ -61,7 +61,7 @@ describe("fetchWeeklyDownloads", () => {
   it("batches unscoped in one bulk request, paces scoped 500ms apart, and treats null as 0", async () => {
     vi.useFakeTimers();
     const seen: string[] = [];
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn<typeof fetch>(async (input) => {
       const url = requestUrl(input);
       seen.push(url);
       if (url.includes("/a,b")) return jsonResponse({ a: { downloads: 5 }, b: null });

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import SharedReport from "./SharedReport.svelte";
 import { formatCompactDateTime, formatDate, formatDateTime } from "./lib/dateFormatting";
 import { auditResult, trustReport } from "./test/fixtures";
+import { mockFetch, mockResolvedFetch } from "./test/mock";
 import { requestUrl } from "./test/request";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -11,7 +12,7 @@ describe("SharedReport", () => {
   test("loads and renders a read-only shared report", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
+      mockResolvedFetch({
         ok: true,
         status: 200,
         json: async () => ({
@@ -72,7 +73,7 @@ describe("SharedReport", () => {
     }>((resolve) => {
       resolveHistory = resolve;
     });
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = mockFetch(async (input) => {
       if (requestUrl(input) === "/api/reports/report-id") {
         return {
           ok: true,
@@ -155,7 +156,7 @@ describe("SharedReport", () => {
   });
 
   test("still renders the report when its history request fails", async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = mockFetch(async (input) => {
       if (requestUrl(input) === "/api/reports/report-id") {
         return {
           ok: true,
@@ -194,7 +195,7 @@ describe("SharedReport", () => {
   test("shows the specific not-found error for 404s", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
+      mockResolvedFetch({
         ok: false,
         status: 404,
       }),
@@ -209,7 +210,7 @@ describe("SharedReport", () => {
   test("rejects malformed stored report data at the client boundary", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
+      mockResolvedFetch({
         ok: true,
         status: 200,
         json: async () => ({ id: "report-id", payload: { failures: [] } }),
@@ -226,7 +227,7 @@ describe("SharedReport", () => {
   test("shows the upstream status when loading a report fails", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
+      mockResolvedFetch({
         ok: false,
         status: 503,
       }),

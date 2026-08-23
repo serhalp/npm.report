@@ -3,6 +3,7 @@ import type { DatabaseConnection } from "@netlify/database";
 import type { NetlifyDB } from "@netlify/database-dev";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseRows, ReportRowSchema, ReportTrustHistoryRowSchema } from "../../../db/schema.js";
+import type { AuditResult } from "../../../src/lib/runAudit.js";
 import { resetTestDatabase, startTestDatabase, stopTestDatabase } from "../database.js";
 
 let database: DatabaseConnection;
@@ -78,6 +79,9 @@ describe("saveReportSnapshot", () => {
           scopeLabel: "ALL org packages",
           orgs: ["Netlify"],
           total: 4,
+          provenance: 0,
+          trustedPublisher: 2,
+          stagedPublish: 1,
           deprecated: 1,
           byLevel: {
             stagedPublish: 1,
@@ -86,12 +90,40 @@ describe("saveReportSnapshot", () => {
             none: 1,
           },
         },
-        rows: [{ pkg: "secret-free" }],
+        rows: [
+          {
+            pkg: "secret-free",
+            latestPublish: "2026-06-27T10:00:00.000Z",
+            version: "1.0.0",
+            level: "stagedPublish",
+            provenance: false,
+            trustedPublisher: false,
+            stagedPublish: true,
+            publisher: "release-bot",
+            deprecated: false,
+            downloads: 42,
+          },
+        ],
       },
-      manual: { rows: [{ who: "sensitive-publisher" }] },
-      external: { rows: [{ user: "sensitive-user", pkg: "pkg" }] },
+      manual: {
+        rows: [
+          {
+            when: "2026-06-27T10:00:00.000Z",
+            who: "sensitive-publisher",
+            ref: "secret-free@1.0.0",
+          },
+        ],
+        totalScanned: 1,
+        bots: [],
+        byPublisher: [{ who: "sensitive-publisher", count: 1 }],
+      },
+      external: {
+        rows: [{ user: "sensitive-user", pkg: "pkg" }],
+        distinctUsers: 1,
+        byUser: [{ user: "sensitive-user", count: 1 }],
+      },
       failures: [{ url: "https://registry.npmjs.org/pkg", reason: "http 429" }],
-    };
+    } satisfies AuditResult;
 
     const { id } = await persistence.saveReportSnapshot({
       orgs: ["Netlify"],

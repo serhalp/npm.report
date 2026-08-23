@@ -15,7 +15,7 @@ describe("ResultsView", () => {
     render(ResultsView, {
       props: {
         result: auditResult,
-        onToast: vi.fn(),
+        onToast: vi.fn<(message: string) => void>(),
         initialTab: "trust",
       },
     });
@@ -29,7 +29,7 @@ describe("ResultsView", () => {
     render(ResultsView, {
       props: {
         result: { trust: trustReport, failures: [] },
-        onToast: vi.fn(),
+        onToast: vi.fn<(message: string) => void>(),
       },
     });
 
@@ -54,7 +54,7 @@ describe("ResultsView", () => {
     render(ResultsView, {
       props: {
         result: auditResult,
-        onToast: vi.fn(),
+        onToast: vi.fn<(message: string) => void>(),
         initialTab: "manual",
       },
     });
@@ -73,7 +73,11 @@ describe("ResultsView", () => {
     const user = userEvent.setup();
     history.replaceState(null, "", "/");
     render(ResultsView, {
-      props: { result: auditResult, onToast: vi.fn(), initialTab: "trust" },
+      props: {
+        result: auditResult,
+        onToast: vi.fn<(message: string) => void>(),
+        initialTab: "trust",
+      },
     });
 
     const trustTab = screen.getByRole("tab", { name: /package trust level 2/i });
