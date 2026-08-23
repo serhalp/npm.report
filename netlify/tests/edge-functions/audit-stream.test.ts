@@ -3,23 +3,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuditJobRow } from "../../../db/schema.ts";
 
 const mocked = vi.hoisted(() => ({
-  createJobIfAbsent:
-    vi.fn<typeof import("../../functions/_shared/audit-jobs.ts").createJobIfAbsent>(),
-  finishJob: vi.fn<typeof import("../../functions/_shared/audit-jobs.ts").finishJob>(),
-  getJob: vi.fn<typeof import("../../functions/_shared/audit-jobs.ts").getJob>(),
+  createJobIfAbsent: vi.fn<typeof import("../../_shared/audit-jobs.ts").createJobIfAbsent>(),
+  finishJob: vi.fn<typeof import("../../_shared/audit-jobs.ts").finishJob>(),
+  getJob: vi.fn<typeof import("../../_shared/audit-jobs.ts").getJob>(),
   runAudit: vi.fn<typeof import("../../../src/lib/runAudit.ts").runAudit>(),
   saveReportSnapshot:
-    vi.fn<typeof import("../../functions/_shared/report-persistence.ts").saveReportSnapshot>(),
-  updateJobLog: vi.fn<typeof import("../../functions/_shared/audit-jobs.ts").updateJobLog>(),
+    vi.fn<typeof import("../../_shared/report-persistence.ts").saveReportSnapshot>(),
+  updateJobLog: vi.fn<typeof import("../../_shared/audit-jobs.ts").updateJobLog>(),
 }));
 
-vi.mock("../../functions/_shared/audit-jobs.ts", () => ({
+vi.mock("../../_shared/audit-jobs.ts", () => ({
   createJobIfAbsent: mocked.createJobIfAbsent,
   finishJob: mocked.finishJob,
   getJob: mocked.getJob,
   updateJobLog: mocked.updateJobLog,
 }));
-vi.mock("../../functions/_shared/report-persistence.ts", () => ({
+vi.mock("../../_shared/report-persistence.ts", () => ({
   saveReportSnapshot: mocked.saveReportSnapshot,
 }));
 vi.mock("../../../src/lib/runAudit.ts", () => ({ runAudit: mocked.runAudit }));

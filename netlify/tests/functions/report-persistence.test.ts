@@ -8,7 +8,7 @@ import { resetTestDatabase, startTestDatabase, stopTestDatabase } from "../datab
 
 let database: DatabaseConnection;
 let local: NetlifyDB;
-let persistence: typeof import("../../functions/_shared/report-persistence.js");
+let persistence: typeof import("../../_shared/report-persistence.js");
 
 beforeAll(async () => {
   const started = await startTestDatabase();
@@ -17,7 +17,7 @@ beforeAll(async () => {
   vi.stubEnv("NETLIFY_DB_DRIVER", "server");
   vi.resetModules();
   database = (await import("../../../db/index.js")).getDb();
-  persistence = await import("../../functions/_shared/report-persistence.js");
+  persistence = await import("../../_shared/report-persistence.js");
 });
 
 beforeEach(async () => {

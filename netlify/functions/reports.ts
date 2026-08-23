@@ -6,7 +6,7 @@ import {
   orgKeyFor,
   type RecentTrustReportLink,
 } from "../../src/lib/reportHistory.js";
-import { historyPointFromRow, recentReportLinkFromRow } from "./_shared/report-persistence.js";
+import { historyPointFromRow, recentReportLinkFromRow } from "../_shared/report-persistence.js";
 import { scheduleDailyTrustReport } from "./_shared/report-schedules.js";
 
 const RECENT_REPORT_LIMIT = 5;

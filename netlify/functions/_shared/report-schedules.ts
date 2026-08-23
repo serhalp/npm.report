@@ -12,7 +12,7 @@ import type { ReportRerunScheduleStatus } from "../../../src/lib/reportHistory.j
 import type { AuditResult } from "../../../src/lib/runAudit.js";
 import { runAudit } from "../../../src/lib/runAudit.js";
 import type { AuditConfig } from "../../../src/lib/types.js";
-import { saveReportSnapshot } from "./report-persistence.js";
+import { saveReportSnapshot } from "../../_shared/report-persistence.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;

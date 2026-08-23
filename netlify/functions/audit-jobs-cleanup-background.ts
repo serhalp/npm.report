@@ -1,5 +1,5 @@
 import type { Config } from "@netlify/functions";
-import { deleteExpiredJobs } from "./_shared/audit-jobs.js";
+import { deleteExpiredJobs } from "../_shared/audit-jobs.js";
 
 // Prune throwaway `audit_jobs` rows. Interactive audits persist their resumable
 // progress there, but the durable artifact is the saved report in `reports`, so a

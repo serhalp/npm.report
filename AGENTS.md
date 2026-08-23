@@ -32,6 +32,9 @@ and Node scheduled functions. Anything reachable from `runAudit` or
 `runUserPublishes` must use APIs available in both runtimes: no `node:` builtins
 and no browser-only globals. Use Web Crypto, not `node:crypto`.
 
+Cross-runtime Netlify helpers live in `netlify/_shared/`;
+`netlify/functions/_shared/` is reserved for Node-only function helpers.
+
 Netlify edge bundling has stricter rules than Vite or local development:
 
 - Edge-reachable relative imports require explicit `.ts` extensions. Node-only

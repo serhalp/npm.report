@@ -1,5 +1,5 @@
-import { getDb } from "../../../db/index.ts";
-import { type ReportTrustHistoryRow, serializeJson } from "../../../db/schema.ts";
+import { getDb } from "../../db/index.ts";
+import { type ReportTrustHistoryRow, serializeJson } from "../../db/schema.ts";
 import {
   extractTrustHistory,
   scopeLabelFor,
@@ -7,7 +7,7 @@ import {
   type ReportTrustHistoryPoint,
   type SharedReportScope,
   type TrustHistorySnapshot,
-} from "../../../src/lib/reportHistory.ts";
+} from "../../src/lib/reportHistory.ts";
 
 export interface SaveReportSnapshotInput {
   orgs: string[];

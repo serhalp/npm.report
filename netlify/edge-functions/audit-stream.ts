@@ -5,13 +5,8 @@ import { scopeLabelFor, type SharedReportScope } from "../../src/lib/reportHisto
 import { AuditRequestSchema, parseOrNull } from "../../src/lib/schemas.ts";
 import { type AuditResult, runAudit } from "../../src/lib/runAudit.ts";
 import type { AuditConfig, ReportKind } from "../../src/lib/types.ts";
-import { saveReportSnapshot } from "../functions/_shared/report-persistence.ts";
-import {
-  createJobIfAbsent,
-  finishJob,
-  getJob,
-  updateJobLog,
-} from "../functions/_shared/audit-jobs.ts";
+import { saveReportSnapshot } from "../_shared/report-persistence.ts";
+import { createJobIfAbsent, finishJob, getJob, updateJobLog } from "../_shared/audit-jobs.ts";
 import type { AuditJobLine } from "../../db/schema.ts";
 
 // Interactive audits run HERE, server-side, and stream progress to the browser
