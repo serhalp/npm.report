@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { FailureLog } from "./npmClient";
 import { discoverInScope, runExternal, runManual, runTrust, runUserPublishes } from "./reports";
 import type { AuditConfig } from "./types";
+import { requestUrl } from "../test/request";
 
 const config: AuditConfig = {
   orgs: ["acme"],
@@ -24,7 +25,7 @@ function installRoutes(routes: Record<string, unknown>) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL) => {
-      const key = String(input);
+      const key = requestUrl(input);
       if (!(key in routes)) return new Response(`missing route: ${key}`, { status: 500 });
       return jsonResponse(routes[key]);
     }),

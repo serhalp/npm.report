@@ -69,6 +69,17 @@ export const AuditResultSchema = v.looseObject({
   failures: v.array(FetchFailure),
 });
 
+export const TrustHistoryPayloadSchema = v.object({
+  trust: TrustReport,
+  failures: v.array(FetchFailure),
+});
+
+export const AuditStreamDoneSchema = v.looseObject({
+  id: v.optional(v.string()),
+  url: v.optional(v.string()),
+  error: v.optional(v.string()),
+});
+
 /** The row returned by GET /api/reports/:id and rendered read-only at /report/:id. */
 export const ReportRecordSchema = v.looseObject({
   id: v.string(),

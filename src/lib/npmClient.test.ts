@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import * as v from "valibot";
 import {
   FailureLog,
   npmGet,
@@ -88,8 +89,19 @@ describe("npm client", () => {
     // A 200 whose body isn't JSON (e.g. an HTML rate-limit interstitial) is NOT
     // empty — it must be recorded so the UI can warn results are incomplete.
     const url = "https://registry.npmjs.org/bad";
-    await expect(npmGetJson(url, failures)).resolves.toBeNull();
+    await expect(npmGetJson(url, failures, v.unknown())).resolves.toBeNull();
     expect(failures.failures).toEqual([{ url, reason: "unparseable JSON response" }]);
+  });
+
+  it("logs a parseable response that violates the supplied JSON schema", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(textResponse('{"downloads":"many"}'));
+    vi.stubGlobal("fetch", fetchMock);
+    const failures = new FailureLog();
+    const url = "https://api.npmjs.org/downloads/point/last-week/left-pad";
+    const downloadSchema = v.object({ downloads: v.number() });
+
+    await expect(npmGetJson(url, failures, downloadSchema)).resolves.toBeNull();
+    expect(failures.failures).toEqual([{ url, reason: "unexpected JSON response" }]);
   });
 
   it("formats registry URLs and ISO epochs", () => {

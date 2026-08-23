@@ -27,7 +27,7 @@ const defaultAuditResult = {
   failures: [],
 };
 
-const runAudit = vi.fn(async () => defaultAuditResult);
+const runAudit = vi.fn<typeof import("../../../src/lib/runAudit.js").runAudit>();
 
 let database: DatabaseConnection;
 let local: NetlifyDB;
@@ -171,7 +171,7 @@ describe("trust rerun schedules", () => {
   });
 
   it("succeeds without storing history when no trust summary can be extracted", async () => {
-    runAudit.mockResolvedValueOnce({ failures: [] } as never);
+    runAudit.mockResolvedValueOnce({ failures: [] });
 
     await expect(schedules.processDueTrustReruns()).resolves.toEqual({
       checked: 1,

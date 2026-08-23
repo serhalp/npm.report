@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { listOrgPackages, resolveMeta } from "./discovery";
 import { FailureLog } from "./npmClient";
+import { requestUrl } from "../test/request";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -13,7 +14,7 @@ function jsonResponse(body: unknown) {
 describe("discovery", () => {
   it("lists org packages from registry responses with dedupe and sorting", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input).endsWith("/-/org/Netlify/package")) {
+      if (requestUrl(input).endsWith("/-/org/Netlify/package")) {
         return jsonResponse({ zebra: {}, alpha: {} });
       }
       return jsonResponse({ alpha: {}, beta: {} });

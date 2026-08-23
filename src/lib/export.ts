@@ -10,7 +10,16 @@ export async function copyJson(data: unknown): Promise<void> {
 
 function csvCell(value: unknown): string {
   if (value == null) return "";
-  const s = String(value);
+  let s: string;
+  if (typeof value === "string") s = value;
+  else if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint")
+    s = value.toString();
+  else if (value instanceof Date) s = value.toISOString();
+  else if (typeof value === "object") {
+    const json = JSON.stringify(value);
+    if (json === undefined) throw new TypeError("CSV cell is not serializable");
+    s = json;
+  } else throw new TypeError(`Unsupported CSV cell type: ${typeof value}`);
   // Quote if it contains a comma, quote, newline, or leading/trailing space.
   if (CSV_QUOTE_RE.test(s) || s !== s.trim()) {
     return `"${s.replace(/"/g, '""')}"`;

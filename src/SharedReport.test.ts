@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import SharedReport from "./SharedReport.svelte";
 import { formatCompactDateTime, formatDate, formatDateTime } from "./lib/dateFormatting";
 import { auditResult, trustReport } from "./test/fixtures";
+import { requestUrl } from "./test/request";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -72,7 +73,7 @@ describe("SharedReport", () => {
       resolveHistory = resolve;
     });
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input) === "/api/reports/report-id") {
+      if (requestUrl(input) === "/api/reports/report-id") {
         return {
           ok: true,
           status: 200,
@@ -155,7 +156,7 @@ describe("SharedReport", () => {
 
   test("still renders the report when its history request fails", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input) === "/api/reports/report-id") {
+      if (requestUrl(input) === "/api/reports/report-id") {
         return {
           ok: true,
           status: 200,

@@ -1,4 +1,5 @@
 /* eslint-disable no-await-in-loop -- api.npmjs.org has a strict token bucket; scoped downloads must remain sequential and paced. */
+import * as v from "valibot";
 import { chunk } from "./concurrency.ts";
 import { FailureLog, npmGetJson, sleep } from "./npmClient.ts";
 
@@ -15,13 +16,8 @@ import { FailureLog, npmGetJson, sleep } from "./npmClient.ts";
 // Only a failed/absent fetch stays unknown (renders as "?").
 // ---------------------------------------------------------------------------
 
-interface BulkResp {
-  // single-name responses are flat {package, downloads}; multi-name responses
-  // are keyed by package: { "<name>": {downloads, package} | null }
-  downloads?: number;
-  package?: string;
-  [key: string]: unknown;
-}
+const DownloadEntrySchema = v.looseObject({ downloads: v.optional(v.unknown()) });
+const BulkDownloadResponseSchema = v.record(v.string(), v.unknown());
 
 export async function fetchWeeklyDownloads(
   names: string[],
@@ -37,9 +33,10 @@ export async function fetchWeeklyDownloads(
   // Unscoped: bulk, 100 per request.
   for (const batch of chunk(unscoped, 100)) {
     if (batch.length === 0) continue;
-    const json = await npmGetJson<BulkResp>(
+    const json = await npmGetJson(
       `https://api.npmjs.org/downloads/point/last-week/${batch.join(",")}`,
       failures,
+      BulkDownloadResponseSchema,
       5,
     );
     if (json) {
@@ -48,10 +45,15 @@ export async function fetchWeeklyDownloads(
         map.set(json.package, json.downloads);
       } else {
         for (const [key, val] of Object.entries(json)) {
-          const v = val as { downloads?: number } | null;
+          const entry = v.safeParse(DownloadEntrySchema, val);
           // A present-but-null entry means npm has the package but zero weekly
           // downloads. Record it as 0; a missing entry stays "?".
-          map.set(key, v && typeof v.downloads === "number" ? v.downloads : 0);
+          map.set(
+            key,
+            entry.success && typeof entry.output.downloads === "number"
+              ? entry.output.downloads
+              : 0,
+          );
         }
       }
     }
@@ -61,9 +63,10 @@ export async function fetchWeeklyDownloads(
 
   // Scoped: sequential + paced to stay under the token bucket.
   for (const p of scoped) {
-    const json = await npmGetJson<{ downloads?: number }>(
+    const json = await npmGetJson(
       `https://api.npmjs.org/downloads/point/last-week/${p}`,
       failures,
+      DownloadEntrySchema,
       5,
     );
     // A fetched response with a non-numeric count is a real 0; only a failed

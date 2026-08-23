@@ -11,7 +11,7 @@
 // replays only newer lines, so the terminal keeps scrolling and the report stays
 // complete however long the audit runs.
 import { readSseStream } from "./sseStream.ts";
-import { AuditResultSchema, parseOrNull } from "./schemas.ts";
+import { AuditResultSchema, AuditStreamDoneSchema, parseOrNull } from "./schemas.ts";
 import type { AuditResult } from "./runAudit.ts";
 import type { ReportKind } from "./types.ts";
 
@@ -68,13 +68,13 @@ export async function streamAudit(
           if (typeof id === "number") from = Math.max(from, id);
           onLog(data);
         } else if (event === "result") {
-          outcome.result = parseOrNull(AuditResultSchema, data) as AuditResult | null;
-        } else if (event === "done" && data && typeof data === "object") {
-          const info = data as { id?: string; url?: string; error?: string };
-          if (info.id) {
+          outcome.result = parseOrNull(AuditResultSchema, data);
+        } else if (event === "done") {
+          const info = parseOrNull(AuditStreamDoneSchema, data);
+          if (info?.id) {
             outcome.reportId = info.id;
             outcome.reportUrl = info.url;
-          } else if (info.error) {
+          } else if (info?.error) {
             outcome.saveError = info.error;
           }
           terminal = true;

@@ -44,12 +44,14 @@ export function parseMembers(raw: string): string[] {
       if (depth === 0 && start >= 0) {
         const slice = text.slice(start, i + 1);
         try {
-          const obj = JSON.parse(slice) as Record<string, unknown>;
-          for (const key of Object.keys(obj)) {
-            const u = key.trim().toLowerCase();
-            if (u) members.add(u);
+          const parsed: unknown = JSON.parse(slice);
+          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            for (const key of Object.keys(parsed)) {
+              const u = key.trim().toLowerCase();
+              if (u) members.add(u);
+            }
+            foundJson = true;
           }
-          foundJson = true;
         } catch {
           // ignore malformed slice
         }

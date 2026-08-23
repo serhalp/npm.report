@@ -1,5 +1,6 @@
 /* eslint-disable no-await-in-loop -- Retry/backoff must wait between attempts; parallelizing retries would violate rate-limit handling. */
 import type { FetchFailure } from "./types.ts";
+import * as v from "valibot";
 
 // ---------------------------------------------------------------------------
 // Retry and failure contract for direct npm reads.
@@ -94,21 +95,24 @@ export async function npmGet(url: string, failures: FailureLog, tries = 5): Prom
 }
 
 /**
- * Convenience: npm_get + JSON.parse. An empty body (null / "") is a
- * legitimately-empty result and returns null silently. But a NON-empty body
- * that fails to parse (e.g. a 200 HTML rate-limit interstitial) is NOT empty —
- * treating it as such would silently zero out an audit, so it's recorded in the
- * FailureLog per the "no silent failure" invariant, matching discovery.ts.
+ * Fetch, parse, and validate JSON. An empty body (null / "") is legitimately
+ * empty and returns null silently. A non-empty body that is invalid JSON or
+ * does not match the expected schema is recorded in the FailureLog.
  */
-export async function npmGetJson<T = unknown>(
+export async function npmGetJson<TSchema extends v.GenericSchema>(
   url: string,
   failures: FailureLog,
+  schema: TSchema,
   tries = 5,
-): Promise<T | null> {
+): Promise<v.InferOutput<TSchema> | null> {
   const body = await npmGet(url, failures, tries);
   if (!body) return null;
   try {
-    return JSON.parse(body) as T;
+    const parsed: unknown = JSON.parse(body);
+    const result = v.safeParse(schema, parsed);
+    if (result.success) return result.output;
+    failures.add(url, "unexpected JSON response");
+    return null;
   } catch {
     failures.add(url, "unparseable JSON response");
     return null;
