@@ -58,9 +58,7 @@
 </svelte:head>
 
 <div class="app">
-  <SiteHeader tracked>
-    <p class="tagline">Daily package trust across tracked npm org sets.</p>
-  </SiteHeader>
+  <SiteHeader tracked />
 
   <main tabindex="-1" aria-busy={loading}>
     <section class="tracked-page" aria-labelledby="tracked-title">

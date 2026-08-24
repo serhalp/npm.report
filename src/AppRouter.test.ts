@@ -206,10 +206,14 @@ describe("AppRouter", () => {
     const user = userEvent.setup();
 
     render(AppRouter);
-    await user.click(screen.getByRole("link", { name: "Tracked orgs" }));
+    await user.click(await screen.findByRole("link", { name: "Tracking 0 orgs" }));
 
     expect(window.location.pathname).toBe("/tracked");
     expect(await screen.findByRole("heading", { name: "Tracked org sets" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Tracking 0 orgs" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     expect(screen.getByRole("main")).toHaveFocus();
   });
 });

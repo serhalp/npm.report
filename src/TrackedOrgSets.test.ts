@@ -34,6 +34,8 @@ describe("TrackedOrgSets", () => {
 
     render(TrackedOrgSets);
 
+    expect(screen.getByRole("link", { name: "Tracking … orgs" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tracked org sets" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Loading tracked orgs…");
     expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
   });
@@ -47,6 +49,7 @@ describe("TrackedOrgSets", () => {
     const { container } = render(TrackedOrgSets);
 
     expect(await screen.findByText("1 set")).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Tracking 2 orgs" })).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "false");
     expect(screen.getByRole("link", { name: "acme, example" })).toHaveAttribute(
       "href",
