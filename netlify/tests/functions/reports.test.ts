@@ -321,19 +321,6 @@ describe("reports function", () => {
     await expect(response.json()).resolves.toEqual({
       orgSets: [
         {
-          orgs: ["netlify"],
-          nextRunAt: "2026-06-28T10:00:00.000Z",
-          latest: {
-            id: "netlify-latest",
-            url: "/report/netlify-latest",
-            capturedAt: "2026-06-27T10:00:00.000Z",
-            total: 4,
-            byLevel: { stagedPublish: 0, trustedPublisher: 2, provenance: 1, none: 1 },
-            deprecated: 0,
-            failureCount: 0,
-          },
-        },
-        {
           orgs: ["gatsbyjs"],
           nextRunAt: "2026-06-28T12:00:00.000Z",
           latest: {
@@ -342,6 +329,19 @@ describe("reports function", () => {
             capturedAt: "2026-06-26T10:00:00.000Z",
             total: 4,
             byLevel: { stagedPublish: 1, trustedPublisher: 1, provenance: 0, none: 2 },
+            deprecated: 0,
+            failureCount: 0,
+          },
+        },
+        {
+          orgs: ["netlify"],
+          nextRunAt: "2026-06-28T10:00:00.000Z",
+          latest: {
+            id: "netlify-latest",
+            url: "/report/netlify-latest",
+            capturedAt: "2026-06-27T10:00:00.000Z",
+            total: 4,
+            byLevel: { stagedPublish: 0, trustedPublisher: 2, provenance: 1, none: 1 },
             deprecated: 0,
             failureCount: 0,
           },

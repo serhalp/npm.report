@@ -152,7 +152,7 @@ async function getTrackedOrgSets(): Promise<Response> {
       INNER JOIN report_trust_history
         ON report_trust_history.report_id = report_rerun_schedules.last_report_id
       WHERE report_rerun_schedules.enabled = ${true}
-      ORDER BY report_trust_history.captured_at DESC, report_rerun_schedules.org_key ASC
+      ORDER BY report_rerun_schedules.org_key ASC
     `,
   );
 
