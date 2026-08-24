@@ -202,11 +202,18 @@ describe("reports function", () => {
       makeHistory("react", "react", ["react"], "2026-06-22T10:00:00.000Z"),
     ];
     await Promise.all(history.map(insertHistory));
+    await handler(
+      new Request("https://audit.example/api/reports/gatsby/schedule-daily", { method: "POST" }),
+    );
+    await handler(
+      new Request("https://audit.example/api/reports/react/schedule-daily", { method: "POST" }),
+    );
 
     const response = await handler(new Request("https://audit.example/api/reports/recent"));
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
+      additionalTrackedCount: 1,
       reports: [
         {
           id: "netlify-newer",
@@ -278,6 +285,69 @@ describe("reports function", () => {
 
     const invalid = await handler(new Request("https://audit.example/api/reports/latest"));
     expect(invalid.status).toBe(400);
+  });
+
+  it("serves every enabled tracked org set with its latest trust snapshot", async () => {
+    const netlify = makeHistory(
+      "netlify-latest",
+      "netlify",
+      ["netlify"],
+      "2026-06-27T10:00:00.000Z",
+    );
+    const gatsby = {
+      ...makeHistory("gatsby-latest", "gatsbyjs", ["gatsbyjs"], "2026-06-26T10:00:00.000Z"),
+      stagedPublish: 1,
+      trustedPublisher: 1,
+      provenance: 0,
+      none: 2,
+    };
+    await insertHistory(netlify);
+    await insertHistory(gatsby);
+    await insertHistory(makeHistory("vite-untracked", "vite", ["vite"], "2026-06-25T10:00:00Z"));
+
+    await handler(
+      new Request(`https://audit.example/api/reports/${netlify.reportId}/schedule-daily`, {
+        method: "POST",
+      }),
+    );
+    await handler(
+      new Request(`https://audit.example/api/reports/${gatsby.reportId}/schedule-daily`, {
+        method: "POST",
+      }),
+    );
+    const response = await handler(new Request("https://audit.example/api/reports/tracked"));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      orgSets: [
+        {
+          orgs: ["gatsbyjs"],
+          nextRunAt: "2026-06-28T12:00:00.000Z",
+          latest: {
+            id: "gatsby-latest",
+            url: "/report/gatsby-latest",
+            capturedAt: "2026-06-26T10:00:00.000Z",
+            total: 4,
+            byLevel: { stagedPublish: 1, trustedPublisher: 1, provenance: 0, none: 2 },
+            deprecated: 0,
+            failureCount: 0,
+          },
+        },
+        {
+          orgs: ["netlify"],
+          nextRunAt: "2026-06-28T10:00:00.000Z",
+          latest: {
+            id: "netlify-latest",
+            url: "/report/netlify-latest",
+            capturedAt: "2026-06-27T10:00:00.000Z",
+            total: 4,
+            byLevel: { stagedPublish: 0, trustedPublisher: 2, provenance: 1, none: 1 },
+            deprecated: 0,
+            failureCount: 0,
+          },
+        },
+      ],
+    });
   });
 
   it("enables daily tracking from saved all-scope trust reports only", async () => {
@@ -403,6 +473,7 @@ describe("reports function", () => {
         "/api/reports/history",
         "/api/reports/recent",
         "/api/reports/latest",
+        "/api/reports/tracked",
         "/api/reports/:id",
         "/api/reports/:id/schedule-daily",
       ],

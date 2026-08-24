@@ -6,9 +6,7 @@
   import ResultsView from "./components/ResultsView.svelte";
   import SignalSpinner from "./components/SignalSpinner.svelte";
   import SiteFooter from "./components/SiteFooter.svelte";
-  import ThemeToggle from "./components/ThemeToggle.svelte";
-  import TrustGlossary from "./components/TrustGlossary.svelte";
-  import logo from "./components/logo.svg";
+  import SiteHeader from "./components/SiteHeader.svelte";
   import { formatDate, formatDateTime } from "#client/dateFormatting";
   import { orgSetPath, type ReportHistoryResponse } from "#shared/reportHistory";
   import { parseOrNull, ReportHistoryResponseSchema, ReportRecordSchema } from "#shared/schemas";
@@ -174,18 +172,7 @@
 </script>
 
 <div class="app">
-  <header class="masthead">
-    <div class="masthead__top">
-      <h1 class="wordmark">
-        <a href="/#" aria-label="npm.report"
-          ><span>npm</span><img class="logo" src={logo} alt="" /><span>report</span></a
-        >
-      </h1>
-      <div class="masthead__controls">
-        <ThemeToggle />
-        <TrustGlossary />
-      </div>
-    </div>
+  <SiteHeader>
     {#if record}
       <p>
         Audit of <strong>{record.orgs || "npm packages"}</strong>{#if scopeNote}<span>
@@ -198,7 +185,7 @@
         <a href="/">Run your own audit →</a>
       </p>
     {/if}
-  </header>
+  </SiteHeader>
 
   <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
     {loading

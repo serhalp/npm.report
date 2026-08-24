@@ -34,6 +34,8 @@ describe("DailyTrackingButton", () => {
 
   test("replaces the action with schedule status after enabling tracking", async () => {
     const user = userEvent.setup();
+    const trackingChanged = vi.fn<() => void>();
+    window.addEventListener("npm.report:tracked-orgs-changed", trackingChanged, { once: true });
     vi.stubGlobal(
       "fetch",
       mockResolvedFetch({
@@ -57,6 +59,7 @@ describe("DailyTrackingButton", () => {
         name: `Tracking daily, next run ${formatCompactDateTime("2026-06-28T12:00:00.000Z")}`,
       }),
     ).toBeInTheDocument();
+    expect(trackingChanged).toHaveBeenCalledOnce();
     expect(screen.queryByRole("button", { name: "Track daily" })).not.toBeInTheDocument();
   });
 

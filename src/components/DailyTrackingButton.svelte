@@ -46,6 +46,7 @@
       const body = data as ReportRerunScheduleStatus;
       scheduledFor = body.nextRunAt;
       status = "done";
+      window.dispatchEvent(new Event("npm.report:tracked-orgs-changed"));
       onToast("Daily tracking enabled");
     } catch (reason) {
       status = "error";
