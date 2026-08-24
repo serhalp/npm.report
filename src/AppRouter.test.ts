@@ -199,10 +199,12 @@ describe("AppRouter", () => {
   });
 
   test("navigates to the tracked org sets page without a document reload", async () => {
-    vi.stubGlobal(
-      "fetch",
-      mockResolvedFetch({ ok: true, status: 200, json: async () => ({ orgSets: [] }) }),
-    );
+    const fetchMock = mockResolvedFetch({
+      ok: true,
+      status: 200,
+      json: async () => ({ orgSets: [] }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
 
     render(AppRouter);
@@ -213,6 +215,15 @@ describe("AppRouter", () => {
     expect(await screen.findByRole("link", { name: "Tracking 0 orgs" })).toHaveAttribute(
       "aria-current",
       "page",
+    );
+    expect(
+      fetchMock.mock.calls.filter(([input]) => requestUrl(input) === "/api/reports/tracked"),
+    ).toHaveLength(2);
+    window.dispatchEvent(new Event("npm.report:tracked-orgs-changed"));
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.filter(([input]) => requestUrl(input) === "/api/reports/tracked"),
+      ).toHaveLength(3),
     );
     expect(screen.getByRole("main")).toHaveFocus();
   });

@@ -1,9 +1,33 @@
+<script module lang="ts">
+  import { parseOrNull, TrackedOrgSetsResponseSchema } from "#shared/schemas";
+
+  let trackedOrgCountRequest:
+    | { fetcher: typeof fetch; promise: Promise<number | null> }
+    | undefined;
+
+  function loadTrackedOrgCount(refresh = false): Promise<number | null> {
+    const fetcher = fetch;
+    if (refresh || trackedOrgCountRequest?.fetcher !== fetcher) {
+      trackedOrgCountRequest = {
+        fetcher,
+        promise: fetcher("/api/reports/tracked")
+          .then(async (response) => {
+            if (!response.ok) return null;
+            const body = parseOrNull(TrackedOrgSetsResponseSchema, await response.json());
+            return body ? new Set(body.orgSets.flatMap((orgSet) => orgSet.orgs)).size : null;
+          })
+          .catch(() => null),
+      };
+    }
+    return trackedOrgCountRequest.promise;
+  }
+</script>
+
 <script lang="ts">
   import type { Snippet } from "svelte";
   import ThemeToggle from "./ThemeToggle.svelte";
   import TrustGlossary from "./TrustGlossary.svelte";
   import logo from "./logo.svg";
-  import { parseOrNull, TrackedOrgSetsResponseSchema } from "#shared/schemas";
 
   interface Props {
     children?: Snippet;
@@ -23,21 +47,22 @@
   $effect(() => {
     let cancelled = false;
 
-    fetch("/api/reports/tracked")
-      .then(async (response) => {
-        if (!response.ok) return null;
-        return parseOrNull(TrackedOrgSetsResponseSchema, await response.json());
-      })
-      .then((body) => {
-        if (cancelled) return;
-        trackedOrgCount = body ? new Set(body.orgSets.flatMap((orgSet) => orgSet.orgs)).size : null;
-      })
-      .catch(() => {
-        if (!cancelled) trackedOrgCount = null;
+    function updateCount(refresh = false): void {
+      loadTrackedOrgCount(refresh).then((count) => {
+        if (!cancelled) trackedOrgCount = count;
       });
+    }
+
+    function handleTrackingChange(): void {
+      updateCount(true);
+    }
+
+    updateCount();
+    window.addEventListener("npm.report:tracked-orgs-changed", handleTrackingChange);
 
     return () => {
       cancelled = true;
+      window.removeEventListener("npm.report:tracked-orgs-changed", handleTrackingChange);
     };
   });
 </script>
