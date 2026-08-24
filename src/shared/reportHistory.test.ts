@@ -4,6 +4,8 @@ import {
   extractTrustHistory,
   normalizeOrgs,
   orgKeyFor,
+  orgSetPath,
+  orgsFromPathSegment,
   strongTrustCount,
   trustPercent,
 } from "./reportHistory";
@@ -16,6 +18,9 @@ describe("report history helpers", () => {
       "netlify",
     ]);
     expect(orgKeyFor(["Netlify", "gatsbyjs"])).toBe("gatsbyjs,netlify");
+    expect(orgSetPath(["Netlify", "gatsbyjs"])).toBe("/orgs/gatsbyjs,netlify");
+    expect(orgsFromPathSegment("Netlify,gatsbyjs")).toEqual(["gatsbyjs", "netlify"]);
+    expect(orgsFromPathSegment("%")).toBeNull();
   });
 
   const point = {

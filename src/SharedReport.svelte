@@ -2,6 +2,7 @@
   import { RefreshCw } from "@lucide/svelte";
   import HistoryPanel from "./components/HistoryPanel.svelte";
   import DailyTrackingButton from "./components/DailyTrackingButton.svelte";
+  import ReportShareActions from "./components/ReportShareActions.svelte";
   import ResultsView from "./components/ResultsView.svelte";
   import SignalSpinner from "./components/SignalSpinner.svelte";
   import SiteFooter from "./components/SiteFooter.svelte";
@@ -9,7 +10,7 @@
   import TrustGlossary from "./components/TrustGlossary.svelte";
   import logo from "./components/logo.svg";
   import { formatDate, formatDateTime } from "#client/dateFormatting";
-  import type { ReportHistoryResponse } from "#shared/reportHistory";
+  import { orgSetPath, type ReportHistoryResponse } from "#shared/reportHistory";
   import { parseOrNull, ReportHistoryResponseSchema, ReportRecordSchema } from "#shared/schemas";
   import type { AuditResult } from "#shared/types";
 
@@ -24,16 +25,18 @@
   }
 
   interface Props {
-    id: string;
+    id?: string;
+    orgs?: string[];
   }
 
-  let { id }: Props = $props();
+  let { id, orgs }: Props = $props();
 
   let record = $state<ReportRecord | null>(null);
   let reportHistory = $state<ReportHistoryResponse | null>(null);
   let error = $state<string | null>(null);
   let loading = $state(true);
   let toast = $state<string | null>(null);
+  let latestRoute = $derived(orgs !== undefined);
 
   let scopeNote = $derived(
     record?.scopeLabel && record.scopeLabel !== "ALL org packages" ? record.scopeLabel : null,
@@ -42,6 +45,24 @@
   let historyEnabled = $derived(
     record?.scopeLabel === "ALL org packages" && !!record.payload.trust,
   );
+  let shareOrgs = $derived(
+    record?.payload.trust?.summary.orgs ?? record?.orgs.split(/,\s*/).filter(Boolean) ?? [],
+  );
+  let latestPath = $derived(
+    historyEnabled && historyOrgs.length > 0 ? orgSetPath(historyOrgs) : null,
+  );
+  let shareUrl = $derived(
+    record
+      ? `${window.location.origin}${latestRoute && latestPath ? latestPath : `/report/${encodeURIComponent(record.id)}`}`
+      : null,
+  );
+
+  function reportEndpoint(): string {
+    if (id !== undefined) return `/api/reports/${encodeURIComponent(id)}`;
+    const params = new URLSearchParams();
+    for (const org of orgs ?? []) params.append("org", org);
+    return `/api/reports/latest${params.size > 0 ? `?${params}` : ""}`;
+  }
 
   function historyConfig(value: ReportRecord): { enabled: boolean; orgs: string[] } {
     return {
@@ -79,10 +100,10 @@
   // Saved external reports omit the private member list, so reruns can only
   // prefill their public configuration.
   function rerunHref(rec: ReportRecord): string {
-    const orgs = (rec.payload.trust?.summary.orgs ?? rec.orgs.split(/,\s*/)).filter(Boolean);
+    const reportOrgs = (rec.payload.trust?.summary.orgs ?? rec.orgs.split(/,\s*/)).filter(Boolean);
     const kinds = REPORT_KINDS.filter((kind) => rec.payload[kind]);
     const params = new URLSearchParams();
-    params.set("orgs", orgs.join(","));
+    params.set("orgs", reportOrgs.join(","));
     params.set(
       "scope",
       rec.scopeLabel === "ALL org packages" ? "all" : String(monthsFromLabel(rec.scopeLabel)),
@@ -110,9 +131,18 @@
     loading = true;
     error = null;
 
-    fetch(`/api/reports/${encodeURIComponent(id)}`)
+    fetch(reportEndpoint())
       .then(async (response) => {
-        if (response.status === 404) throw new Error("This report could not be found.");
+        if (response.status === 404) {
+          throw new Error(
+            latestRoute
+              ? "No package-trust report exists for this org set yet."
+              : "This report could not be found.",
+          );
+        }
+        if (response.status === 400 && latestRoute) {
+          throw new Error("This org-set link is invalid.");
+        }
         if (!response.ok) throw new Error(`Failed to load report (${response.status}).`);
         const data: unknown = await response.json();
         if (!parseOrNull(ReportRecordSchema, data)) {
@@ -163,7 +193,7 @@
           >{/if}{#if record.createdAt}, generated <time
             datetime={record.createdAt}
             title={formatDateTime(record.createdAt)}>{formatDate(record.createdAt)}</time
-          >{/if}. This is a read-only snapshot.
+          >{/if}. This is {latestRoute ? "the latest" : "a"} read-only snapshot.
         <br />
         <a href="/">Run your own audit →</a>
       </p>
@@ -224,6 +254,7 @@
             nextRunAt={record.dailyTrackingNextRunAt}
             onToast={showToast}
           />
+          <ReportShareActions url={shareUrl} orgs={shareOrgs} onToast={showToast} />
         </div>
         <HistoryPanel
           orgs={historyOrgs}

@@ -5,11 +5,14 @@ import wasmUrl from "takumi-js/wasm-url";
 import type { ReportSocialRow } from "#db/schema";
 import { OG_DEVICE_PIXEL_RATIO, OG_HEIGHT, OG_WIDTH } from "#server/og-image";
 import { homeCardHtml, OG_CARD_STYLES, OG_LOGO_SOURCE, reportCardHtml } from "#node/og-cards";
-import { getReportSocialData } from "#node/report-social";
+import { getLatestReportSocialData, getReportSocialData } from "#node/report-social";
+import { MAX_ORGS } from "#shared/auditDefaults";
+import { orgsFromPathSegment } from "#shared/reportHistory";
 
 export { homeCardHtml, reportCardHtml } from "#node/og-cards";
 
-const REPORT_IMAGE_PATH = /^\/og\/report\/([^/]+)$/;
+const REPORT_IMAGE_PATH = /^\/og\/report\/([^/]+)\/?$/;
+const ORG_IMAGE_PATH = /^\/og\/orgs\/([^/]+)\/?$/;
 const assets = Promise.all([
   readFile(new URL("../../src/components/logo.svg", import.meta.url)),
   readFile(
@@ -33,11 +36,18 @@ const assets = Promise.all([
   readFile(wasmUrl),
 ]);
 
-function reportIdFromUrl(url: URL): string | null {
-  const match = REPORT_IMAGE_PATH.exec(url.pathname);
-  if (!match?.[1]) return null;
+type ReportImageTarget = { kind: "report"; id: string } | { kind: "orgs"; orgs: string[] };
+
+function reportTargetFromUrl(url: URL): ReportImageTarget | null {
+  const reportMatch = REPORT_IMAGE_PATH.exec(url.pathname);
+  const orgMatch = ORG_IMAGE_PATH.exec(url.pathname);
   try {
-    return decodeURIComponent(match[1]);
+    if (reportMatch?.[1]) return { kind: "report", id: decodeURIComponent(reportMatch[1]) };
+    if (orgMatch?.[1]) {
+      const orgs = orgsFromPathSegment(orgMatch[1]);
+      return orgs && orgs.length <= MAX_ORGS ? { kind: "orgs", orgs } : null;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -72,10 +82,13 @@ export function renderReportCard(report: ReportSocialRow): Promise<Uint8Array<Ar
 export default async (request: Request): Promise<Response> => {
   if (request.method !== "GET") return new Response("Method not allowed", { status: 405 });
 
-  const id = reportIdFromUrl(new URL(request.url));
-  if (!id) return new Response("Not found", { status: 404 });
+  const target = reportTargetFromUrl(new URL(request.url));
+  if (!target) return new Response("Not found", { status: 404 });
 
-  const report = await getReportSocialData(id);
+  const report =
+    target.kind === "report"
+      ? await getReportSocialData(target.id)
+      : await getLatestReportSocialData(target.orgs);
   if (!report) return new Response("Not found", { status: 404 });
 
   const image = await renderReportCard(report);
@@ -84,11 +97,14 @@ export default async (request: Request): Promise<Response> => {
     headers: {
       "Content-Type": "image/png",
       "Cache-Control": "public, max-age=0, must-revalidate",
-      "Netlify-CDN-Cache-Control": "public, durable, max-age=86400, stale-while-revalidate=604800",
+      "Netlify-CDN-Cache-Control":
+        target.kind === "report"
+          ? "public, durable, max-age=86400, stale-while-revalidate=604800"
+          : "public, durable, max-age=300, stale-while-revalidate=86400",
     },
   });
 };
 
 export const config: Config = {
-  path: "/og/report/:id",
+  path: ["/og/report/:id", "/og/orgs/:orgs"],
 };

@@ -242,6 +242,44 @@ describe("reports function", () => {
     });
   });
 
+  it("resolves a normalized org set to its latest package-trust report", async () => {
+    const older = makeHistory(
+      "gatsby-netlify-older",
+      "gatsbyjs,netlify",
+      ["gatsbyjs", "netlify"],
+      "2026-06-26T10:00:00.000Z",
+    );
+    const latest = makeHistory(
+      "gatsby-netlify-latest",
+      "gatsbyjs,netlify",
+      ["gatsbyjs", "netlify"],
+      "2026-06-27T10:00:00.000Z",
+    );
+    await insertHistory(latest);
+    await insertHistory(older);
+
+    const response = await handler(
+      new Request("https://audit.example/api/reports/latest?org=Netlify&org=gatsbyjs"),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      id: latest.reportId,
+      orgs: "gatsbyjs, netlify",
+      scopeLabel: "ALL org packages",
+      dailyTrackingEnabled: false,
+      dailyTrackingNextRunAt: null,
+    });
+
+    const missing = await handler(
+      new Request("https://audit.example/api/reports/latest?org=missing"),
+    );
+    expect(missing.status).toBe(404);
+
+    const invalid = await handler(new Request("https://audit.example/api/reports/latest"));
+    expect(invalid.status).toBe(400);
+  });
+
   it("enables daily tracking from saved all-scope trust reports only", async () => {
     const history = {
       ...makeHistory(
@@ -364,6 +402,7 @@ describe("reports function", () => {
       path: [
         "/api/reports/history",
         "/api/reports/recent",
+        "/api/reports/latest",
         "/api/reports/:id",
         "/api/reports/:id/schedule-daily",
       ],

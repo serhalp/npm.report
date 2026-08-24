@@ -74,6 +74,38 @@ describe("AppRouter", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/reports/netlify%20report");
   });
 
+  test("resolves stable normalized org-set URLs without replacing the browser URL", async () => {
+    window.history.replaceState(null, "", "/orgs/Netlify,gatsbyjs");
+    const record = {
+      ...reportRecord("two", "gatsbyjs, netlify"),
+      payload: {
+        ...auditResult,
+        trust: {
+          ...trustReport,
+          summary: { ...trustReport.summary, orgs: ["gatsbyjs", "netlify"] },
+        },
+      },
+    };
+    const fetchMock = mockFetch(async (input) =>
+      requestUrl(input).startsWith("/api/reports/history")
+        ? {
+            ok: true,
+            status: 200,
+            json: async () => ({ orgs: record.payload.trust.summary.orgs, points }),
+          }
+        : { ok: true, status: 200, json: async () => record },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(AppRouter);
+
+    expect(
+      await screen.findByRole("heading", { name: "Audit of gatsbyjs, netlify" }),
+    ).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/orgs/Netlify,gatsbyjs");
+    expect(fetchMock).toHaveBeenCalledWith("/api/reports/latest?org=gatsbyjs&org=netlify");
+  });
+
   test("navigates between reports without remounting their shared shell", async () => {
     window.history.replaceState(null, "", "/report/one");
     let resolveSecond!: (value: {

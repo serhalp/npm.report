@@ -4,8 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const getReportSocialData = vi.hoisted(() =>
   vi.fn<typeof import("#node/report-social").getReportSocialData>(),
 );
+const getLatestReportSocialData = vi.hoisted(() =>
+  vi.fn<typeof import("#node/report-social").getLatestReportSocialData>(),
+);
 
-vi.mock("#node/report-social", () => ({ getReportSocialData }));
+vi.mock("#node/report-social", () => ({ getLatestReportSocialData, getReportSocialData }));
 
 import handler, {
   config,
@@ -15,7 +18,7 @@ import handler, {
 } from "../functions/report-og.js";
 
 beforeEach(() => {
-  getReportSocialData.mockResolvedValue({
+  const report = {
     id: "acme-2026-08-23-0123456789abcdef",
     orgs: "acme",
     createdAt: new Date("2026-08-23T12:34:56.000Z"),
@@ -52,7 +55,9 @@ beforeEach(() => {
         },
       },
     ],
-  });
+  };
+  getReportSocialData.mockResolvedValue(report);
+  getLatestReportSocialData.mockResolvedValue(report);
 });
 
 describe("report OG image function", () => {
@@ -107,6 +112,15 @@ describe("report OG image function", () => {
     getReportSocialData.mockResolvedValueOnce(null);
     const missing = await handler(new Request("https://npm.report/og/report/missing"));
     expect(missing.status).toBe(404);
+  });
+
+  it("renders the latest report for a stable org-set image URL", async () => {
+    const response = await handler(new Request("https://npm.report/og/orgs/Netlify,gatsbyjs"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("netlify-cdn-cache-control")).toContain("max-age=300");
+    expect(getLatestReportSocialData).toHaveBeenCalledWith(["gatsbyjs", "netlify"]);
+    expect(getReportSocialData).not.toHaveBeenCalled();
   });
 
   it("rejects methods other than GET", async () => {
@@ -182,6 +196,6 @@ describe("report OG image function", () => {
   });
 
   it("owns the report image route", () => {
-    expect(config.path).toBe("/og/report/:id");
+    expect(config.path).toEqual(["/og/report/:id", "/og/orgs/:orgs"]);
   });
 });

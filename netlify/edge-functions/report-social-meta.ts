@@ -3,6 +3,8 @@ import { OG_HEIGHT, OG_WIDTH } from "../_shared/og-image.ts";
 
 const SOCIAL_META_BLOCK = /<!-- social-meta:start -->[\s\S]*?<!-- social-meta:end -->/;
 const TRAILING_SLASH = /\/$/;
+const REPORT_PATH = /^\/report\/([^/]+)\/?$/;
+const ORG_PATH = /^\/orgs\/([^/]+)\/?$/;
 
 function escapeAttribute(value: string): string {
   return value.replace(/[&<>"']/g, (character) => {
@@ -23,8 +25,10 @@ function escapeAttribute(value: string): string {
 
 export function reportSocialMeta(requestUrl: URL): string {
   const canonicalUrl = new URL(requestUrl.pathname, requestUrl.origin).toString();
-  const encodedId = requestUrl.pathname.slice("/report/".length).replace(TRAILING_SLASH, "");
-  const imageUrl = new URL(`/og/report/${encodedId}`, requestUrl.origin);
+  const reportTarget = REPORT_PATH.exec(requestUrl.pathname)?.[1];
+  const orgTarget = ORG_PATH.exec(requestUrl.pathname)?.[1];
+  const imagePath = orgTarget ? `/og/orgs/${orgTarget}` : `/og/report/${reportTarget ?? ""}`;
+  const imageUrl = new URL(imagePath.replace(TRAILING_SLASH, ""), requestUrl.origin);
   const title = "npm supply-chain audit report";
   const description = "A read-only npm supply-chain audit snapshot on npm.report.";
 
@@ -70,5 +74,5 @@ export default async (request: Request, context: Context): Promise<Response> => 
 };
 
 export const config: Config = {
-  path: "/report/:id",
+  path: ["/report/:id", "/orgs/:orgs"],
 };

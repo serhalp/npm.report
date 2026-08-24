@@ -20,9 +20,10 @@ organization, leave the dev server running and run:
 pnpm run db:seed:local
 ```
 
-Then enter `acme` in the organization field or open `/report/dev-example-acme-2026-07-19`. Daily
-tracking is already enabled for the seeded org, so the shared report shows its tracking status and
-next scheduled run. The seed uses Netlify's local database connection and is kept outside
+Then enter `acme` in the organization field, open `/report/dev-example-acme-2026-07-19` for that
+snapshot, or open `/orgs/acme` for the latest seeded snapshot. Daily tracking is already enabled for
+the seeded org, so the shared report shows its tracking status and next scheduled run. The seed uses
+Netlify's local database connection and is kept outside
 `netlify/database/migrations`, so it is never applied by a deploy.
 
 ## Before changing behaviour
