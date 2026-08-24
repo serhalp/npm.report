@@ -53,6 +53,12 @@ describe("SharedReport", () => {
     expect(screen.getByRole("link", { name: "Re-run this audit" }).getAttribute("href")).toContain(
       "run=1",
     );
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeEnabled();
+    const bluesky = new URL(
+      screen.getByRole("link", { name: "Share to Bluesky" }).getAttribute("href")!,
+    );
+    expect(bluesky.origin).toBe("https://bsky.app");
+    expect(bluesky.searchParams.get("text")).toContain("http://localhost:3000/report/report-id");
     expect(screen.getByRole("link", { name: "npm.report on GitHub" })).toHaveAttribute(
       "href",
       "https://github.com/serhalp/npm.report",

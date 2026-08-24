@@ -1144,6 +1144,15 @@ textarea {
   flex-wrap: wrap;
   gap: 0.625rem;
 }
+.report-share-actions {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+.bluesky-icon {
+  flex: 0 0 auto;
+}
 .schedule-cta {
   display: inline-flex;
   align-items: center;

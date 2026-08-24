@@ -3,6 +3,7 @@
   import LogTerminal from "./components/LogTerminal.svelte";
   import HistoryPanel from "./components/HistoryPanel.svelte";
   import RecentReports from "./components/RecentReports.svelte";
+  import ReportShareActions from "./components/ReportShareActions.svelte";
   import SamplePreview from "./components/SamplePreview.svelte";
   import DailyTrackingButton from "./components/DailyTrackingButton.svelte";
   import ResultsView from "./components/ResultsView.svelte";
@@ -119,6 +120,7 @@
 
   let reportSaveError = $state<string | null>(null);
   let shareUrl = $state<string | null>(null);
+  let savedReportOrgs = $state<string[]>([]);
   let savedReportId = $state<string | null>(null);
   let savedReportCanTrackDaily = $state(false);
   let historyRefreshKey = $state(0);
@@ -216,9 +218,11 @@
     }
 
     const attempt = ++saveAttempt;
+    const requestedOrgs = [...orgs];
     running = true;
     result = null;
     shareUrl = null;
+    savedReportOrgs = [];
     savedReportId = null;
     savedReportCanTrackDaily = false;
     reportSaveError = null;
@@ -247,6 +251,7 @@
       }
       if (outcome.reportId) {
         savedReportId = outcome.reportId;
+        savedReportOrgs = requestedOrgs;
         shareUrl = `${window.location.origin}${outcome.reportUrl ?? `/report/${outcome.reportId}`}`;
         savedReportCanTrackDaily = all && !!outcome.result?.trust;
         historyRefreshKey++;
@@ -295,14 +300,6 @@
     navigator.clipboard
       .writeText(`npm org ls ${org} --json`)
       .then(() => showToast("Command copied"))
-      .catch(() => showToast("Clipboard unavailable"));
-  }
-
-  function copyShareLink() {
-    if (!shareUrl) return;
-    navigator.clipboard
-      .writeText(shareUrl)
-      .then(() => showToast("Link copied"))
       .catch(() => showToast("Clipboard unavailable"));
   }
 
@@ -518,14 +515,7 @@
               enabled={savedReportCanTrackDaily}
               onToast={showToast}
             />
-            <button
-              class="btn btn--ghost"
-              type="button"
-              onclick={copyShareLink}
-              disabled={!shareUrl}
-            >
-              Copy link
-            </button>
+            <ReportShareActions url={shareUrl} orgs={savedReportOrgs} onToast={showToast} />
           </div>
         </div>
         {#if shareUrl}

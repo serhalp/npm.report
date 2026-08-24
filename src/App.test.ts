@@ -217,6 +217,10 @@ describe("App", () => {
     expect(await screen.findByText(/netlify-2026-06-27-abc12345/)).toBeInTheDocument();
     expect(screen.getByText("Saved automatically after this run.")).toBeInTheDocument();
     expect(screen.getByText("Package trust only.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Share to Bluesky" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("https://bsky.app/intent/compose"),
+    );
     expect(writeText).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Track daily" }));
@@ -257,6 +261,7 @@ describe("App", () => {
       await screen.findByText("Report link unavailable: could not save report"),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy link" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Share to Bluesky" })).toBeDisabled();
   });
 
   test("surfaces a streamed audit failure and leaves the form usable", async () => {
