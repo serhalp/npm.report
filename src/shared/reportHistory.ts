@@ -29,6 +29,16 @@ export interface RecentTrustReportsResponse {
   reports: RecentTrustReportLink[];
 }
 
+export interface TrackedOrgSet {
+  orgs: string[];
+  nextRunAt: string;
+  latest: ReportTrustHistoryPoint;
+}
+
+export interface TrackedOrgSetsResponse {
+  orgSets: TrackedOrgSet[];
+}
+
 export interface ReportRerunScheduleStatus {
   orgs: string[];
   enabled: boolean;

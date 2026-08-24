@@ -75,6 +75,22 @@ export const ReportTrustHistoryRowSchema = v.object({
 });
 export type ReportTrustHistoryRow = v.InferOutput<typeof ReportTrustHistoryRowSchema>;
 
+export const TrackedOrgSetRowSchema = v.object({
+  reportId: v.string(),
+  orgKey: v.string(),
+  orgs: v.array(v.string()),
+  capturedAt: v.date(),
+  total: v.number(),
+  stagedPublish: v.number(),
+  trustedPublisher: v.number(),
+  provenance: v.number(),
+  none: v.number(),
+  deprecated: v.number(),
+  failureCount: v.number(),
+  nextRunAt: v.date(),
+});
+export type TrackedOrgSetRow = v.InferOutput<typeof TrackedOrgSetRowSchema>;
+
 export const ReportRerunScheduleRowSchema = v.object({
   orgKey: v.string(),
   orgs: v.array(v.string()),

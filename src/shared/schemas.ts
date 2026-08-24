@@ -119,6 +119,17 @@ export const RecentTrustReportsResponseSchema = v.looseObject({
   ),
 });
 
+/** GET /api/reports/tracked */
+export const TrackedOrgSetsResponseSchema = v.looseObject({
+  orgSets: v.array(
+    v.looseObject({
+      orgs: v.array(v.string()),
+      nextRunAt: v.string(),
+      latest: TrustHistoryPoint,
+    }),
+  ),
+});
+
 /** POST /api/reports/:id/schedule-daily */
 export const ReportRerunScheduleStatusSchema = v.looseObject({
   orgs: v.array(v.string()),

@@ -197,4 +197,19 @@ describe("AppRouter", () => {
 
     await waitFor(() => expect(screen.getByRole("button", { name: "Run audit" })).toBeVisible());
   });
+
+  test("navigates to the tracked org sets page without a document reload", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockResolvedFetch({ ok: true, status: 200, json: async () => ({ orgSets: [] }) }),
+    );
+    const user = userEvent.setup();
+
+    render(AppRouter);
+    await user.click(screen.getByRole("link", { name: "Tracked orgs" }));
+
+    expect(window.location.pathname).toBe("/tracked");
+    expect(await screen.findByRole("heading", { name: "Tracked org sets" })).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveFocus();
+  });
 });
