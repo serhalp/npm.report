@@ -67,6 +67,23 @@ export function orgKeyFor(orgs: string[]): string {
   return normalizeOrgs(orgs).join(",");
 }
 
+export function orgSetPath(orgs: string[]): string {
+  const normalized = normalizeOrgs(orgs);
+  if (normalized.length === 0) throw new TypeError("An org-set URL requires at least one org");
+  return `/orgs/${normalized.map(encodeURIComponent).join(",")}`;
+}
+
+export function orgsFromPathSegment(segment: string): string[] | null {
+  try {
+    const decoded = decodeURIComponent(segment);
+    if (decoded.includes("/")) return null;
+    const orgs = normalizeOrgs(decoded.split(","));
+    return orgs.length > 0 ? orgs : null;
+  } catch {
+    return null;
+  }
+}
+
 export function scopeLabelFor(scope: SharedReportScope): string {
   return scope === "all" ? "ALL org packages" : `last ${scope.months} months`;
 }

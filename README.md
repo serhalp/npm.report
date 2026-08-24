@@ -40,7 +40,8 @@ information exists, there is no official tooling that makes this easy. npm.repor
    authenticated member list to compare them. The list is used only for that audit and is not
    persisted; derived external findings are included in the saved report.
 6. Run the audit. Results render as sortable tables with JSON copy and CSV download actions.
-7. The server saves each completed run automatically; copy its report link to share it.
+7. The server saves each completed run automatically. `/report/:id` preserves that exact snapshot;
+   `/orgs/:orgs` always shows the latest snapshot for a normalized org set.
 8. For all-package package trust reports, select "Track daily" to generate one automatic trust
    snapshot per day. You'll be able to visualize progress and trends over time.
 
@@ -57,7 +58,8 @@ information exists, there is no official tooling that makes this easy. npm.repor
   Netlify scheduled background function that picks up daily work that is due.
 - Report links and daily tracking are the only durable stateful features. The audit stream saves the
   completed `AuditResult` plus display metadata to Netlify Database as part of the run; `/report/:id`
-  renders that snapshot read-only.
+  renders that snapshot read-only, while `/orgs/:orgs` resolves the latest all-package trust snapshot
+  without changing the stable URL.
 - Resumable audit jobs retain non-sensitive request metadata, progress, and results temporarily;
   hourly cleanup removes job records after they are two hours old. Private org membership input is
   not written to the job or report records.

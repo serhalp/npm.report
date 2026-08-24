@@ -125,7 +125,6 @@
   let savedReportCanTrackDaily = $state(false);
   let historyRefreshKey = $state(0);
   let saveAttempt = 0;
-
   let upUser = $state("");
   let upMonths = $state(12);
   let upUseCache = $state(true);

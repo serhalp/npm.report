@@ -10,7 +10,9 @@ describe("ReportShareActions", () => {
     const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
     const url = "https://npm.report/report/acme-2026-08-23-abc";
 
-    render(ReportShareActions, { props: { url, orgs: ["acme"], onToast } });
+    render(ReportShareActions, {
+      props: { url, orgs: ["acme"], onToast },
+    });
 
     await user.click(screen.getByRole("button", { name: "Copy link" }));
     expect(writeText).toHaveBeenCalledWith(url);
