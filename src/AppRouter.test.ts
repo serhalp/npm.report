@@ -199,17 +199,32 @@ describe("AppRouter", () => {
   });
 
   test("navigates to the tracked org sets page without a document reload", async () => {
-    vi.stubGlobal(
-      "fetch",
-      mockResolvedFetch({ ok: true, status: 200, json: async () => ({ orgSets: [] }) }),
-    );
+    const fetchMock = mockResolvedFetch({
+      ok: true,
+      status: 200,
+      json: async () => ({ orgSets: [] }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
 
     render(AppRouter);
-    await user.click(screen.getByRole("link", { name: "Tracked orgs" }));
+    await user.click(await screen.findByRole("link", { name: "Tracking 0 orgs" }));
 
     expect(window.location.pathname).toBe("/tracked");
     expect(await screen.findByRole("heading", { name: "Tracked org sets" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Tracking 0 orgs" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(
+      fetchMock.mock.calls.filter(([input]) => requestUrl(input) === "/api/reports/tracked"),
+    ).toHaveLength(2);
+    window.dispatchEvent(new Event("npm.report:tracked-orgs-changed"));
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.filter(([input]) => requestUrl(input) === "/api/reports/tracked"),
+      ).toHaveLength(3),
+    );
     expect(screen.getByRole("main")).toHaveFocus();
   });
 });
