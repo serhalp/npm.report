@@ -2,6 +2,7 @@
   import { RefreshCw } from "@lucide/svelte";
   import HistoryPanel from "./components/HistoryPanel.svelte";
   import DailyTrackingButton from "./components/DailyTrackingButton.svelte";
+  import ReportShareActions from "./components/ReportShareActions.svelte";
   import ResultsView from "./components/ResultsView.svelte";
   import SignalSpinner from "./components/SignalSpinner.svelte";
   import SiteFooter from "./components/SiteFooter.svelte";
@@ -41,6 +42,12 @@
   let historyOrgs = $derived(record?.payload.trust?.summary.orgs ?? []);
   let historyEnabled = $derived(
     record?.scopeLabel === "ALL org packages" && !!record.payload.trust,
+  );
+  let shareOrgs = $derived(
+    record?.payload.trust?.summary.orgs ?? record?.orgs.split(/,\s*/).filter(Boolean) ?? [],
+  );
+  let shareUrl = $derived(
+    record ? `${window.location.origin}/report/${encodeURIComponent(record.id)}` : null,
   );
 
   function historyConfig(value: ReportRecord): { enabled: boolean; orgs: string[] } {
@@ -224,6 +231,7 @@
             nextRunAt={record.dailyTrackingNextRunAt}
             onToast={showToast}
           />
+          <ReportShareActions url={shareUrl} orgs={shareOrgs} onToast={showToast} />
         </div>
         <HistoryPanel
           orgs={historyOrgs}
