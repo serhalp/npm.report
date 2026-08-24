@@ -2,9 +2,14 @@
   import { tick } from "svelte";
   import App from "./App.svelte";
   import SharedReport from "./SharedReport.svelte";
+  import TrackedOrgSets from "./TrackedOrgSets.svelte";
   import { orgsFromPathSegment } from "#shared/reportHistory";
 
-  type Route = { name: "app" } | { name: "report"; id: string } | { name: "orgs"; orgs: string[] };
+  type Route =
+    | { name: "app" }
+    | { name: "report"; id: string }
+    | { name: "orgs"; orgs: string[] }
+    | { name: "tracked" };
 
   function reportIdFromPath(pathname: string): string | null {
     const match = pathname.match(/^\/report\/([^/]+)\/?$/);
@@ -24,6 +29,7 @@
   function routeFromUrl(url: URL): Route {
     const orgs = orgSetFromPath(url.pathname);
     if (orgs !== undefined) return { name: "orgs", orgs: orgs ?? [] };
+    if (/^\/tracked\/?$/.test(url.pathname)) return { name: "tracked" };
     const reportId = reportIdFromPath(url.pathname);
     return reportId === null ? { name: "app" } : { name: "report", id: reportId };
   }
@@ -32,6 +38,7 @@
     return (
       url.pathname === "/" ||
       orgSetFromPath(url.pathname) !== undefined ||
+      /^\/tracked\/?$/.test(url.pathname) ||
       reportIdFromPath(url.pathname) !== null
     );
   }
@@ -91,6 +98,8 @@
   <SharedReport id={route.id} />
 {:else if route.name === "orgs"}
   <SharedReport orgs={route.orgs} />
+{:else if route.name === "tracked"}
+  <TrackedOrgSets />
 {:else}
   <App />
 {/if}

@@ -35,6 +35,7 @@ describe("RecentReports", () => {
     const latestDate = formatDate("2026-06-27T12:00:00.000Z");
     const previousDate = formatDate("2026-06-26T12:00:00.000Z");
     mockRecentReports({
+      additionalTrackedCount: 3,
       reports: [
         {
           id: "netlify-gatsby-2026-06-27-abc12345",
@@ -64,10 +65,11 @@ describe("RecentReports", () => {
       "title",
       formatDateTime("2026-06-27T12:00:00.000Z"),
     );
+    expect(screen.getByRole("link", { name: "… 3 more" })).toHaveAttribute("href", "/tracked");
   });
 
   test("renders an empty state", async () => {
-    mockRecentReports({ reports: [] });
+    mockRecentReports({ reports: [], additionalTrackedCount: 0 });
 
     render(RecentReports);
 

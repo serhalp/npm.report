@@ -21,11 +21,11 @@ implementation is organized around these entry points:
 - `netlify/functions/audit-jobs-cleanup-background.ts`: removes transient
   `audit_jobs` rows older than two hours.
 
-`src/AppRouter.svelte` owns the `/`, `/report/:id`, and `/orgs/:orgs` client
-routes. Shared snapshots render through `SharedReport.svelte` and reuse
+`src/AppRouter.svelte` owns the `/`, `/report/:id`, `/orgs/:orgs`, and `/tracked`
+client routes. Shared snapshots render through `SharedReport.svelte` and reuse
 `components/ResultsView.svelte`; `/report/:id` is immutable, while `/orgs/:orgs`
 keeps its URL and resolves the latest all-package trust snapshot for the
-normalized org set.
+normalized org set. `TrackedOrgSets.svelte` summarizes enabled daily schedules.
 
 ## Runtime boundaries
 

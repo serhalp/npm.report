@@ -1,6 +1,12 @@
 import type { Config } from "@netlify/functions";
 import { getDb } from "#db/index";
-import { parseRows, ReportTrustHistoryRowSchema, SharedReportRowSchema } from "#db/schema";
+import {
+  parseRows,
+  ReportTrustHistoryRowSchema,
+  SharedReportRowSchema,
+  TrackedOrgKeyRowSchema,
+  TrackedOrgSetRowSchema,
+} from "#db/schema";
 import { scheduleDailyTrustReport } from "#node/report-schedules";
 import { historyPointFromRow, recentReportLinkFromRow } from "#server/report-persistence";
 import { MAX_ORGS } from "#shared/auditDefaults";
@@ -75,7 +81,19 @@ async function getRecentReports(): Promise<Response> {
     if (recentReports.length === RECENT_REPORT_LIMIT) break;
   }
 
-  return Response.json({ reports: recentReports });
+  const trackedOrgKeys = parseRows(
+    TrackedOrgKeyRowSchema,
+    await db.sql<unknown>`
+      SELECT report_rerun_schedules.org_key AS "orgKey"
+      FROM report_rerun_schedules
+      INNER JOIN report_trust_history
+        ON report_trust_history.report_id = report_rerun_schedules.last_report_id
+      WHERE report_rerun_schedules.enabled = ${true}
+    `,
+  );
+  const additionalTrackedCount = trackedOrgKeys.filter((row) => !seen.has(row.orgKey)).length;
+
+  return Response.json({ reports: recentReports, additionalTrackedCount });
 }
 
 async function getLatestReport(url: URL): Promise<Response> {
@@ -112,6 +130,41 @@ async function getLatestReport(url: URL): Promise<Response> {
   return Response.json(row);
 }
 
+async function getTrackedOrgSets(): Promise<Response> {
+  const db = getDb();
+  const rows = parseRows(
+    TrackedOrgSetRowSchema,
+    await db.sql<unknown>`
+      SELECT
+        report_trust_history.report_id AS "reportId",
+        report_trust_history.org_key AS "orgKey",
+        report_trust_history.orgs_json AS orgs,
+        report_trust_history.captured_at AS "capturedAt",
+        report_trust_history.total,
+        report_trust_history.staged_publish AS "stagedPublish",
+        report_trust_history.trusted_publisher AS "trustedPublisher",
+        report_trust_history.provenance,
+        report_trust_history.none,
+        report_trust_history.deprecated,
+        report_trust_history.failure_count AS "failureCount",
+        report_rerun_schedules.next_run_at AS "nextRunAt"
+      FROM report_rerun_schedules
+      INNER JOIN report_trust_history
+        ON report_trust_history.report_id = report_rerun_schedules.last_report_id
+      WHERE report_rerun_schedules.enabled = ${true}
+      ORDER BY report_trust_history.captured_at DESC, report_rerun_schedules.org_key ASC
+    `,
+  );
+
+  return Response.json({
+    orgSets: rows.map((row) => ({
+      orgs: row.orgs,
+      nextRunAt: row.nextRunAt.toISOString(),
+      latest: historyPointFromRow(row),
+    })),
+  });
+}
+
 export default async (req: Request) => {
   const url = new URL(req.url);
   // /api/reports/:id  ->  ["api", "reports", ":id"]
@@ -123,6 +176,7 @@ export default async (req: Request) => {
     if (id === "history") return getHistory(url);
     if (id === "recent") return getRecentReports();
     if (id === "latest") return getLatestReport(url);
+    if (id === "tracked") return getTrackedOrgSets();
     if (!id) return new Response("Not found", { status: 404 });
     const db = getDb();
     const [row] = parseRows(
@@ -173,6 +227,7 @@ export const config: Config = {
     "/api/reports/history",
     "/api/reports/recent",
     "/api/reports/latest",
+    "/api/reports/tracked",
     "/api/reports/:id",
     "/api/reports/:id/schedule-daily",
   ],

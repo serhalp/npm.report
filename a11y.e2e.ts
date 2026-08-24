@@ -43,6 +43,7 @@ async function mockRecentReports(page: Page) {
     route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
+        additionalTrackedCount: 0,
         reports: [
           {
             id: "netlify-2026-06-27-abc12345",

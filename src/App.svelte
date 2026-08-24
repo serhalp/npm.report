@@ -8,10 +8,8 @@
   import DailyTrackingButton from "./components/DailyTrackingButton.svelte";
   import ResultsView from "./components/ResultsView.svelte";
   import SiteFooter from "./components/SiteFooter.svelte";
+  import SiteHeader from "./components/SiteHeader.svelte";
   import TagInput from "./components/TagInput.svelte";
-  import ThemeToggle from "./components/ThemeToggle.svelte";
-  import TrustGlossary from "./components/TrustGlossary.svelte";
-  import logo from "./components/logo.svg";
   import UserPublishView from "./components/UserPublishView.svelte";
   import {
     DEFAULT_BOT_EXCLUSIONS,
@@ -315,22 +313,11 @@
 </script>
 
 <div class="app">
-  <header class="masthead">
-    <div class="masthead__top">
-      <h1 class="wordmark">
-        <a href="/#" aria-label="npm.report"
-          ><span>npm</span><img class="logo" src={logo} alt="" /><span>report</span></a
-        >
-      </h1>
-      <div class="masthead__controls">
-        <ThemeToggle />
-        <TrustGlossary />
-      </div>
-    </div>
+  <SiteHeader>
     <p class="tagline">
       Supply-chain trust signals for npm orgs. Audit, visualize, share, track over time.
     </p>
-  </header>
+  </SiteHeader>
 
   <main tabindex="-1">
     {#if !result}
