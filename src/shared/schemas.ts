@@ -80,7 +80,7 @@ export const AuditStreamDoneSchema = v.looseObject({
   error: v.optional(v.string()),
 });
 
-/** The row returned by GET /api/reports/:id and rendered read-only at /report/:id. */
+/** The row returned for immutable report ids and stable latest-org lookups. */
 export const ReportRecordSchema = v.looseObject({
   id: v.string(),
   orgs: v.string(),

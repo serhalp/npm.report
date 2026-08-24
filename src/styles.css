@@ -1153,6 +1153,11 @@ textarea {
 .bluesky-icon {
   flex: 0 0 auto;
 }
+.report-share-actions__latest {
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
 .schedule-cta {
   display: inline-flex;
   align-items: center;

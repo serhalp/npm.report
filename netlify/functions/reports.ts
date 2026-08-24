@@ -3,6 +3,7 @@ import { getDb } from "#db/index";
 import { parseRows, ReportTrustHistoryRowSchema, SharedReportRowSchema } from "#db/schema";
 import { scheduleDailyTrustReport } from "#node/report-schedules";
 import { historyPointFromRow, recentReportLinkFromRow } from "#server/report-persistence";
+import { MAX_ORGS } from "#shared/auditDefaults";
 import { normalizeOrgs, orgKeyFor, type RecentTrustReportLink } from "#shared/reportHistory";
 
 const RECENT_REPORT_LIMIT = 5;
@@ -77,6 +78,40 @@ async function getRecentReports(): Promise<Response> {
   return Response.json({ reports: recentReports });
 }
 
+async function getLatestReport(url: URL): Promise<Response> {
+  const orgs = normalizeOrgs(url.searchParams.getAll("org"));
+  if (orgs.length === 0 || orgs.length > MAX_ORGS) {
+    return new Response("Invalid org set", { status: 400 });
+  }
+
+  const db = getDb();
+  const [row] = parseRows(
+    SharedReportRowSchema,
+    await db.sql<unknown>`
+      SELECT
+        reports.id,
+        reports.orgs,
+        reports.scope_label AS "scopeLabel",
+        reports.payload,
+        reports.created_at AS "createdAt",
+        COALESCE(report_rerun_schedules.enabled, ${false}) AS "dailyTrackingEnabled",
+        report_rerun_schedules.next_run_at AS "dailyTrackingNextRunAt"
+      FROM report_trust_history
+      INNER JOIN reports
+        ON reports.id = report_trust_history.report_id
+      LEFT JOIN report_rerun_schedules
+        ON
+          report_rerun_schedules.org_key = report_trust_history.org_key
+          AND report_rerun_schedules.enabled = ${true}
+      WHERE report_trust_history.org_key = ${orgKeyFor(orgs)}
+      ORDER BY report_trust_history.captured_at DESC
+      LIMIT 1
+    `,
+  );
+  if (!row) return new Response("Not found", { status: 404 });
+  return Response.json(row);
+}
+
 export default async (req: Request) => {
   const url = new URL(req.url);
   // /api/reports/:id  ->  ["api", "reports", ":id"]
@@ -87,6 +122,7 @@ export default async (req: Request) => {
   if (req.method === "GET") {
     if (id === "history") return getHistory(url);
     if (id === "recent") return getRecentReports();
+    if (id === "latest") return getLatestReport(url);
     if (!id) return new Response("Not found", { status: 404 });
     const db = getDb();
     const [row] = parseRows(
@@ -136,6 +172,7 @@ export const config: Config = {
   path: [
     "/api/reports/history",
     "/api/reports/recent",
+    "/api/reports/latest",
     "/api/reports/:id",
     "/api/reports/:id/schedule-daily",
   ],

@@ -4,10 +4,11 @@
   interface Props {
     url: string | null;
     orgs: string[];
+    latestUrl?: string | null;
     onToast: (message: string) => void;
   }
 
-  let { url, orgs, onToast }: Props = $props();
+  let { url, orgs, latestUrl = null, onToast }: Props = $props();
 
   let orgLabel = $derived(orgs.length > 0 ? orgs.join(", ") : "npm packages");
   let blueskyUrl = $derived(
@@ -66,5 +67,8 @@
       </svg>
       Share to Bluesky
     </button>
+  {/if}
+  {#if latestUrl}
+    <a class="report-share-actions__latest" href={latestUrl}>View latest report →</a>
   {/if}
 </div>

@@ -8,6 +8,7 @@ import { resetTestDatabase, startTestDatabase, stopTestDatabase } from "../datab
 let database: DatabaseConnection;
 let local: NetlifyDB;
 let getReportSocialData: typeof import("#node/report-social").getReportSocialData;
+let getLatestReportSocialData: typeof import("#node/report-social").getLatestReportSocialData;
 
 async function insertTrustHistory(
   reportId: string,
@@ -55,7 +56,7 @@ beforeAll(async () => {
   vi.stubEnv("NETLIFY_DB_DRIVER", "server");
   vi.resetModules();
   database = (await import("#db/index")).getDb();
-  ({ getReportSocialData } = await import("#node/report-social"));
+  ({ getLatestReportSocialData, getReportSocialData } = await import("#node/report-social"));
 });
 
 beforeEach(async () => {
@@ -132,6 +133,35 @@ describe("getReportSocialData", () => {
         { id: "acme-report", capturedAt: createdAt, total: 60, byLevel: currentLevels },
       ],
     });
+  });
+
+  it("resolves stable org-set social data to the latest snapshot", async () => {
+    const olderAt = new Date("2026-08-22T12:34:56.000Z");
+    const latestAt = new Date("2026-08-23T12:34:56.000Z");
+    const payload = {
+      trust: {
+        summary: {
+          total: 2,
+          byLevel: { stagedPublish: 0, trustedPublisher: 1, provenance: 0, none: 1 },
+        },
+      },
+      failures: [],
+    };
+    await database.sql`
+      INSERT INTO reports (id, orgs, scope_label, payload, created_at)
+      VALUES
+        (${"acme-older"}, ${"acme"}, ${"ALL org packages"}, ${serializeJson(payload)}::jsonb, ${olderAt}),
+        (${"acme-latest"}, ${"acme"}, ${"ALL org packages"}, ${serializeJson(payload)}::jsonb, ${latestAt})
+    `;
+    const levels = { stagedPublish: 0, trustedPublisher: 1, provenance: 0, none: 1 };
+    await insertTrustHistory("acme-latest", latestAt, levels);
+    await insertTrustHistory("acme-older", olderAt, levels);
+
+    await expect(getLatestReportSocialData(["Acme"])).resolves.toMatchObject({
+      id: "acme-latest",
+      orgs: "acme",
+    });
+    await expect(getLatestReportSocialData(["missing"])).resolves.toBeNull();
   });
 
   it("returns a report without invented trust metrics when no trust audit exists", async () => {

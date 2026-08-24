@@ -1,10 +1,12 @@
 import { getDb } from "#db/index";
 import {
   parseRows,
+  IdRowSchema,
   ReportSocialBaseRowSchema,
   ReportTrustHistoryRowSchema,
   type ReportSocialRow,
 } from "#db/schema";
+import { orgKeyFor } from "#shared/reportHistory";
 
 export async function getReportSocialData(id: string): Promise<ReportSocialRow | null> {
   const db = getDb();
@@ -66,4 +68,19 @@ export async function getReportSocialData(id: string): Promise<ReportSocialRow |
   }));
 
   return { ...row, history };
+}
+
+export async function getLatestReportSocialData(orgs: string[]): Promise<ReportSocialRow | null> {
+  const db = getDb();
+  const [latest] = parseRows(
+    IdRowSchema,
+    await db.sql<unknown>`
+      SELECT report_id AS id
+      FROM report_trust_history
+      WHERE org_key = ${orgKeyFor(orgs)}
+      ORDER BY captured_at DESC
+      LIMIT 1
+    `,
+  );
+  return latest ? getReportSocialData(latest.id) : null;
 }

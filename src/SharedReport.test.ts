@@ -155,10 +155,51 @@ describe("SharedReport", () => {
         name: `Tracking daily, next run ${formatCompactDateTime("2026-06-28T12:34:56.000Z")}`,
       }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /View latest report/ })).toHaveAttribute(
+      "href",
+      "http://localhost:3000/orgs/netlify",
+    );
     expect(fetchMock).not.toHaveBeenCalledWith(
       "/api/reports/report-id/schedule-daily",
       expect.anything(),
     );
+  });
+
+  test("keeps stable org-set URLs while rendering and sharing the latest snapshot", async () => {
+    const record = {
+      id: "latest-report-id",
+      orgs: "netlify",
+      scopeLabel: "ALL org packages",
+      payload: {
+        ...auditResult,
+        trust: {
+          ...trustReport,
+          summary: { ...trustReport.summary, orgs: ["netlify"] },
+        },
+      },
+      createdAt: "2026-06-27T12:34:56.000Z",
+      dailyTrackingEnabled: true,
+      dailyTrackingNextRunAt: "2026-06-28T12:34:56.000Z",
+    };
+    const fetchMock = mockFetch(async (input) =>
+      requestUrl(input).startsWith("/api/reports/history")
+        ? { ok: true, status: 200, json: async () => ({ orgs: ["netlify"], points: [] }) }
+        : { ok: true, status: 200, json: async () => record },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(SharedReport, { props: { orgs: ["netlify"] } });
+
+    expect(await screen.findByRole("heading", { name: "Audit of netlify" })).toBeInTheDocument();
+    expect(document.querySelector(".masthead > p")).toHaveTextContent(
+      "This is the latest read-only snapshot.",
+    );
+    expect(fetchMock).toHaveBeenCalledWith("/api/reports/latest?org=netlify");
+    const bluesky = new URL(
+      screen.getByRole("link", { name: "Share to Bluesky" }).getAttribute("href")!,
+    );
+    expect(bluesky.searchParams.get("text")).toContain("http://localhost:3000/orgs/netlify");
+    expect(screen.queryByRole("link", { name: /View latest report/ })).not.toBeInTheDocument();
   });
 
   test("still renders the report when its history request fails", async () => {

@@ -221,6 +221,10 @@ describe("App", () => {
       "href",
       expect.stringContaining("https://bsky.app/intent/compose"),
     );
+    expect(screen.getByRole("link", { name: /View latest report/ })).toHaveAttribute(
+      "href",
+      "http://localhost:3000/orgs/netlify",
+    );
     expect(writeText).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Track daily" }));

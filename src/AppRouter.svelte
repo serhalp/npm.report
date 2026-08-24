@@ -1,10 +1,10 @@
-<!-- Teeny tiny micro client router because this is just a simple two-page SPA -->
 <script lang="ts">
   import { tick } from "svelte";
   import App from "./App.svelte";
   import SharedReport from "./SharedReport.svelte";
+  import { orgsFromPathSegment } from "#shared/reportHistory";
 
-  type Route = { name: "app" } | { name: "report"; id: string };
+  type Route = { name: "app" } | { name: "report"; id: string } | { name: "orgs"; orgs: string[] };
 
   function reportIdFromPath(pathname: string): string | null {
     const match = pathname.match(/^\/report\/([^/]+)\/?$/);
@@ -16,13 +16,24 @@
     }
   }
 
+  function orgSetFromPath(pathname: string): string[] | null | undefined {
+    const match = pathname.match(/^\/orgs\/([^/]+)\/?$/);
+    return match ? orgsFromPathSegment(match[1]) : undefined;
+  }
+
   function routeFromUrl(url: URL): Route {
+    const orgs = orgSetFromPath(url.pathname);
+    if (orgs !== undefined) return { name: "orgs", orgs: orgs ?? [] };
     const reportId = reportIdFromPath(url.pathname);
     return reportId === null ? { name: "app" } : { name: "report", id: reportId };
   }
 
   function isClientRoute(url: URL): boolean {
-    return url.pathname === "/" || reportIdFromPath(url.pathname) !== null;
+    return (
+      url.pathname === "/" ||
+      orgSetFromPath(url.pathname) !== undefined ||
+      reportIdFromPath(url.pathname) !== null
+    );
   }
 
   let currentUrl = $state(new URL(window.location.href));
@@ -78,6 +89,8 @@
 
 {#if route.name === "report"}
   <SharedReport id={route.id} />
+{:else if route.name === "orgs"}
+  <SharedReport orgs={route.orgs} />
 {:else}
   <App />
 {/if}

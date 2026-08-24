@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
+  config,
   injectReportSocialMeta,
   reportSocialMeta,
 } from "../../edge-functions/report-social-meta.ts";
@@ -39,5 +40,16 @@ describe("report social metadata", () => {
     expect(result).toContain(
       'rel="canonical" href="https://npm.report/report/acme-2026-08-23-abc"',
     );
+  });
+
+  it("keeps stable org-set previews and images on stable URLs", () => {
+    const meta = reportSocialMeta(new URL("https://npm.report/orgs/gatsbyjs,netlify?from=share"));
+
+    expect(meta).toContain('property="og:url" content="https://npm.report/orgs/gatsbyjs,netlify"');
+    expect(meta).toContain(
+      'property="og:image" content="https://npm.report/og/orgs/gatsbyjs,netlify"',
+    );
+    expect(meta).not.toContain("from=share");
+    expect(config.path).toEqual(["/report/:id", "/orgs/:orgs"]);
   });
 });
