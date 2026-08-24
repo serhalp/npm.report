@@ -202,11 +202,18 @@ describe("reports function", () => {
       makeHistory("react", "react", ["react"], "2026-06-22T10:00:00.000Z"),
     ];
     await Promise.all(history.map(insertHistory));
+    await handler(
+      new Request("https://audit.example/api/reports/gatsby/schedule-daily", { method: "POST" }),
+    );
+    await handler(
+      new Request("https://audit.example/api/reports/react/schedule-daily", { method: "POST" }),
+    );
 
     const response = await handler(new Request("https://audit.example/api/reports/recent"));
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
+      additionalTrackedCount: 1,
       reports: [
         {
           id: "netlify-newer",

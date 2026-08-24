@@ -4,6 +4,7 @@
   import { parseOrNull, RecentTrustReportsResponseSchema } from "#shared/schemas";
 
   let reports = $state<RecentTrustReportLink[]>([]);
+  let additionalTrackedCount = $state(0);
   let loading = $state(true);
 
   function orgLabel(orgs: string[]): string {
@@ -16,17 +17,23 @@
 
     fetch("/api/reports/recent")
       .then(async (response) => {
-        if (!response.ok) return { reports: [] };
+        if (!response.ok) return { reports: [], additionalTrackedCount: 0 };
         const data = await response.json();
         return parseOrNull(RecentTrustReportsResponseSchema, data)
           ? (data as RecentTrustReportsResponse)
-          : { reports: [] };
+          : { reports: [], additionalTrackedCount: 0 };
       })
       .then((body) => {
-        if (!cancelled) reports = Array.isArray(body.reports) ? body.reports : [];
+        if (!cancelled) {
+          reports = body.reports;
+          additionalTrackedCount = body.additionalTrackedCount;
+        }
       })
       .catch(() => {
-        if (!cancelled) reports = [];
+        if (!cancelled) {
+          reports = [];
+          additionalTrackedCount = 0;
+        }
       })
       .finally(() => {
         if (!cancelled) loading = false;
@@ -62,6 +69,9 @@
           >
         </li>
       {/each}
+      {#if additionalTrackedCount > 0}
+        <li><a href="/tracked">… {additionalTrackedCount} more</a></li>
+      {/if}
     </ol>
   {/if}
 </section>

@@ -27,6 +27,7 @@ export interface RecentTrustReportLink {
 
 export interface RecentTrustReportsResponse {
   reports: RecentTrustReportLink[];
+  additionalTrackedCount: number;
 }
 
 export interface TrackedOrgSet {

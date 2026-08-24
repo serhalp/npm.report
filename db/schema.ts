@@ -91,6 +91,8 @@ export const TrackedOrgSetRowSchema = v.object({
 });
 export type TrackedOrgSetRow = v.InferOutput<typeof TrackedOrgSetRowSchema>;
 
+export const TrackedOrgKeyRowSchema = v.object({ orgKey: v.string() });
+
 export const ReportRerunScheduleRowSchema = v.object({
   orgKey: v.string(),
   orgs: v.array(v.string()),

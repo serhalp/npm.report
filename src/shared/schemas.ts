@@ -117,6 +117,7 @@ export const RecentTrustReportsResponseSchema = v.looseObject({
       capturedAt: v.string(),
     }),
   ),
+  additionalTrackedCount: v.pipe(v.number(), v.integer(), v.minValue(0)),
 });
 
 /** GET /api/reports/tracked */

@@ -4,6 +4,7 @@ import {
   parseRows,
   ReportTrustHistoryRowSchema,
   SharedReportRowSchema,
+  TrackedOrgKeyRowSchema,
   TrackedOrgSetRowSchema,
 } from "#db/schema";
 import { scheduleDailyTrustReport } from "#node/report-schedules";
@@ -80,7 +81,19 @@ async function getRecentReports(): Promise<Response> {
     if (recentReports.length === RECENT_REPORT_LIMIT) break;
   }
 
-  return Response.json({ reports: recentReports });
+  const trackedOrgKeys = parseRows(
+    TrackedOrgKeyRowSchema,
+    await db.sql<unknown>`
+      SELECT report_rerun_schedules.org_key AS "orgKey"
+      FROM report_rerun_schedules
+      INNER JOIN report_trust_history
+        ON report_trust_history.report_id = report_rerun_schedules.last_report_id
+      WHERE report_rerun_schedules.enabled = ${true}
+    `,
+  );
+  const additionalTrackedCount = trackedOrgKeys.filter((row) => !seen.has(row.orgKey)).length;
+
+  return Response.json({ reports: recentReports, additionalTrackedCount });
 }
 
 async function getLatestReport(url: URL): Promise<Response> {
