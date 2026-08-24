@@ -62,6 +62,15 @@ describe("report OG image function", () => {
     expect(html).toContain("Supply-chain trust signals");
     expect(html).toContain("for npm orgs.");
     expect(html).toContain("Audit, visualize, share, track over time.");
+    expect(html).toContain('class="home-chart"');
+    expect(html).toContain('class="home-spectrum"');
+    expect(html).toContain("Strong trust");
+    expect(html).toContain("24 · 40%");
+    expect(html).toContain("Any trust");
+    expect(html).toContain("No trust signal");
+    expect(html).toContain("Staged publish");
+    expect(html).toContain("Trusted publisher");
+    expect(html).toContain("Provenance only");
   });
 
   it("renders the homepage card at the social-image dimensions", async () => {

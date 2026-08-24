@@ -71,17 +71,33 @@ export const OG_CARD_STYLES = `
     flex: 0 0 auto;
     color: #d7dde5;
   }
-  .home-mark {
+  .home-chart {
     position: absolute;
     top: 165px;
-    right: 52px;
-    width: 310px;
-    height: 310px;
+    right: 64px;
+    width: 382px;
+    height: 294px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .home-chart svg {
+    display: block;
+    width: 100%;
+    height: 272px;
+  }
+  .home-chart .home-chart-legend {
+    justify-content: flex-end;
+  }
+  .home-strong-summary {
+    position: absolute;
+    top: 510px;
+    left: 64px;
   }
   .home-spectrum {
     position: absolute;
     right: 64px;
-    bottom: 52px;
+    bottom: 82px;
     left: 64px;
     display: flex;
     height: 13px;
@@ -90,10 +106,24 @@ export const OG_CARD_STYLES = `
     border-radius: 3px;
     background: #151b24;
   }
-  .home-spectrum span:nth-child(1) { width: 16%; background: #c9a0dc; }
-  .home-spectrum span:nth-child(2) { width: 24%; background: #d8a657; }
-  .home-spectrum span:nth-child(3) { width: 28%; background: #5fb3b3; }
-  .home-spectrum span:nth-child(4) { width: 32%; background: #e07a5f; }
+  .home-spectrum-key {
+    position: absolute;
+    top: 559px;
+    display: flex;
+    height: 18px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #758296;
+    font-family: "IBM Plex Mono";
+    font-size: 12px;
+    line-height: 18px;
+  }
+  .home-spectrum-swatch {
+    width: 15px;
+    height: 4px;
+    border-radius: 1px;
+  }
   .report-card {
     flex-direction: column;
     padding: 50px 56px 48px;
@@ -333,6 +363,27 @@ const TRUST_LEVELS = [
   { key: "none", label: "No trust signal", color: "#e07a5f", variant: "risk" },
 ] as const;
 
+type TrustSummary = NonNullable<ReportSocialRow["trust"]>;
+type TrendPoint = { x: number; strong: number; any: number; none: number };
+
+const HOME_TRUST: TrustSummary = {
+  total: 60,
+  byLevel: { stagedPublish: 8, trustedPublisher: 16, provenance: 15, none: 21 },
+};
+
+const HOME_TREND = [
+  { strong: 15, any: 35, none: 65 },
+  { strong: 15, any: 35, none: 65 },
+  { strong: 18.3, any: 40, none: 60 },
+  { strong: 18.3, any: 40, none: 60 },
+  { strong: 23.3, any: 46.7, none: 53.3 },
+  { strong: 26.7, any: 50, none: 50 },
+  { strong: 30, any: 55, none: 45 },
+  { strong: 33.3, any: 58.3, none: 41.7 },
+  { strong: 35, any: 60, none: 40 },
+  { strong: 40, any: 65, none: 35 },
+] as const;
+
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => {
     switch (character) {
@@ -354,6 +405,78 @@ function wordmark(): string {
   return `<div class="wordmark"><span>npm</span><img src="${OG_LOGO_SOURCE}" /><span>report</span></div>`;
 }
 
+function chartLegendHtml(className = ""): string {
+  return `<div class="trend-legend${className ? ` ${className}` : ""}">
+    <span class="trend-key"><span class="trend-key-line trend-key-line--strong"></span>Strong trust</span>
+    <span class="trend-key"><span class="trend-key-line trend-key-line--any"></span>Any trust</span>
+    <span class="trend-key"><span class="trend-key-line trend-key-line--none"></span>No trust signal</span>
+  </div>`;
+}
+
+function trendChartSvg(
+  points: readonly TrendPoint[],
+  options: {
+    width: number;
+    height: number;
+    plotTop: number;
+    plotBottom: number;
+    strokeWidth: number;
+    anyDash: string;
+    noneDash: string;
+    gridValues: readonly number[];
+    tickPositions?: readonly number[];
+  },
+): string {
+  const { width, height, plotTop, plotBottom } = options;
+  const yAt = (value: number): number => plotTop + (1 - value / 100) * (plotBottom - plotTop);
+  const line = (key: "strong" | "any" | "none"): string =>
+    points
+      .map((point) => `${(point.x * width).toFixed(1)},${yAt(point[key]).toFixed(1)}`)
+      .join(" ");
+  const grid = options.gridValues
+    .map(
+      (value) =>
+        `<line x1="0" x2="${width}" y1="${yAt(value)}" y2="${yAt(value)}" stroke="#20272f" stroke-width="1" />`,
+    )
+    .join("");
+  const ticks = (options.tickPositions ?? [])
+    .map((position) => {
+      const x = position * width;
+      return `<line x1="${x}" x2="${x}" y1="${plotBottom}" y2="${plotBottom + 8}" stroke="#526075" stroke-width="1" />`;
+    })
+    .join("");
+
+  return `<svg viewBox="0 0 ${width} ${height}">${grid}${ticks}
+    <polyline points="${line("strong")}" fill="none" stroke="#8fbf7f" stroke-width="${options.strokeWidth}" stroke-linejoin="round" stroke-linecap="round" />
+    <polyline points="${line("any")}" fill="none" stroke="#5fb3b3" stroke-width="${options.strokeWidth}" stroke-dasharray="${options.anyDash}" stroke-linejoin="round" stroke-linecap="round" />
+    <polyline points="${line("none")}" fill="none" stroke="#e07a5f" stroke-width="${options.strokeWidth}" stroke-dasharray="${options.noneDash}" stroke-linejoin="round" stroke-linecap="round" />
+  </svg>`;
+}
+
+function homeChartHtml(): string {
+  const points = HOME_TREND.map((point, index) => ({
+    x: index / (HOME_TREND.length - 1),
+    strong: point.strong,
+    any: point.any,
+    none: point.none,
+  }));
+
+  return `<div class="home-chart">
+    ${chartLegendHtml("home-chart-legend")}
+    ${trendChartSvg(points, {
+      width: 382,
+      height: 272,
+      plotTop: 26,
+      plotBottom: 257,
+      strokeWidth: 3,
+      anyDash: "9 6",
+      noneDash: "1 8",
+      gridValues: [0, 100 / 3, 200 / 3, 100],
+      tickPositions: [0, 1 / 3, 2 / 3, 1],
+    })}
+  </div>`;
+}
+
 function percentage(count: number, total: number): string {
   const value = total > 0 ? (count / total) * 100 : 0;
   return `${value.toFixed(Number.isInteger(value) ? 0 : 1)}%`;
@@ -361,6 +484,40 @@ function percentage(count: number, total: number): string {
 
 function widthPercentage(count: number, total: number): string {
   return total > 0 ? `${(count / total) * 100}%` : "0%";
+}
+
+function strongTrustCount(trust: TrustSummary): number {
+  return trust.byLevel.stagedPublish + trust.byLevel.trustedPublisher;
+}
+
+function strongSummaryHtml(
+  trust: TrustSummary,
+  { className = "", width }: { className?: string; width?: number } = {},
+): string {
+  const strongTrust = strongTrustCount(trust);
+  const style = width === undefined ? "" : ` style="width:${width.toFixed(1)}px"`;
+  return `<div class="strong-summary${className ? ` ${className}` : ""}"${style}><span class="strong-summary-line">Strong trust · ${strongTrust.toLocaleString("en-US")} · ${percentage(strongTrust, trust.total)}</span></div>`;
+}
+
+function distributionHtml(trust: TrustSummary, className: string): string {
+  const segments = TRUST_LEVELS.map(
+    (level) =>
+      `<span style="width:${widthPercentage(trust.byLevel[level.key], trust.total)};background:${level.color}"></span>`,
+  ).join("");
+  return `<div class="${className}">${segments}</div>`;
+}
+
+function homeDistributionLegendHtml(trust: TrustSummary): string {
+  const left = 64;
+  const totalWidth = OG_LOGICAL_WIDTH - left * 2;
+  let offset = left;
+
+  return TRUST_LEVELS.map((level) => {
+    const width = trust.total > 0 ? (trust.byLevel[level.key] / trust.total) * totalWidth : 0;
+    const html = `<div class="home-spectrum-key" style="left:${offset.toFixed(1)}px;width:${width.toFixed(1)}px"><span class="home-spectrum-swatch" style="background:${level.color}"></span>${level.label}</div>`;
+    offset += width;
+    return html;
+  }).join("");
 }
 
 function shortDate(date: Date): string {
@@ -384,52 +541,45 @@ function trendHtml(history: ReportSocialRow["history"]): string {
   if (history.length <= 1) return "";
 
   const width = 1088;
-  const plotTop = 3;
-  const plotBottom = 61;
   const firstTime = history[0].capturedAt.getTime();
   const lastTime = history.at(-1)!.capturedAt.getTime();
-  const xAt = (index: number): number => {
-    if (lastTime <= firstTime) return (index / (history.length - 1)) * width;
-    return ((history[index].capturedAt.getTime() - firstTime) / (lastTime - firstTime)) * width;
-  };
-  const yAt = (value: number): number => plotTop + (1 - value / 100) * (plotBottom - plotTop);
-  const line = (count: (point: ReportSocialRow["history"][number]) => number): string =>
-    history
-      .map((point, index) => {
-        const value = point.total > 0 ? (count(point) / point.total) * 100 : 0;
-        return `${xAt(index).toFixed(1)},${yAt(value).toFixed(1)}`;
-      })
-      .join(" ");
-
-  const strong = line((point) => point.byLevel.stagedPublish + point.byLevel.trustedPublisher);
-  const any = line((point) => point.total - point.byLevel.none);
-  const none = line((point) => point.byLevel.none);
-  const grid = [0, 50, 100]
-    .map(
-      (value) =>
-        `<line x1="0" x2="${width}" y1="${yAt(value)}" y2="${yAt(value)}" stroke="#20272f" stroke-width="1" />`,
-    )
-    .join("");
+  const points: TrendPoint[] = history.map((point, index) => {
+    const x =
+      lastTime <= firstTime
+        ? index / (history.length - 1)
+        : (point.capturedAt.getTime() - firstTime) / (lastTime - firstTime);
+    const percent = (count: number): number => (point.total > 0 ? (count / point.total) * 100 : 0);
+    return {
+      x,
+      strong: percent(point.byLevel.stagedPublish + point.byLevel.trustedPublisher),
+      any: percent(point.total - point.byLevel.none),
+      none: percent(point.byLevel.none),
+    };
+  });
 
   return `<div class="trend">
     <div class="trend-head">
       <span class="trend-title">Progress over time</span>
-      <div class="trend-legend">
-        <span class="trend-key"><span class="trend-key-line trend-key-line--strong"></span>Strong trust</span>
-        <span class="trend-key"><span class="trend-key-line trend-key-line--any"></span>Any trust</span>
-        <span class="trend-key"><span class="trend-key-line trend-key-line--none"></span>No trust signal</span>
-      </div>
+      ${chartLegendHtml()}
     </div>
-    <svg viewBox="0 0 ${width} 64">${grid}
-      <polyline points="${strong}" fill="none" stroke="#8fbf7f" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" />
-      <polyline points="${any}" fill="none" stroke="#5fb3b3" stroke-width="2.2" stroke-dasharray="7 4" stroke-linejoin="round" stroke-linecap="round" />
-      <polyline points="${none}" fill="none" stroke="#e07a5f" stroke-width="2.2" stroke-dasharray="1 5" stroke-linejoin="round" stroke-linecap="round" />
-    </svg>
+    ${trendChartSvg(points, {
+      width,
+      height: 64,
+      plotTop: 3,
+      plotBottom: 61,
+      strokeWidth: 2.2,
+      anyDash: "7 4",
+      noneDash: "1 5",
+      gridValues: [0, 50, 100],
+    })}
     <div class="trend-dates"><span>${shortDate(history[0].capturedAt)}</span><span>${shortDate(history.at(-1)!.capturedAt)}</span></div>
   </div>`;
 }
 
 export function homeCardHtml(): string {
+  const distributionWidth = OG_LOGICAL_WIDTH - 128;
+  const strongWidth = (strongTrustCount(HOME_TRUST) / HOME_TRUST.total) * distributionWidth;
+
   return `<div class="card home-card">
     ${wordmark()}
     <div class="home-rule"></div>
@@ -437,8 +587,10 @@ export function homeCardHtml(): string {
       <div class="home-title">Supply-chain trust signals<br />for npm orgs.</div>
       <div class="home-subtitle"><span class="home-caret">&gt;</span><span>Audit, visualize, share, track over time.</span></div>
     </div>
-    <img class="home-mark" src="${OG_LOGO_SOURCE}" />
-    <div class="home-spectrum"><span></span><span></span><span></span><span></span></div>
+    ${homeChartHtml()}
+    ${strongSummaryHtml(HOME_TRUST, { className: "home-strong-summary", width: strongWidth })}
+    ${distributionHtml(HOME_TRUST, "home-spectrum")}
+    ${homeDistributionLegendHtml(HOME_TRUST)}
   </div>`;
 }
 
@@ -459,12 +611,6 @@ export function reportCardHtml(report: ReportSocialRow): string {
   }
 
   const { total, byLevel } = report.trust;
-  const distribution = TRUST_LEVELS.map(
-    (level) =>
-      `<span style="width:${widthPercentage(byLevel[level.key], total)};background:${level.color}"></span>`,
-  ).join("");
-  const strongTrust = byLevel.stagedPublish + byLevel.trustedPublisher;
-  const strongSummary = `<div class="strong-summary"><span class="strong-summary-line">Strong trust · ${strongTrust.toLocaleString("en-US")} · ${percentage(strongTrust, total)}</span></div>`;
   const metrics = TRUST_LEVELS.map((level) => {
     const count = byLevel[level.key];
     return `<div class="metric metric--${level.variant}">
@@ -477,6 +623,6 @@ export function reportCardHtml(report: ReportSocialRow): string {
     <div class="report-top">${wordmark()}<div class="snapshot">${snapshotHtml(report)}</div></div>
     ${title}
     ${trendHtml(report.history)}
-    <div class="trust-block">${strongSummary}<div class="metrics">${metrics}</div><div class="distribution">${distribution}</div></div>
+    <div class="trust-block">${strongSummaryHtml(report.trust)}<div class="metrics">${metrics}</div>${distributionHtml(report.trust, "distribution")}</div>
   </div>`;
 }
