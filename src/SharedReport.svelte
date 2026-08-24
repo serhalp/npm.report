@@ -56,9 +56,6 @@
       ? `${window.location.origin}${latestRoute && latestPath ? latestPath : `/report/${encodeURIComponent(record.id)}`}`
       : null,
   );
-  let latestUrl = $derived(
-    !latestRoute && latestPath ? `${window.location.origin}${latestPath}` : null,
-  );
 
   function reportEndpoint(): string {
     if (id !== undefined) return `/api/reports/${encodeURIComponent(id)}`;
@@ -257,7 +254,7 @@
             nextRunAt={record.dailyTrackingNextRunAt}
             onToast={showToast}
           />
-          <ReportShareActions url={shareUrl} orgs={shareOrgs} {latestUrl} onToast={showToast} />
+          <ReportShareActions url={shareUrl} orgs={shareOrgs} onToast={showToast} />
         </div>
         <HistoryPanel
           orgs={historyOrgs}

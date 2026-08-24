@@ -11,12 +11,7 @@ describe("ReportShareActions", () => {
     const url = "https://npm.report/report/acme-2026-08-23-abc";
 
     render(ReportShareActions, {
-      props: {
-        url,
-        orgs: ["acme"],
-        latestUrl: "https://npm.report/orgs/acme",
-        onToast,
-      },
+      props: { url, orgs: ["acme"], onToast },
     });
 
     await user.click(screen.getByRole("button", { name: "Copy link" }));
@@ -30,10 +25,6 @@ describe("ReportShareActions", () => {
     expect(intent.searchParams.get("text")).toBe(`npm supply-chain audit for acme: ${url}`);
     expect(share).toHaveAttribute("target", "_blank");
     expect(share).toHaveAttribute("rel", "noopener noreferrer");
-    expect(screen.getByRole("link", { name: /View latest report/ })).toHaveAttribute(
-      "href",
-      "https://npm.report/orgs/acme",
-    );
   });
 
   test("disables both actions until a saved report URL exists", () => {

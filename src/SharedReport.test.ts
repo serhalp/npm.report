@@ -155,10 +155,6 @@ describe("SharedReport", () => {
         name: `Tracking daily, next run ${formatCompactDateTime("2026-06-28T12:34:56.000Z")}`,
       }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /View latest report/ })).toHaveAttribute(
-      "href",
-      "http://localhost:3000/orgs/netlify",
-    );
     expect(fetchMock).not.toHaveBeenCalledWith(
       "/api/reports/report-id/schedule-daily",
       expect.anything(),
@@ -199,7 +195,6 @@ describe("SharedReport", () => {
       screen.getByRole("link", { name: "Share to Bluesky" }).getAttribute("href")!,
     );
     expect(bluesky.searchParams.get("text")).toContain("http://localhost:3000/orgs/netlify");
-    expect(screen.queryByRole("link", { name: /View latest report/ })).not.toBeInTheDocument();
   });
 
   test("still renders the report when its history request fails", async () => {

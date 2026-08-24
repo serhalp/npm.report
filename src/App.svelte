@@ -21,7 +21,6 @@
   } from "#shared/auditDefaults";
   import { streamAudit } from "#client/auditStream";
   import { parseMembers } from "#client/members";
-  import { orgSetPath } from "#shared/reportHistory";
   import type { AuditResult, ReportKind, UserPublishReport } from "#shared/types";
   import { streamUserPublishes } from "#client/userPublishStream";
 
@@ -126,12 +125,6 @@
   let savedReportCanTrackDaily = $state(false);
   let historyRefreshKey = $state(0);
   let saveAttempt = 0;
-  let latestReportUrl = $derived(
-    shareUrl && savedReportCanTrackDaily && savedReportOrgs.length > 0
-      ? `${window.location.origin}${orgSetPath(savedReportOrgs)}`
-      : null,
-  );
-
   let upUser = $state("");
   let upMonths = $state(12);
   let upUseCache = $state(true);
@@ -521,12 +514,7 @@
               enabled={savedReportCanTrackDaily}
               onToast={showToast}
             />
-            <ReportShareActions
-              url={shareUrl}
-              orgs={savedReportOrgs}
-              latestUrl={latestReportUrl}
-              onToast={showToast}
-            />
+            <ReportShareActions url={shareUrl} orgs={savedReportOrgs} onToast={showToast} />
           </div>
         </div>
         {#if shareUrl}

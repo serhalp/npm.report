@@ -41,8 +41,7 @@ information exists, there is no official tooling that makes this easy. npm.repor
    persisted; derived external findings are included in the saved report.
 6. Run the audit. Results render as sortable tables with JSON copy and CSV download actions.
 7. The server saves each completed run automatically. `/report/:id` preserves that exact snapshot;
-   eligible package-trust reports also link to `/orgs/:orgs`, which always shows the latest snapshot
-   for the normalized org set.
+   `/orgs/:orgs` always shows the latest snapshot for a normalized org set.
 8. For all-package package trust reports, select "Track daily" to generate one automatic trust
    snapshot per day. You'll be able to visualize progress and trends over time.
 
