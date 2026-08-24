@@ -1,23 +1,27 @@
 <script lang="ts">
-  const TERMS: { term: string; def: string; href?: string }[] = [
+  const TERMS: { term: string; def: string; variant: string; href?: string }[] = [
     {
       term: "Staged publishing",
-      def: "Published through npm's staged flow — prepared and reviewed before it goes live.",
+      def: "Published through npm's staged flow, prepared and reviewed before it goes live.",
+      variant: "staged",
       href: "https://docs.npmjs.com/staged-publishing",
     },
     {
       term: "Trusted publisher",
-      def: "Published from CI over OIDC — no long-lived npm token to leak or steal.",
+      def: "Published from CI over OIDC, with no long-lived npm token to leak or steal.",
+      variant: "trusted",
       href: "https://docs.npmjs.com/trusted-publishers",
     },
     {
       term: "Provenance",
       def: "A signed link from the published package back to the exact source commit and build.",
+      variant: "provenance",
       href: "https://docs.npmjs.com/generating-provenance-statements",
     },
     {
       term: "None",
-      def: "No verifiable signal — the release rests on the maintainer's account and token alone, so a compromise there can ship malware unnoticed.",
+      def: "No verifiable signal. The release rests on the maintainer's account and token alone, so a compromise there can ship malware unnoticed.",
+      variant: "none",
     },
   ];
 </script>
@@ -37,7 +41,7 @@
   </p>
   <dl class="glossary__list">
     {#each TERMS as t (t.term)}
-      <dt class:glossary__risk={t.term === "None"}>{t.term}</dt>
+      <dt class={`glossary__term glossary__term--${t.variant}`}>{t.term}</dt>
       <dd>
         {t.def}
         {#if t.href}
@@ -47,9 +51,10 @@
     {/each}
   </dl>
   <p class="glossary__note">
-    In the summary, <strong>staged publishing</strong> and
-    <strong>trusted publisher</strong>
-    both count as <em>strong</em> trust; provenance is a weaker positive;
-    <em>none</em> is the one to check.
+    In the summary, <strong class="glossary__term--staged">staged publishing</strong> and
+    <strong class="glossary__term--trusted">trusted publisher</strong>
+    both count as <em class="glossary__term--strong">strong</em> trust;
+    <span class="glossary__term--provenance">provenance</span> is a weaker positive;
+    <em class="glossary__term--none">none</em> is the one to check.
   </p>
 </div>

@@ -248,9 +248,20 @@ a:hover {
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: var(--track-eyebrow);
-  color: var(--gold-dim);
 }
-.glossary__list dt.glossary__risk {
+.glossary__term--staged {
+  color: var(--t-staged);
+}
+.glossary__term--trusted {
+  color: var(--t-trusted);
+}
+.glossary__term--provenance {
+  color: var(--t-provenance);
+}
+.glossary__term--strong {
+  color: var(--t-strong);
+}
+.glossary__term--none {
   color: var(--t-none);
 }
 .glossary__list dd {
