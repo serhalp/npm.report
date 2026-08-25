@@ -20,4 +20,6 @@ export interface Column<T> {
   numeric?: boolean;
   value?: (row: T) => SortValue;
   cell?: (row: T) => CellValue;
+  /** Full row comparator; takes precedence over value/default string sorting. */
+  compare?: (a: T, b: T) => number;
 }

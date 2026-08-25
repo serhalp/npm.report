@@ -25,8 +25,9 @@
     const column = columns.find((item) => item.key === sortKey);
     if (!column) return rows;
 
-    const factor = dir === "asc" ? 1 : -1;
+    const direction = dir === "asc" ? 1 : -1;
     return rows.toSorted((a, b) => {
+      if (column.compare) return column.compare(a, b) * direction;
       const av = getSortValue(a, column);
       const bv = getSortValue(b, column);
 
@@ -34,9 +35,9 @@
       if (av == null) return 1;
       if (bv == null) return -1;
       if (typeof av === "number" && typeof bv === "number") {
-        return (av - bv) * factor;
+        return (av - bv) * direction;
       }
-      return String(av).localeCompare(String(bv)) * factor;
+      return String(av).localeCompare(String(bv)) * direction;
     });
   });
 

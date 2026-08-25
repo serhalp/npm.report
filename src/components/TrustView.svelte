@@ -4,6 +4,7 @@
   import ExportButtons from "./ExportButtons.svelte";
   import Stat from "./Stat.svelte";
   import { formatDate, formatDateTime } from "#client/dateFormatting";
+  import { compare } from "verkit";
   import type { TrustReport, TrustRow } from "#shared/types";
   import { LEVEL_LABEL, LEVEL_ORDER, yn } from "./reportFormatting";
 
@@ -22,7 +23,11 @@
 
   const columns: Column<TrustRow>[] = [
     { key: "pkg", header: "Package" },
-    { key: "version", header: "Version" },
+    {
+      key: "version",
+      header: "Version",
+      compare: (a, b) => compare(a.version, b.version),
+    },
     {
       key: "level",
       header: "Trust level",
