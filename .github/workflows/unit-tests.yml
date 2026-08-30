@@ -34,7 +34,7 @@ jobs:
         run: pnpm run test:coverage
       - name: Report coverage
         if: ${{ always() && hashFiles('coverage/coverage-summary.json') != '' && hashFiles('coverage/coverage-final.json') != '' }}
-        uses: davelosert/vitest-coverage-report-action@3c054a2d2e2ca45446417ad5d6d5eb33092af8f1 # v2.12.1
+        uses: davelosert/vitest-coverage-report-action@8b157684c6a6b259b97d45e72b44242865c0f6a5 # v2.12.2
         with:
           comment-on: none
           file-coverage-mode: all
