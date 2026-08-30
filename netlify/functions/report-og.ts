@@ -60,7 +60,7 @@ async function renderCard(html: string): Promise<Uint8Array<ArrayBuffer>> {
     height: OG_HEIGHT,
     devicePixelRatio: OG_DEVICE_PIXEL_RATIO,
     format: "png",
-    stylesheets: [OG_CARD_STYLES],
+    css: [OG_CARD_STYLES],
     images: [{ src: OG_LOGO_SOURCE, data: logo }],
     fonts: [
       { name: "IBM Plex Sans", data: plexSans },
