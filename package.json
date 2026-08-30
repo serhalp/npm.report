@@ -50,7 +50,7 @@
     "@netlify/database-dev": "^1.0.0",
     "@netlify/edge-functions": "^4.0.0",
     "@netlify/functions": "^6.0.0",
-    "@netlify/vite-plugin": "^2.12.9",
+    "@netlify/vite-plugin": "^3.0.0",
     "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/svelte": "^5.4.2",
