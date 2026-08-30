@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
-    "@e18e/eslint-plugin": "^0.5.1",
+    "@e18e/eslint-plugin": "^0.8.0",
     "@netlify/database-dev": "^1.0.0",
     "@netlify/edge-functions": "^4.0.0",
     "@netlify/functions": "^6.0.0",
