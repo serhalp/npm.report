@@ -218,7 +218,7 @@ importers:
         version: 1.39.0(svelte@5.57.0(@typescript-eslint/types@8.68.0))
       '@netlify/database':
         specifier: ^2.0.0
-        version: 2.0.0
+        version: 2.0.1
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.3.0
         version: 7.3.0(svelte@5.57.0(@typescript-eslint/types@8.68.0))(vite@8.2.2(@types/node@26.4.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
@@ -850,8 +850,8 @@ packages:
     resolution: {integrity: sha512-Zu8cM4AeXNuQI/cNAI6vrammtdDnWIGO6PYKDAECDMzsb3IcoTsVOZAePup7cGdjaGcBBVdi1qx/PoI5hNZcxg==}
     engines: {node: '>=22.12.0'}
 
-  '@netlify/database@2.0.0':
-    resolution: {integrity: sha512-Gn6gOSMrCo576okpLqR8Rn001KRlxMrO1VI459Hf+RYa151OgDc/FAhWcwi0Ituyf2xW1FI03p+y86WWY1+cLw==}
+  '@netlify/database@2.0.1':
+    resolution: {integrity: sha512-ikz0NcVgeOe62Sic5MEFMyv/yMWtzhMLcynXTDftTL3rVEMoJL16mjnU9gNZ6G80lBngjjPjZrDOyAS1j+Kt3A==}
     engines: {node: '>=22.12.0'}
 
   '@netlify/dev-utils@6.0.1':
@@ -5165,7 +5165,7 @@ snapshots:
       '@electric-sql/pglite': 0.3.16
       pg-gateway: 0.3.0-beta.4
 
-  '@netlify/database@2.0.0':
+  '@netlify/database@2.0.1':
     dependencies:
       '@neondatabase/serverless': 1.1.0
       '@netlify/runtime-utils': 3.0.0
