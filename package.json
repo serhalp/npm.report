@@ -42,7 +42,7 @@
     "svelte": "^5.57.0",
     "takumi-js": "^2.13.2",
     "valibot": "^1.4.2",
-    "verkit": "0.4.0"
+    "verkit": "0.4.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
