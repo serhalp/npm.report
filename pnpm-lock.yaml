@@ -208,7 +208,7 @@ importers:
         version: 1.0.1
       '@netlify/edge-functions':
         specifier: ^4.0.0
-        version: 4.0.2
+        version: 4.0.3
       '@netlify/functions':
         specifier: ^6.0.0
         version: 6.0.3
@@ -836,8 +836,8 @@ packages:
     resolution: {integrity: sha512-0jerPQQ5mLczl7jwCRfTJsLcaiXbvPOC+Whtxxk7IHdz24OvZGjUtVHAxhppjT8wcX48I7C6oAff04QdQDMTfw==}
     engines: {node: '>=22.12.0'}
 
-  '@netlify/edge-functions@4.0.2':
-    resolution: {integrity: sha512-DQflkwaC3greGAAZ9v2wE5PU0qkXMeC7xhRnF/8DEGCjWaVLt/uf48nqDkyCxLG84GYMSQSmlMs+O4wPf+FqPw==}
+  '@netlify/edge-functions@4.0.3':
+    resolution: {integrity: sha512-AMxIH6D+VaMbCWFVXeYtCGGqIGxJ/92vbRj9fVzWvTvfjUA4S+0zHWnDLpa36CkYRk7ED00PR1Gh1W+CSAB/8g==}
     engines: {node: '>=22.12.0'}
 
   '@netlify/functions-dev@2.0.2':
@@ -902,10 +902,6 @@ packages:
 
   '@netlify/types@3.0.0':
     resolution: {integrity: sha512-zRCidsQgI4CZWrZB/kmwdPf0QbSNljakfNSLizFvrsSA3UcUrTWSBNMVKmZnob92/8ESeUN0ewXLOlffJU+ATQ==}
-    engines: {node: '>=22.12.0'}
-
-  '@netlify/types@3.2.0':
-    resolution: {integrity: sha512-PVvY1EEN9i2Er0LQoiyNG7i/BnwnttLuZqIkBnhL2Jrcj3P5N/NcGkv1i20MJ2ngNGSPQcT7tagDmF3V6BsdWg==}
     engines: {node: '>=22.12.0'}
 
   '@netlify/types@3.3.0':
@@ -5232,9 +5228,9 @@ snapshots:
     dependencies:
       '@netlify/types': 3.0.0
 
-  '@netlify/edge-functions@4.0.2':
+  '@netlify/edge-functions@4.0.3':
     dependencies:
-      '@netlify/types': 3.2.0
+      '@netlify/types': 3.3.0
 
   '@netlify/functions-dev@2.0.2(supports-color@7.2.0)':
     dependencies:
@@ -5349,8 +5345,6 @@ snapshots:
   '@netlify/types@2.8.0': {}
 
   '@netlify/types@3.0.0': {}
-
-  '@netlify/types@3.2.0': {}
 
   '@netlify/types@3.3.0': {}
 
