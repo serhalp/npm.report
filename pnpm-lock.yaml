@@ -182,8 +182,8 @@ importers:
         specifier: ^7.3.0
         version: 7.3.1(svelte@5.57.2(@typescript-eslint/types@8.68.0))(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1))
       packumeta:
-        specifier: 0.4.1
-        version: 0.4.1
+        specifier: 0.5.0
+        version: 0.5.0
       svelte:
         specifier: ^5.57.0
         version: 5.57.2(@typescript-eslint/types@8.68.0)
@@ -3616,8 +3616,8 @@ packages:
   package-manager-detector@1.8.0:
     resolution: {integrity: sha512-yQA4H19AmPEoMUeavPMDIe1higySl/gH/yaQrkT/s07Qp+7pp2hYz30N3z2l5BkjVkF9Ow6o0wjJamm2y7Sn0A==}
 
-  packumeta@0.4.1:
-    resolution: {integrity: sha512-n+4VKW4+05duTeQP8BRUDke6rTHYqxqsrVyLEt0Y4Kmisp+ZL3JKREjaxv+ajSd9GpjZkJLY+zG1A0f1Jib21A==}
+  packumeta@0.5.0:
+    resolution: {integrity: sha512-9ooLx2HvdRd00gbVv4K7FFyKANNBHnbMF6K4vRF81+35Yzo1SsQN7CttiyoKAAIt57hv96z6ChTnZKQPtOx6vA==}
     engines: {node: '>=20.0.0'}
 
   parse-gitignore@2.0.0:
@@ -7898,7 +7898,7 @@ snapshots:
 
   package-manager-detector@1.8.0: {}
 
-  packumeta@0.4.1: {}
+  packumeta@0.5.0: {}
 
   parse-gitignore@2.0.0: {}
 
