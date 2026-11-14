@@ -60,7 +60,7 @@
     "@vitest/coverage-v8": "5.1.0",
     "jsdom": "^31.0.0",
     "knip": "^6.33.0",
-    "oxfmt": "^0.65.0",
+    "oxfmt": "^0.78.0",
     "oxlint": "^1.80.0",
     "oxlint-tsgolint": "^7.0.2001",
     "sonda": "^0.14.0",
