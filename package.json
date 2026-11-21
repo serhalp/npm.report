@@ -38,7 +38,7 @@
     "@lucide/svelte": "^1.37.0",
     "@netlify/database": "^2.0.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
-    "packumeta": "0.4.1",
+    "packumeta": "0.5.0",
     "svelte": "^5.57.0",
     "takumi-js": "^2.13.2",
     "valibot": "^1.4.2",
