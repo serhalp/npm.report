@@ -196,7 +196,7 @@ importers:
         version: 1.78.0(svelte@5.59.1(@typescript-eslint/types@8.68.0))
       '@netlify/database':
         specifier: ^2.0.0
-        version: 2.0.3
+        version: 2.0.4
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.3.0
         version: 7.3.2(svelte@5.59.1(@typescript-eslint/types@8.68.0))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.1))
@@ -784,8 +784,8 @@ packages:
     resolution: {integrity: sha512-nC3W66kUU5BYFlDVdbg5sPr0imRBdwd353OkneHVfJNRScswXLXuAmrj1Ol2Ehz0Y7MOY9eEz7S7N+WbpJ5slA==}
     engines: {node: '>=22.12.0'}
 
-  '@netlify/database@2.0.3':
-    resolution: {integrity: sha512-Ghq0NYwsQyT9GjgUhpbeOlk98RD6PeV2skhQIy/q6tPMiJz/p7NkfcixkXSouHfyJZmOEI6eweZeIDKAa3VLmA==}
+  '@netlify/database@2.0.4':
+    resolution: {integrity: sha512-my24Wff6MaKuUN3xNY6A1d5GCSsPEgIDMqoeDroaPCRsOCdtQfk4t6mHMF7s35mNmnrOkAQERXqViRKlGjT/kQ==}
     engines: {node: '>=22.12.0'}
 
   '@netlify/dev-utils@6.0.1':
@@ -861,6 +861,10 @@ packages:
 
   '@netlify/runtime-utils@3.0.1':
     resolution: {integrity: sha512-PythjseqdFTvaTK28IiRZ/w0YOZKgyBDxiXuCNEwCBxidnKZ7najsOMtstwwzmsRtfHbmXHOB5NLaGCnvnvBTg==}
+    engines: {node: '>=22.12.0'}
+
+  '@netlify/runtime-utils@3.1.0':
+    resolution: {integrity: sha512-mzlRsXQCo9a9Y4W/jiKvPrDOgmoVu+QIsQ2Lehi7hFJD7KlvEsCucJ2i1DOgN3LpYVbo8gyrxmGZFT2Jlf6SHA==}
     engines: {node: '>=22.12.0'}
 
   '@netlify/runtime@5.0.2':
@@ -5054,10 +5058,10 @@ snapshots:
       '@electric-sql/pglite': 0.3.16
       pg-gateway: 0.3.0-beta.4
 
-  '@netlify/database@2.0.3':
+  '@netlify/database@2.0.4':
     dependencies:
       '@neondatabase/serverless': 1.1.0
-      '@netlify/runtime-utils': 3.0.1
+      '@netlify/runtime-utils': 3.1.0
       pg: 8.23.0
       waddler: 0.1.1(@neondatabase/serverless@1.1.0)(pg@8.23.0)
       ws: 8.21.3
@@ -5275,6 +5279,8 @@ snapshots:
   '@netlify/runtime-utils@3.0.0': {}
 
   '@netlify/runtime-utils@3.0.1': {}
+
+  '@netlify/runtime-utils@3.1.0': {}
 
   '@netlify/runtime@5.0.2(supports-color@7.2.0)':
     dependencies:
