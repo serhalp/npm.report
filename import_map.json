@@ -15,7 +15,7 @@
     "#shared/reportHistory": "./src/shared/reportHistory.ts",
     "#shared/schemas": "./src/shared/schemas.ts",
     "#shared/types": "./src/shared/types.ts",
-    "packumeta": "https://esm.sh/packumeta@0.4.1",
+    "packumeta": "https://esm.sh/packumeta@0.5.0",
     "valibot": "https://esm.sh/valibot@1.4.2"
   }
 }
