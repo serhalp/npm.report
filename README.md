@@ -51,7 +51,7 @@ information exists, there is no official tooling that makes this easy. npm.repor
 - Vite, Svelte 5, and TypeScript provide the static client. It submits audits to the server and
   renders the streamed progress and results.
 - Audits run server-side in Netlify edge functions and stream to the browser over SSE (`POST
-/api/audit-stream` and `POST /api/user-publishes-stream`). The browser does not compute the audit;
+  /api/audit-stream` and `POST /api/user-publishes-stream`). The browser does not compute the audit;
   because the server does, the saved report is authoritative.
 - npm is fetched directly from the server (`registry.npmjs.org`, `api.npmjs.org`, and
   `npm.antfu.dev`).
