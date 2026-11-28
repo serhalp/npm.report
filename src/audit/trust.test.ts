@@ -33,7 +33,7 @@ describe("trust status", () => {
         trustedPublisher: true,
         stagedPublish: false,
       }),
-    ).toBe("none");
+    ).toBe("trustedPublisher");
   });
 
   it("uses packumeta trust status and adds publisher fallback", () => {
@@ -75,8 +75,8 @@ describe("trust status", () => {
       provenance: false,
       trustedPublisher: true,
       stagedPublish: false,
-      level: "none",
-      order: 0,
+      level: "trustedPublisher",
+      order: 2,
       publisher: "?",
     });
   });
