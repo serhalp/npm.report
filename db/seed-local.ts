@@ -134,7 +134,8 @@ SELECT
         'byUser', jsonb_build_array(
           jsonb_build_object('user', 'former-contractor', 'count', 2),
           jsonb_build_object('user', 'community-maintainer', 'count', 1)
-        )
+        ),
+        'scanned', ${EXAMPLE_TOTAL_PACKAGES}
       )
     )
     ELSE '{}'::jsonb

@@ -141,8 +141,9 @@ POSTs, and `external` member lists can exceed URL limits. Request bodies are
 validated server-side by `AuditRequestSchema` and `UserPublishRequestSchema` in
 `schemas.ts`; validated data is the trust boundary.
 
-Completed `/api/audit-stream` runs are saved server-side. Report ids are
-`<orgs>-<yyyy-mm-dd>-<shorthash>`; hashing the payload makes same-day saves
+Completed `/api/audit-stream` runs that matched at least one package are saved
+server-side; an audit of an unknown or empty org set is not persisted. Report ids
+are `<orgs>-<yyyy-mm-dd>-<shorthash>`; hashing the payload makes same-day saves
 idempotent. There is no public report-write endpoint.
 
 Daily schedules are keyed by normalized org sets and can be created only from a

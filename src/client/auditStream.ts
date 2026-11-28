@@ -2,7 +2,7 @@
 // Client side of the server-run audit: POST the request to /api/audit-stream and
 // consume its SSE stream. `log` events feed the live terminal; `result` carries
 // the authoritative AuditResult the server computed; `done` carries the saved
-// report id/url (or a save error).
+// report id/url (or why no report was saved).
 //
 // The platform recycles the SSE connection (~60s) mid-audit, so this reconnects
 // transparently: each run has a client-generated `jobId`, we track the last log
@@ -27,8 +27,9 @@ export interface AuditStreamOutcome {
   result: AuditResult | null;
   reportId?: string;
   reportUrl?: string;
-  /** Set when the audit ran but the server-side save failed — the result is
-   *  still usable, only the shareable link is missing. */
+  /** Set when the audit ran but no report was saved: the save failed or the
+   *  audit matched no packages. The result is still usable, only the shareable
+   *  link is missing. */
   saveError?: string;
 }
 

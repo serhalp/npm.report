@@ -12,6 +12,7 @@
     "#server/audit-jobs": "./netlify/_shared/audit-jobs.ts",
     "#server/report-persistence": "./netlify/_shared/report-persistence.ts",
     "#shared/auditDefaults": "./src/shared/auditDefaults.ts",
+    "#shared/auditResult": "./src/shared/auditResult.ts",
     "#shared/reportHistory": "./src/shared/reportHistory.ts",
     "#shared/schemas": "./src/shared/schemas.ts",
     "#shared/types": "./src/shared/types.ts",

@@ -170,7 +170,7 @@ describe("trust rerun schedules", () => {
     });
   });
 
-  it("succeeds without storing history when no trust summary can be extracted", async () => {
+  it("skips saving an empty rerun result", async () => {
     runAudit.mockResolvedValueOnce({ failures: [] });
 
     await expect(schedules.processDueTrustReruns()).resolves.toEqual({
@@ -187,9 +187,13 @@ describe("trust rerun schedules", () => {
         (SELECT count(*)::int FROM reports) AS "reportCount",
         (SELECT count(*)::int FROM report_trust_history) AS "historyCount"
     `;
-    expect(reportCount).toBe(2);
+    expect(reportCount).toBe(1);
     expect(historyCount).toBe(0);
-    expect(await readSchedule()).toMatchObject({ consecutiveFailures: 0, lastError: null });
+    expect(await readSchedule()).toMatchObject({
+      lastReportId: "netlify-old",
+      consecutiveFailures: 0,
+      lastError: null,
+    });
   });
 
   it("declares an hourly background schedule", async () => {

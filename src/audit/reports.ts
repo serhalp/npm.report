@@ -268,7 +268,7 @@ export async function runExternal(
   );
 
   log(`[external] ${byUser.length} external maintainer account(s)`);
-  return { rows: external, distinctUsers: byUser.length, byUser };
+  return { rows: external, distinctUsers: byUser.length, byUser, scanned: pkgs.length };
 }
 
 // ---------------------------------------------------------------------------

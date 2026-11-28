@@ -265,6 +265,7 @@ describe("report builders", () => {
       { user: "mallory", pkg: "pkg" },
     ]);
     expect(report.distinctUsers).toBe(1);
+    expect(report.scanned).toBe(2);
     expect(report.byUser).toEqual([{ user: "mallory", count: 2 }]);
   });
 

@@ -56,6 +56,9 @@ const ExternalReport = v.looseObject({
   rows: v.array(v.looseObject({ user: v.string(), pkg: v.string() })),
   distinctUsers: v.number(),
   byUser: v.array(v.looseObject({ user: v.string(), count: v.number() })),
+  // Legacy payloads predate the scan count; parse them as 0 so the domain type
+  // stays total. Nothing reads this field from stored reports.
+  scanned: v.optional(v.number(), 0),
 });
 
 const FetchFailure = v.looseObject({ url: v.string(), reason: v.string() });

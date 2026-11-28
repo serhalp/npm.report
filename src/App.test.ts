@@ -115,7 +115,10 @@ describe("App", () => {
     const user = userEvent.setup();
     mockedStreamAudit.mockResolvedValue(
       savedOutcome({
-        result: { ...auditResult, external: { rows: [], distinctUsers: 0, byUser: [] } },
+        result: {
+          ...auditResult,
+          external: { rows: [], distinctUsers: 0, byUser: [], scanned: 2 },
+        },
       }),
     );
     render(App);

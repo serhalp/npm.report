@@ -5,6 +5,7 @@ import type { AuditJobLine } from "#db/schema";
 import { createJobIfAbsent, finishJob, getJob, updateJobLog } from "#server/audit-jobs";
 import { saveReportSnapshot } from "#server/report-persistence";
 import { FETCH_CONCURRENCY, blockedOrgMessage, isBlockedOrg } from "#shared/auditDefaults";
+import { NO_AUDIT_CONTENT_MESSAGE, hasAuditContent } from "#shared/auditResult";
 import { scopeLabelFor, type SharedReportScope } from "#shared/reportHistory";
 import { AuditRequestSchema, parseOrNull } from "#shared/schemas";
 import type { AuditConfig, AuditResult, ReportKind } from "#shared/types";
@@ -187,25 +188,31 @@ async function runFresh(
   try {
     const result: AuditResult = await runAudit(config, kinds, members, log);
 
-    // Persist the authoritative report; the server owns this write.
+    // Persist the authoritative report; the server owns this write. An audit
+    // that matched no packages would otherwise create an empty shareable record.
     const scope: SharedReportScope = config.all ? "all" : { months: config.months };
     let reportId: string | null = null;
     let saveError: string | null = null;
-    try {
-      const saved = await saveReportSnapshot({
-        orgs: config.orgs,
-        scope,
-        scopeLabel: scopeLabelFor(scope),
-        capturedAt: new Date().toISOString(),
-        payload: result,
-      });
-      reportId = saved.id;
-    } catch (error) {
-      saveError = error instanceof Error ? error.message : "could not save report";
-      console.error(
-        `[audit-stream] save failed after ${Date.now() - startedAt}ms job=${jobId}:`,
-        error,
-      );
+    if (!hasAuditContent(result)) {
+      log(NO_AUDIT_CONTENT_MESSAGE);
+      saveError = NO_AUDIT_CONTENT_MESSAGE;
+    } else {
+      try {
+        const saved = await saveReportSnapshot({
+          orgs: config.orgs,
+          scope,
+          scopeLabel: scopeLabelFor(scope),
+          capturedAt: new Date().toISOString(),
+          payload: result,
+        });
+        reportId = saved.id;
+      } catch (error) {
+        saveError = error instanceof Error ? error.message : "could not save report";
+        console.error(
+          `[audit-stream] save failed after ${Date.now() - startedAt}ms job=${jobId}:`,
+          error,
+        );
+      }
     }
 
     clearInterval(flushTimer);
