@@ -320,6 +320,9 @@ a:hover {
 .glossary__list a {
   color: var(--gold);
   white-space: nowrap;
+  /* Inline prose link: underline so it does not rely on color alone (axe link-in-text-block). */
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 .glossary__note {
   margin: var(--space-md) 0 0;

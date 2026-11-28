@@ -71,7 +71,7 @@
   <div class="masthead__top">
     <h1 class="wordmark">
       <a href="/#" aria-label="npm.report"
-        ><span>npm</span><img class="logo" src={logo} alt="" /><span>report</span></a
+        ><span>npm</span>{" "}<img class="logo" src={logo} alt="" />{" "}<span>report</span></a
       >
     </h1>
     <div class="masthead__actions">
@@ -81,10 +81,10 @@
           href="/tracked"
           aria-label={trackedOrgLabel}
           aria-current={tracked ? "page" : undefined}
-          ><img class="masthead__nav-mark" src={logo} alt="" /><span>Tracking</span
-          >{#if trackedOrgCount !== null}<span class="masthead__nav-count"
+          ><img class="masthead__nav-mark" src={logo} alt="" />{" "}<span>Tracking</span
+          >{#if trackedOrgCount !== null}{" "}<span class="masthead__nav-count"
               >{trackedOrgCount ?? "…"}</span
-            >{/if}<span>{trackedOrgCount === 1 ? "org" : "orgs"}</span></a
+            >{/if}{" "}<span>{trackedOrgCount === 1 ? "org" : "orgs"}</span></a
         >
       </nav>
       <div class="masthead__controls">
