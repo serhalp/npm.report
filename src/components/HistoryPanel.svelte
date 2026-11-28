@@ -38,6 +38,11 @@
   let points = $derived(response?.points ?? []);
   let pointGroups = $derived(groupTrustHistoryPoints(points).toReversed());
   let latest = $derived(points.at(-1) ?? null);
+  let viewedPoint = $derived(points.find((point) => point.id === currentReportId) ?? null);
+  let summaryPoint = $derived(viewedPoint ?? latest);
+  let summaryLabel = $derived(
+    viewedPoint && viewedPoint !== latest ? "This report" : "Latest report",
+  );
 
   function formatPercent(value: number): string {
     return `${value.toFixed(value % 1 === 0 ? 0 : 1)}%`;
@@ -46,9 +51,15 @@
   function pctCount(count: number, total: number): string {
     return `${formatPercent(trustPercent(count, total))} (${count})`;
   }
-  let latestStrong = $derived(latest ? pctCount(strongTrustCount(latest), latest.total) : "—");
-  let latestAny = $derived(latest ? pctCount(anyTrustCount(latest), latest.total) : "—");
-  let latestNone = $derived(latest ? pctCount(latest.byLevel.none, latest.total) : "—");
+  let summaryStrong = $derived(
+    summaryPoint ? pctCount(strongTrustCount(summaryPoint), summaryPoint.total) : "—",
+  );
+  let summaryAny = $derived(
+    summaryPoint ? pctCount(anyTrustCount(summaryPoint), summaryPoint.total) : "—",
+  );
+  let summaryNone = $derived(
+    summaryPoint ? pctCount(summaryPoint.byLevel.none, summaryPoint.total) : "—",
+  );
 
   function containsCurrentReport(pointsInGroup: ReportTrustHistoryPoint[]): boolean {
     return pointsInGroup.some((point) => point.id === currentReportId);
@@ -117,20 +128,20 @@
           Run an all-packages trust report for this org set to start the timeline.
         </div>
       {:else}
-        {#if latest && latest.failureCount > 0}
+        {#if summaryPoint && summaryPoint.failureCount > 0}
           <p class="history-alert" role="alert">
             <TriangleAlert aria-hidden="true" size={17} strokeWidth={2} />
-            Latest report had {latest.failureCount} fetch
-            {latest.failureCount === 1 ? "failure" : "failures"}; results may be incomplete.
+            {summaryLabel} had {summaryPoint.failureCount} fetch
+            {summaryPoint.failureCount === 1 ? "failure" : "failures"}; results may be incomplete.
           </p>
         {/if}
 
         <div class="statgrid trust-summary history-stats">
-          <Stat k="Strong trust" v={latestStrong} sub="staged or trusted" variant="strong" />
-          <Stat k="Any trust" v={latestAny} sub="incl. provenance" variant="any" />
+          <Stat k="Strong trust" v={summaryStrong} sub="staged or trusted" variant="strong" />
+          <Stat k="Any trust" v={summaryAny} sub="incl. provenance" variant="any" />
           <Stat
             k="No trust signal"
-            v={latestNone}
+            v={summaryNone}
             sub="no trust metadata detected"
             variant="risk"
           />
