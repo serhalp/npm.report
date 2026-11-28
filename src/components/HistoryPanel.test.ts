@@ -172,6 +172,34 @@ describe("HistoryPanel", () => {
     expect(screen.getByRole("tooltip")).toHaveTextContent("Provenance only 1 (25%)");
   });
 
+  test("scopes the summary to the report being viewed", async () => {
+    const points = [
+      historyPoint(26, {
+        byLevel: { stagedPublish: 0, trustedPublisher: 1, provenance: 1, none: 2 },
+        failureCount: 2,
+      }),
+      historyPoint(27, {
+        byLevel: { stagedPublish: 2, trustedPublisher: 1, provenance: 1, none: 0 },
+      }),
+    ];
+    mockHistory({ orgs: ["netlify"], points });
+
+    const { container } = render(HistoryPanel, {
+      props: { orgs: ["netlify"], currentReportId: points[0].id },
+    });
+
+    expect(await screen.findByRole("group", { name: "Report snapshots" })).toBeInTheDocument();
+    const stats = [...container.querySelectorAll(".history-stats .stat")].map(
+      (stat) => stat.textContent,
+    );
+    expect(stats[0]).toContain("25% (1)"); // Strong trust on the viewed snapshot
+    expect(stats[1]).toContain("50% (2)"); // Any trust on the viewed snapshot
+    expect(stats[2]).toContain("50% (2)"); // No trust signal on the viewed snapshot
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "This report had 2 fetch failures; results may be incomplete.",
+    );
+  });
+
   test("hides the trend chart with a single snapshot", async () => {
     mockHistory({
       orgs: ["netlify"],
