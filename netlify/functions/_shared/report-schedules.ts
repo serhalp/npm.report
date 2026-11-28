@@ -10,6 +10,7 @@ import {
 } from "#db/schema";
 import { saveReportSnapshot } from "#server/report-persistence";
 import { FETCH_CONCURRENCY } from "#shared/auditDefaults";
+import { NO_AUDIT_CONTENT_MESSAGE, hasAuditContent } from "#shared/auditResult";
 import type { ReportRerunScheduleStatus } from "#shared/reportHistory";
 import type { AuditConfig, AuditResult } from "#shared/types";
 
@@ -158,6 +159,21 @@ async function runSchedule(row: ReportRerunScheduleRow, now: Date) {
     const payload: AuditResult = await runAudit(config, ["trust"], [], (message) =>
       console.log(`[trust-rerun:${row.orgKey}] ${message}`),
     );
+    if (!hasAuditContent(payload)) {
+      // Keep the last saved report: an empty daily snapshot is not a new report.
+      console.log(`[trust-rerun:${row.orgKey}] ${NO_AUDIT_CONTENT_MESSAGE} Skipping save.`);
+      await db.sql`
+        UPDATE report_rerun_schedules
+        SET
+          next_run_at = ${addMs(new Date(capturedAt), DAY_MS)},
+          last_run_at = ${new Date(capturedAt)},
+          last_error = ${null},
+          consecutive_failures = ${0},
+          updated_at = ${new Date()}
+        WHERE org_key = ${row.orgKey}
+      `;
+      return true;
+    }
     const saved = await saveReportSnapshot({
       orgs: row.orgs,
       scope: "all",

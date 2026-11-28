@@ -40,8 +40,9 @@ information exists, there is no official tooling that makes this easy. npm.repor
    authenticated member list to compare them. The list is used only for that audit and is not
    persisted; derived external findings are included in the saved report.
 6. Run the audit. Results render as sortable tables with JSON copy and CSV download actions.
-7. The server saves each completed run automatically. `/report/:id` preserves that exact snapshot;
-   `/orgs/:orgs` always shows the latest snapshot for a normalized org set.
+7. The server saves each completed run that matched at least one package automatically. `/report/:id`
+   preserves that exact snapshot; `/orgs/:orgs` always shows the latest snapshot for a normalized org
+   set.
 8. For all-package package trust reports, select "Track daily" to generate one automatic trust
    snapshot per day. The **Tracked orgs** page shows every tracked org set, its latest trust
    distribution, and a link to the latest report.

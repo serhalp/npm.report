@@ -121,6 +121,7 @@ describe("saveReportSnapshot", () => {
         rows: [{ user: "sensitive-user", pkg: "pkg" }],
         distinctUsers: 1,
         byUser: [{ user: "sensitive-user", count: 1 }],
+        scanned: 1,
       },
       failures: [{ url: "https://registry.npmjs.org/pkg", reason: "http 429" }],
     } satisfies AuditResult;

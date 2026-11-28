@@ -6,7 +6,7 @@ describe("ExternalView", () => {
   test("renders the empty state when every maintainer is a member", () => {
     render(ExternalView, {
       props: {
-        report: { rows: [], distinctUsers: 0, byUser: [] },
+        report: { rows: [], distinctUsers: 0, byUser: [], scanned: 2 },
         onToast: vi.fn<(message: string) => void>(),
       },
     });
@@ -21,6 +21,7 @@ describe("ExternalView", () => {
         report: {
           distinctUsers: 1,
           byUser: [{ user: "mallory", count: 2 }],
+          scanned: 2,
           rows: [
             { user: "mallory", pkg: "alpha" },
             { user: "mallory", pkg: "beta" },

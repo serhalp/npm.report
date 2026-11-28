@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuditJobRow } from "../../../db/schema.ts";
+import type { AuditResult } from "#shared/types";
+import { NO_AUDIT_CONTENT_MESSAGE } from "#shared/auditResult";
 
 const mocked = vi.hoisted(() => ({
   createJobIfAbsent: vi.fn<typeof import("#server/audit-jobs").createJobIfAbsent>(),
@@ -24,7 +26,48 @@ vi.mock("#audit/runAudit", () => ({ runAudit: mocked.runAudit }));
 
 import handler, { config } from "../../edge-functions/audit-stream.ts";
 
-const RESULT = { failures: [] };
+const RESULT = {
+  trust: {
+    rows: [],
+    summary: {
+      scopeLabel: "ALL org packages",
+      orgs: ["vue"],
+      total: 1,
+      provenance: 0,
+      trustedPublisher: 0,
+      stagedPublish: 0,
+      deprecated: 0,
+      byLevel: {
+        stagedPublish: 0,
+        trustedPublisher: 0,
+        provenance: 0,
+        none: 1,
+      },
+    },
+  },
+  failures: [],
+} satisfies AuditResult;
+const EMPTY_RESULT = {
+  trust: {
+    rows: [],
+    summary: {
+      scopeLabel: "ALL org packages",
+      orgs: ["vue"],
+      total: 0,
+      provenance: 0,
+      trustedPublisher: 0,
+      stagedPublish: 0,
+      deprecated: 0,
+      byLevel: {
+        stagedPublish: 0,
+        trustedPublisher: 0,
+        provenance: 0,
+        none: 0,
+      },
+    },
+  },
+  failures: [],
+} satisfies AuditResult;
 const VALID_REQUEST = {
   jobId: "job-1",
   from: -1,
@@ -181,10 +224,32 @@ describe("audit stream edge function", () => {
     );
   });
 
+  it("does not save a report when the audit matched no packages", async () => {
+    mocked.runAudit.mockResolvedValueOnce(EMPTY_RESULT);
+
+    const response = await handler(post(VALID_REQUEST));
+
+    expect(await readFrames(response)).toEqual([
+      { event: "log", id: 0, data: NO_AUDIT_CONTENT_MESSAGE },
+      { event: "result", data: EMPTY_RESULT },
+      { event: "done", data: { error: NO_AUDIT_CONTENT_MESSAGE } },
+    ]);
+    expect(mocked.saveReportSnapshot).not.toHaveBeenCalled();
+    expect(mocked.finishJob).toHaveBeenCalledWith(
+      "job-1",
+      expect.objectContaining({
+        status: "done",
+        result: EMPTY_RESULT,
+        reportId: null,
+        error: NO_AUDIT_CONTENT_MESSAGE,
+      }),
+    );
+  });
+
   it("uses external members without persisting them in the resumable job", async () => {
     const members = ["sensitive-owner", "private-developer"];
     mocked.runAudit.mockResolvedValueOnce({
-      external: { rows: [], distinctUsers: 0, byUser: [] },
+      external: { rows: [], distinctUsers: 0, byUser: [], scanned: 1 },
       failures: [],
     });
 

@@ -57,6 +57,7 @@ beforeEach(() => {
     rows: [],
     distinctUsers: 0,
     byUser: [],
+    scanned: 0,
   });
 });
 
@@ -98,7 +99,7 @@ describe("runAudit", () => {
   it("logs incomplete-results warnings when report builders record failures", async () => {
     vi.mocked(runExternal).mockImplementationOnce(async (_config, _members, failures) => {
       failures.add("https://registry.npmjs.org/pkg", "http 500");
-      return { rows: [], distinctUsers: 0, byUser: [] };
+      return { rows: [], distinctUsers: 0, byUser: [], scanned: 0 };
     });
     const log = vi.fn<(message: string) => void>();
 

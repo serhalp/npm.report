@@ -88,6 +88,9 @@ export interface ExternalReport {
   rows: ExternalRow[];
   distinctUsers: number;
   byUser: { user: string; count: number }[];
+  /** Packages scanned for maintainers; distinguishes an empty org from an all-clear report.
+   *  Legacy payloads without it parse as 0. */
+  scanned: number;
 }
 
 export interface UserPublishRow {
